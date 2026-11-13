@@ -1,29 +1,150 @@
 # Biz Assistant Framework
 
-Packages `@dsh-bridge/*` (the framework was first called DSH Business Bridge; the package names keep that prefix). Customer-facing
-name: Bizアシスタント.
+**Every IT system, a workplace of AI employees that think and act.**<br>
+あらゆる IT システムを、考えて動く AI 社員の職場に。 · 让每一个 IT 系统，都成为会思考、会行动的 AI 员工的职场。
 
-A truly general-purpose framework that turns **any IT system** into an AI agent / AI assistant: an **existing business system**
-(billing, inspections, HR, ... any IT system with its own employees, roles and login) becomes one that works with **DSH AI employees** — an AI assistant for every employee, working through IM
-(Slack, LINE, Teams, WeCom, personal WeChat, Feishu, ...). A new system can be built on it the same way.
+[Integration skill](#bring-it-into-your-system-with-the-integration-skill) ·
+[Quick start](#quick-start) ·
+[Guideline](docs/GUIDELINE.md) ·
+[Technical guide](docs/slides/manual/biz-assistant-framework-technical-guide.md) ·
+[Discussions](https://github.com/ITC-cloud-soft/biz-ai/discussions) ·
+[Issues](https://github.com/ITC-cloud-soft/biz-ai/issues)
 
-The business system stays the single source of record. It adds a bridge: a small HTTP protocol (Bridge v1), a manifest that
-describes it, SNS linking on its own login, and recipient rules it decides itself. The framework provides the rest — the DSH
-runtime and its IM channels, plugins that link employees' IM accounts (each employee links only their own, through the
-organisation's bots or their own personal bots), call business tools with the employee's own delegated rights (read and propose
-only — people decide), deliver notifications and approval cards **only to the people the business system names**, run automatic
-tasks on business events (per-class or per-person delegation), send scheduled reports to the employee's own chat, and answer
-questions from the business web's assistant panel; the guards on every path from the AI to IM; tests and a conformance suite.
+Biz Assistant (Bizアシスタント, packages `@dsh-bridge/*`) adds a small **bridge** to business systems that used to just wait for
+create, read and update. **AI employees** come alive and, in each employee's own chat (Slack, LINE, Teams, WeCom, Feishu, …),
+**notify, ask, draft and remember**. No rewrite of business logic. People always decide.
+
+**52** conformance checks (Bridge v1) · **9** AI-plane plugins · **12** chat platforms for personal bots ·
+**0** actions the AI can confirm, approve or pay
+
+## From a tool that records to a colleague who works with you
+
+| era | the system | people |
+|---|---|---|
+| Records | ledgers and input | type data in, search for it |
+| Screens | CRUD and business logic — it waits until someone opens a screen | check screens, chase each other for approvals, collect data for reports |
+| **Intelligence** | **AI employees notice changes first, tell only the people concerned, ask the right person, follow up, sum up every morning and evening** | **decide in chat — one tap to approve** |
+
+An AI employee is an AI assistant that works **within each employee's own rights**:
+
+- **Think** — reads business data with the user's rights, spots what matters now, drafts plans and corrections as proposals.
+- **Remember** — each person's preferences and open items, the organisation's procedures, earlier conversations. Never personal data.
+- **Act on its own** — watches for changes, tells only those concerned, asks the right person, follows up, reports on schedule.
+
+**The AI reads and proposes. Confirming, approving and deciding amounts is always up to people** — enforced by code and
+configuration, not prompts.
+
+## How it works
+
+Your business system stays the **source of truth**; AI employees work across the bridge. The business plane and the AI plane are
+joined by **Bridge v1** (a small, versioned HTTP protocol, OpenAPI 3.1) and the **manifest** (the system's machine-readable
+self-description: roles, events, message templates, tools, playbooks, reports).
+
+1. A business change and its event are recorded in the **same transaction** (outbox).
+2. **Your system** decides who is told — the same check as its web screens.
+3. The AI employee reads **with the user's rights** and drafts proposals.
+4. People decide in chat; the result is recorded **in your system**.
+
+It works for **legacy systems and new ones alike** — but it does not connect with zero changes: the first assessment lists what
+your system adds (13 items, below).
+
+## Bring it into your system with the integration skill
+
+The fastest way in is to let an AI coding agent do the integration with the skill shipped in this repository:
+[`docs/skill/biz-assistant-integration`](docs/skill/biz-assistant-integration/SKILL.md). It guides the agent through
+**assess → plan → implement → verify**, using this repository's documents as the source of truth, and stops to ask you whenever a
+decision is yours.
+
+### 1. Install the skill
+
+You need an AI coding agent ([Claude Code](https://claude.com/claude-code) or another agent that reads Markdown runbooks),
+Node 22.19+ and pnpm 10, and the repository of the business system you want to connect (or an empty one for a new system).
+
+```sh
+git clone https://github.com/ITC-cloud-soft/biz-ai.git
+
+# for yourself, in every project
+cp -r biz-ai/docs/skill/biz-assistant-integration ~/.claude/skills/
+
+# or for your team, inside the business system's repository (commit it with the system)
+cp -r biz-ai/docs/skill/biz-assistant-integration <your-system>/.claude/skills/
+```
+
+On Windows (PowerShell): `Copy-Item -Recurse biz-ai\docs\skill\biz-assistant-integration "$HOME\.claude\skills\"`.
+With another agent, have it read `SKILL.md` first and the files under `references/` when it needs them.
+
+### 2. Ask for it
+
+Open the agent in the business system's repository and ask in your own words — the skill is picked up from requests such as:
+
+```text
+Integrate Biz Assistant Framework into this system.
+この業務システムに Bizアシスタントを導入して。最初は請求の承認から。
+把 biz assistant framework 导入这个既有系统，先从巡检超期提醒开始。
+```
+
+Tip from the field: **start with one process** (billing approvals, overdue deadlines, …), run it next to the existing screens, then widen.
+
+### 3. What the agent does
+
+| step | what happens | proof |
+|---|---|---|
+| 1 Assess and plan | reads your login, staff and roles, APIs, transactions and batch jobs; fills the 13-item checklist (have / add / alias); picks the path; writes `integration-plan.md` from the template | a plan you review |
+| 2 Manifest | roles and delegation limits, event and payload allow-lists, messages, tools, playbooks, reports | `bridge-validate manifest --strict` exits 0 |
+| 3 Business side | hooks `employees` · `authenticate` · `isSessionLive` · `recipientsFor` · `approvals` · `proposalKinds` · `reports` · `piiScan`; AI writes only as proposals | your tests |
+| 4 Events | the business row and `emitEvent` in the same transaction | your tests |
+| 5 Conformance | the 52 checks against a TEST environment | `52 passed, 0 known gaps, 0 skipped` |
+| 6 AI plane | DSH product profile from the template, registry, bots, outbound settings kept closed | profile checks |
+| 7 Web and BFF | chat linking, notification settings, approvals, AI proposals, the AI employee's profile page; the gateway | type checks, screens |
+| 8 Automatic tasks | delegation classes and playbooks switched on | profile checks |
+| 9 Optional features | how-to answers from your manual, long-term memory, attachments, external connectors, scanned documents | per feature |
+| 10 Done checks | every check above re-run as commands, results reported; anything not verified is reported as "not verified" | the final checklist |
+
+The agent first chooses one of these paths (and shows you the assessment when it is not obvious):
+
+| your situation | path |
+|---|---|
+| a new system | build it on `server-kit` — you write the business code, hooks, manifest and screens |
+| existing, Node.js, code may change | mount `createBridgeApp` on your server and wire the hooks to your tables and functions |
+| existing, equivalent APIs already exist | serve `/bridge/v1` as aliases of your routes, add only what is missing |
+| existing, another language | implement `packages/protocol/openapi/bridge-v1.yaml` and prove it with the conformance suite |
+| existing, no code changes at all | external mode (trial): a separate bridge service; needs an IdP, per-user APIs, change notifications and approval / write APIs |
+
+### 4. What stays with you
+
+The skill never guesses these; it writes the options and a recommendation into the plan and waits for you: the first process and
+what the AI may read (tools and roles, `none | read | propose` per role); which events notify whom; which proposals exist and who
+may accept them; automatic-task delegation; any outbound setting to open (with the reason); the chats and the AI model; which
+optional features to use.
+
+And it keeps the framework's rules while it works: it never edits the framework itself (`packages/*`, `plugins/*`, `vendor/*`,
+`profile/template`); the AI only reads and proposes; your system names the recipients; no personal data in events or messages;
+chat linking only by the person, through your own login; no secrets in the repository, config, logs or chat; tests only on fictional
+data and a TEST environment; and it never claims "connects with zero changes".
+
+The skill (Japanese, `SKILL.md` + 10 references + a plan template) is a route map over [`docs/GUIDELINE.md`](docs/GUIDELINE.md);
+details always come from the repository. Contents: [`docs/skill/README.md`](docs/skill/README.md).
+Prefer to do it by hand? Read [`docs/GUIDELINE.md`](docs/GUIDELINE.md) — start with
+[「既存の業務システムをつなぐ：チェックリスト」](docs/GUIDELINE.md#既存の業務システムをつなぐチェックリスト) — and the
+[sample system](examples/equipment-inspection/README.md) (52 / 52).
+
+## What's inside
+
+The business system stays the single source of record. It adds the bridge: Bridge v1, the manifest, chat linking on its own
+login, and recipient rules it decides itself. The framework provides the rest — the DSH runtime and its IM channels, plugins that
+link employees' IM accounts (each employee links only their own, through the organisation's bots or their own personal bots), call
+business tools with the employee's own delegated rights (read and propose only — people decide), deliver notifications and approval
+cards **only to the people the business system names**, run automatic tasks on business events (per-class or per-person delegation),
+send scheduled reports to the employee's own chat, and answer questions from the business web's assistant panel; the guards on every
+path from the AI to IM; tests and a conformance suite.
 
 The AI employee also has **the name and personality the company sets** (nickname, tone, company introduction — always signed as an
 AI secretary, never able to change the rules), **long-term memory** (each employee's preferences and open matters, the organization's
 procedures, recall of earlier conversations; personal data is never kept) and **answers how-to questions from the system's own
 manual** with a link to the right screen (sections below).
 
-It was extracted from ケアビリング (care-ai-native), which is its first user (`examples/care-billing/`: manifest and mapping only, no
+The framework was extracted from its first user, a care-billing system (`examples/care-billing/`: manifest and mapping only, no
 business code).
-
-What an existing system adds, item by item, and how each item is checked: [`docs/GUIDELINE.md`「既存の業務システムをつなぐ：チェックリスト」](docs/GUIDELINE.md#既存の業務システムをつなぐチェックリスト).
 
 ## Layout
 
