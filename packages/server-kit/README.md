@@ -12,9 +12,10 @@ business knows comes in through **hooks**.
 
 ```
 pnpm add @dsh-bridge/server-kit @dsh-bridge/protocol pg      # pg only for the PostgreSQL store
+pnpm add @dsh-bridge/server-kit @dsh-bridge/protocol mysql2  # mysql2 only for the MySQL 8 / TiDB store
 ```
 
-ESM, Node >= 22.19, no runtime dependency besides `@dsh-bridge/protocol` (and the optional peer `pg`). The first complete user
+ESM, Node >= 22.19, no runtime dependency besides `@dsh-bridge/protocol` (and the optional peers `pg` / `mysql2`). The first complete user
 is [`examples/equipment-inspection`](../../examples/equipment-inspection) (52 / 52 conformance checks).
 
 ## Parts
@@ -29,6 +30,8 @@ is [`examples/equipment-inspection`](../../examples/equipment-inspection) (52 / 
 | `store/memory` | `createMemoryStore({ now?, serverKey? })` | in-memory store (tests, prototypes): serialised transactions with snapshot rollback, injectable clock |
 | `store/postgres` | `createPostgresStore({ pool })` → `store.migrate()` | the `bridge_*` tables (`store/migrations/001_bridge.sql`, `002_event_delegation.sql`, `003_ai_profile.sql`: `bridge_ai_profile_version`, `004_assistant_attachments.sql`: `bridge_assistant_attachment_settings`, one row, `005_connectors.sql`: `bridge_connector` (definition + sealed secret + hint), `bridge_connector_rule`, `bridge_connector_run` (ids, status, code, timing only), `bridge_connector_state` (the emergency stop, the event cursor, the last cron minute)); `store.tx(fn)` gives `fn(t)` with `t.db` = the transaction's pg client so business rows and events commit together; event ids commit in order (advisory lock) |
 | `store/pg` | `createPool`, `ensureDatabase`, `dropDatabase` (only `*_test` by default), `databaseName`, `migrate(pool, { migrations, table })`, `readMigrations(dir)`, `withTransaction`, `bridgeMigrations` | database lifecycle with protected names, an ordered advisory-locked migration runner for the app's own SQL too |
+| `store/mysql` | `createMysqlStore({ pool })` → `store.migrate()` (`kind: 'mysql'`) | the same `bridge_*` tables on MySQL 8.0.16+ / TiDB (`store/migrations-mysql/001`–`005`, same ids as the PostgreSQL ones), the same contract (`test/store-contract.mjs`); `store.tx(fn)` gives `fn(t)` with `t.db` = the transaction's mysql2 connection (business SQL runs on it); duplicate keys (1062) → `StoreConflict(<index name>)`; event ids from a locked counter (see "MySQL / TiDB") |
+| `store/mysqldb` | `createMysqlPool(url, { max })`, `mysqlConnectionOptions(url)`, `ensureMysqlDatabase`, `dropMysqlDatabase` (only `*_test` by default; never `mysql`, `information_schema`, `performance_schema`, `sys`, `test`, `metrics_schema`), `migrateMysql(pool, { migrations, table })`, `splitSqlStatements`, `withMysqlTransaction`, `bridgeMysqlMigrations`, `loadMysql`, `MYSQL_SYSTEM_DATABASES` | `mysql2/promise` loaded lazily; TLS unless local, UTC sessions; an ordered migration runner serialised across processes with `GET_LOCK` (per database and table), for the app's own SQL too |
 | `alias` | `registerAliasRoutes(router, { table, from, adapters })`, `aliasTableFromOpenApi(doc, { key })`, `pickAlias`, `camelRows` | serve `/bridge/v1` as aliases of an **existing** API: same handler, the existing route's policy re-checked for the principal, `shape` adapters |
 | `routes/help` | option `help` of `createBridgeApp` | optional: `GET /bridge/v1/help/search` (employee / delegation / service = public sections only), `/help/public` (service only), `/help/sections/:sectionId`, answered by the help service you pass (`@dsh-bridge/help` `createHelpService`) for the asker's role; `help.onQuestion(entry, ctx)` for your own log |
 | `routes/ai-profile` | `aiProfileEtag`, `AI_PROFILE_REASON_MAX` (200), `AI_PROFILE_VERSIONS_SHOWN` (20); option `aiProfile` (false: off), `roles.admins` | optional: the AI employee's profile (`GET /bridge/v1/ai-profile` for the DSH, the administrators' `GET / PUT /admin/ai-profile` and restore; versions in `bridge_ai_profile_version`, audit `ai_profile.updated` with the version number only). Endpoints below |
@@ -79,6 +82,37 @@ bridge.router.add('POST', '/api/things', { allow: ['user'] }, async ({ principal
 
 createServer(bridge.handler).listen(8080)
 ```
+
+## MySQL / TiDB
+
+```js
+import { createMysqlPool, createMysqlStore } from '@dsh-bridge/server-kit'
+
+const pool = await createMysqlPool(process.env.MY_DATABASE_URL, { max: 10 })   // mysql://user:password@host:4000/db
+const store = createMysqlStore({ pool })
+await store.migrate()
+// in a transaction: const [res] = await t.db.query('insert into thing (name) values (?)', [name]); res.insertId
+```
+
+- **TLS**: `createMysqlPool` connects with TLS 1.2+ and verifies the server certificate (TiDB Cloud requires it) unless the
+  host is `localhost` / `127.0.0.1` / `::1`. `?ssl=false` turns it off (a plain MySQL on a private network), `?ssl=true`
+  forces it on localhost. Size `max` to the plan's connection limit.
+- **UTC**: every connection of `createMysqlPool` runs `set time_zone = '+00:00'` and uses `timezone: 'Z'`; times are
+  `DATETIME(6)` holding UTC. The store itself writes `UTC_TIMESTAMP(6)`, formats Date parameters in UTC and reads times as
+  UTC, so it also works on a pool of the business's own (keep mysql2's default `FOUND_ROWS` flag: update counts are rows
+  matched, as in PostgreSQL).
+- **Event ids**: TiDB's `AUTO_INCREMENT` is handed out in batches per TiDB server, so it is not monotonic, and the cursor of
+  `GET /events?after` needs ids that commit in increasing order. `insertEvent` takes the next id from the one-row counter
+  `bridge_event_seq` (`update … set last_id = last_insert_id(last_id + 1)`: the row stays locked until the transaction
+  ends, like `SELECT … FOR UPDATE`), so event writers are serialised and a rolled-back id is never seen. Outside a
+  transaction it opens its own. Use the default pessimistic transactions of TiDB. The audit log, throttle hits and
+  connector runs keep `AUTO_INCREMENT` with TiDB's `AUTO_ID_CACHE=1` (increasing allocation, for "newest first").
+- **Dialect**: no `RETURNING` (UUIDs are made in JS, rows read back), `ON DUPLICATE KEY UPDATE` for upserts, partial unique
+  indexes as unique indexes on a "live" virtual column (same index names), `utf8mb4_bin` (exact comparisons, as in
+  PostgreSQL), `report_date` back as `YYYY-MM-DD`, booleans and JSON normalised. DDL is not transactional: a migration that
+  stopped half-way is run again, skipping objects that already exist.
+- **Tests**: `FW_TEST_MYSQL_URL=mysql://<user>:<password>@<host>:<port>/<db>` runs the store contract in a temporary
+  `fw_serverkit_test` database (created and dropped by the test); unset → skipped.
 
 ## Hooks
 
@@ -168,6 +202,6 @@ pnpm --filter @dsh-bridge/server-kit test
 ```
 
 `test/app.test.mjs` (end-to-end over HTTP on the memory store with a fictional "toy tasks" system), `store-memory` /
-`store-postgres` (the same store contract on both; PostgreSQL in a temporary `fw_serverkit_test` database that is dropped at
-the end; the server comes from `FW_TEST_DATABASE_URL=postgres://<user>:<password>@<host>:5432/<db>`, skipped when unset or unreachable), `http`, `events-gate`,
+`store-postgres` / `store-mysql` (the same store contract on all three; PostgreSQL and MySQL / TiDB each in a temporary `fw_serverkit_test` database that is dropped at
+the end; the servers come from `FW_TEST_DATABASE_URL=postgres://<user>:<password>@<host>:5432/<db>` and `FW_TEST_MYSQL_URL=mysql://<user>:<password>@<host>:<port>/<db>`, each skipped when unset or unreachable), `http`, `events-gate`,
 `crypto-manifest-time`, `alias-scheduler`, `help` (the help routes per principal and role), `owner-rule-event-delegation`, `ai-profile` (the profile routes on the memory store and on PostgreSQL in its own `fw_p1w1_test`; ports 20181–20183).

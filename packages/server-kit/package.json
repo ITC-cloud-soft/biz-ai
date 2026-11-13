@@ -11,6 +11,8 @@
     "./memory": "./src/store/memory.mjs",
     "./postgres": "./src/store/postgres.mjs",
     "./pg": "./src/store/pg.mjs",
+    "./mysql": "./src/store/mysql.mjs",
+    "./mysqldb": "./src/store/mysqldb.mjs",
     "./alias": "./src/alias.mjs",
     "./extract": "./src/extract/index.mjs",
     "./connectors": "./src/connectors/index.mjs",
@@ -30,14 +32,19 @@
     "@dsh-bridge/protocol": "workspace:*"
   },
   "peerDependencies": {
+    "mysql2": "^3.11.5",
     "pg": "^8.23.1"
   },
   "peerDependenciesMeta": {
+    "mysql2": {
+      "optional": true
+    },
     "pg": {
       "optional": true
     }
   },
   "devDependencies": {
+    "mysql2": "3.11.5",
     "pg": "^8.23.1"
   }
 }

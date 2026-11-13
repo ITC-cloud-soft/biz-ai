@@ -19,6 +19,11 @@ export { StoreConflict, STORE_METHODS } from './store/errors.mjs'
 export {
   loadPg, databaseName, ensureDatabase, dropDatabase, createPool, withTransaction, migrate, readMigrations, bridgeMigrations, MAINTENANCE_DATABASES,
 } from './store/pg.mjs'
+export { createMysqlStore } from './store/mysql.mjs'
+export {
+  loadMysql, mysqlConnectionOptions, createMysqlPool, ensureMysqlDatabase, dropMysqlDatabase, withMysqlTransaction, migrateMysql, splitSqlStatements,
+  bridgeMysqlMigrations, MYSQL_SYSTEM_DATABASES,
+} from './store/mysqldb.mjs'
 export { preferencesOf, DEFAULT_QUIET_HOURS } from './routes/notify.mjs'
 export { identityOf, LINK_CODE_TTL_MINUTES, PERSONAL_BOT_PLATFORMS, canonicalPlatform } from './routes/identity.mjs'
 export { DELEGATION_TTL_MS, TICKET_TTL_MS, EVENT_DELEGATION_MAX_AGE_HOURS, createEventDelegationRules } from './routes/delegation.mjs'
