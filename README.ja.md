@@ -240,7 +240,7 @@ server-kit は照合時に個人ボットの所有者の規則を適用し、eve
 日本語で書かれている（それぞれ冒頭に短い英語の要約がある）。日本語の原文は下の表に載せている。開発ガイドラインと技術解説には
 英語と中国語の翻訳もある：[`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) · [`docs/GUIDELINE.zh-CN.md`](docs/GUIDELINE.zh-CN.md) ·
 [`technical-guide.en.md`](docs/slides/manual/biz-assistant-framework-technical-guide.en.md) · [`technical-guide.zh-CN.md`](docs/slides/manual/biz-assistant-framework-technical-guide.zh-CN.md)
-（正本は日本語の原文）。Web サイトは、これらを 3 言語のページとして表示する（`docs/website/tools/build-docs.cjs`）。
+（正本は日本語の原文）。公式サイト（https://biz-ai.myaiportal.net）では、これらを 3 言語のページとして読める。
 
 | 文書 | 対象 | 内容 |
 |---|---|---|

@@ -230,7 +230,7 @@ server-kit 在查找时应用个人机器人的所有者规则，并且只通过
 
 以日语编写（每份文档开头都有简短的英文摘要）。开发指南与技术解说另有英文版和中文版：[`docs/GUIDELINE.zh-CN.md`](docs/GUIDELINE.zh-CN.md) ·
 [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) · [`technical-guide.zh-CN.md`](docs/slides/manual/biz-assistant-framework-technical-guide.zh-CN.md) ·
-[`technical-guide.en.md`](docs/slides/manual/biz-assistant-framework-technical-guide.en.md)（以日文原文为准）。官网把它们生成为日、英、中三种语言的网页（`docs/website/tools/build-docs.cjs`）。
+[`technical-guide.en.md`](docs/slides/manual/biz-assistant-framework-technical-guide.en.md)（以日文原文为准）。官网（https://biz-ai.myaiportal.net）上可以阅读这三种语言的网页版。
 
 | 文档 | 面向 | 内容 |
 |---|---|---|

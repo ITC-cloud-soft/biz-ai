@@ -240,7 +240,7 @@ small manual (`examples/equipment-inspection/manual`); ケアビリング's has 
 Written in Japanese (each starts with a short English summary). The development guideline and the technical guide are also translated into
 English and Chinese: [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) · [`docs/GUIDELINE.zh-CN.md`](docs/GUIDELINE.zh-CN.md) ·
 [`technical-guide.en.md`](docs/slides/manual/biz-assistant-framework-technical-guide.en.md) · [`technical-guide.zh-CN.md`](docs/slides/manual/biz-assistant-framework-technical-guide.zh-CN.md)
-(the Japanese originals are authoritative). The website renders them as pages in all three languages (`docs/website/tools/build-docs.cjs`).
+(the Japanese originals are authoritative). The official website (https://biz-ai.myaiportal.net) shows them as pages in all three languages.
 
 | document | for | what |
 |---|---|---|
