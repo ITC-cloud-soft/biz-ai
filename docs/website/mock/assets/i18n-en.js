@@ -36,7 +36,7 @@ window.I18N.en = {
   'c.faq.h': 'Frequently asked questions',
   'c.final.h': 'Take your IT<br><span class="grad">into the next era.</span>',
   'c.final.p': 'Start with one business process. We size what to add and grow it, proven by the conformance suite.',
-  'c.viewGh': 'View the source on GitHub ↗', 'c.avail': 'Available', 'c.read': 'Read ↗', 'c.more': 'Learn more →',
+  'c.viewGh': 'View the source on GitHub ↗', 'c.avail': 'Available', 'c.read': 'Read ↗', 'c.readWeb': 'Read on the web →', 'c.more': 'Learn more →',
 
   // ── FAQ ──
   'f.q1': 'Can we keep our existing system\'s code unchanged?',
@@ -200,9 +200,9 @@ window.I18N.en = {
   'dc.lead': 'From the introduction for executives to the technical guide for engineers, the developer guideline and the skill for AI coding agents — all in the GitHub repository.',
   'dc.t1': 'Technical guide', 'dc.t2': 'Developer guideline', 'dc.t3': 'Integration skill', 'dc.t4': 'Reference', 'dc.t5': 'Introductions',
   'dc.g1.h': 'Technical guide (for engineers)', 'dc.g1.t': 'Biz Assistant Framework technical guide',
-  'dc.g1.p': 'Architecture, Bridge v1 and the manifest, main flows, safety promises, connecting and building, quality and status. A detailed Markdown version and 50 slides.',
+  'dc.g1.p': 'Architecture, Bridge v1 and the manifest, main flows, safety promises, connecting and building, quality and status. Available in Japanese, English and Chinese.',
   'dc.g2.h': 'Developer guideline and architecture', 'dc.g2a.t': 'Developer guideline (GUIDELINE.md)',
-  'dc.g2a.p': 'Checklist, steps, extension points, MUST / SHOULD rules, testing, versioning, FAQ — the reference for connecting a business system.',
+  'dc.g2a.p': 'Checklist, steps, extension points, MUST / SHOULD rules, testing, versioning, FAQ — the reference for connecting a business system. Available in Japanese, English and Chinese.',
   'dc.g2b.t': 'Architecture (ARCHITECTURE.md)', 'dc.g2b.p': 'Business and AI planes, five layers, event flow, identity and delegation, recipient guarantees, safety and privacy promises.',
   'dc.g3.h': 'Integration skill', 'dc.g3.p': 'A runbook that guides AI coding agents such as Claude Code through bringing the framework into a new or existing system (assess → plan → manifest · hooks · events → conformance → AI plane → web app → done checks).',
   'dc.g4.h': 'Reference', 'dc.g4a': 'packages/protocol/openapi/bridge-v1.yaml — the reference for implementations in other languages.',

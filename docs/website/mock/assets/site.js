@@ -75,6 +75,7 @@
     document.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-current', b.dataset.lang === lang))
     try { localStorage.setItem('biz-lang', lang) } catch {}
     window.BIZ_LANG = lang
+    document.dispatchEvent(new CustomEvent('biz:lang', { detail: lang }))
     if (missing.size) console.warn('i18n missing', lang, [...missing])
   }
   window.BIZ_MISSING = missing

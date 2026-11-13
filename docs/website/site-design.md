@@ -271,7 +271,9 @@
 | 安全 | `mock/trust.html` | 6 つの約束・受信者の保証・送信の経路と守り・約束の一覧・AI 特有のリスク |
 | つなぎ方 | `mock/integration.html` | 3 つの道（タブ）・13 項目・7 ステップと完了の条件 |
 | 開発者 | `mock/developers.html` | クイックスタート・hooks・エンドポイント（`#api`）・適合性テスト（`#conformance`）・パッケージ |
-| ドキュメント | `mock/docs.html` | 技術解説・ガイドライン・skill・リファレンス・紹介資料（GitHub へのリンク） |
+| ドキュメント | `mock/docs.html` | 技術解説・ガイドライン（下の 2 ページへ）・skill・リファレンス・紹介資料 |
+| 技術解説 | `mock/technical-guide.html` | 技術解説の全文（3 言語・目次・図。`tools/build-docs.cjs` が Markdown から生成） |
+| 開発ガイドライン | `mock/guideline.html` | GUIDELINE の全文（3 言語・目次・図。同上） |
 | コミュニティ | `mock/community.html` | 検索・カテゴリ 8・スレッド一覧（絞り込み）・投稿のルール・タグ・貢献者・イベント |
 | 運用AI Bot | `mock/ops-ai-bot.html` | 姉妹製品：6 つの働き・自律レベル・隔離 |
 | FAQ | `mock/faq.html` | 4 分類 11 問 |

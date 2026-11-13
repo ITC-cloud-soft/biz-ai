@@ -1,12 +1,14 @@
 # Biz Assistant Framework
 
+**English** · [简体中文](README.zh-CN.md)
+
 **Every IT system, a workplace of AI employees that think and act.**<br>
 あらゆる IT システムを、考えて動く AI 社員の職場に。 · 让每一个 IT 系统，都成为会思考、会行动的 AI 员工的职场。
 
 [Integration skill](#bring-it-into-your-system-with-the-integration-skill) ·
 [Quick start](#quick-start) ·
-[Guideline](docs/GUIDELINE.md) ·
-[Technical guide](docs/slides/manual/biz-assistant-framework-technical-guide.md) ·
+[Development guideline](docs/GUIDELINE.en.md) ·
+[Technical guide](docs/slides/manual/biz-assistant-framework-technical-guide.en.md) ·
 [Discussions](https://github.com/ITC-cloud-soft/biz-ai/discussions) ·
 [Issues](https://github.com/ITC-cloud-soft/biz-ai/issues)
 
@@ -235,7 +237,10 @@ small manual (`examples/equipment-inspection/manual`); ケアビリング's has 
 
 ## Docs
 
-Written in Japanese (each starts with a short English summary).
+Written in Japanese (each starts with a short English summary). The development guideline and the technical guide are also translated into
+English and Chinese: [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) · [`docs/GUIDELINE.zh-CN.md`](docs/GUIDELINE.zh-CN.md) ·
+[`technical-guide.en.md`](docs/slides/manual/biz-assistant-framework-technical-guide.en.md) · [`technical-guide.zh-CN.md`](docs/slides/manual/biz-assistant-framework-technical-guide.zh-CN.md)
+(the Japanese originals are authoritative). The website renders them as pages in all three languages (`docs/website/tools/build-docs.cjs`).
 
 | document | for | what |
 |---|---|---|

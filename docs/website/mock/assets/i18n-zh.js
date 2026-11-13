@@ -36,7 +36,7 @@ window.I18N.zh = {
   'c.faq.h': '常见问题',
   'c.final.h': '让你的 IT，<br><span class="grad">走进下一个时代。</span>',
   'c.final.p': '先从一项业务开始。评估需要补充的内容，用一致性测试验证后再逐步扩大。',
-  'c.viewGh': '在 GitHub 查看源码 ↗', 'c.avail': '已提供', 'c.read': '阅读 ↗', 'c.more': '了解更多 →',
+  'c.viewGh': '在 GitHub 查看源码 ↗', 'c.avail': '已提供', 'c.read': '阅读 ↗', 'c.readWeb': '在线阅读 →', 'c.more': '了解更多 →',
 
   // ── FAQ ──
   'f.q1': '现有系统的代码可以完全不改吗？',
@@ -200,9 +200,9 @@ window.I18N.zh = {
   'dc.lead': '从面向管理层的介绍，到面向技术人员的解说、面向开发者的指南、供 AI 编程智能体使用的 skill，都在 GitHub 仓库中。',
   'dc.t1': '技术解说', 'dc.t2': '开发指南', 'dc.t3': '导入 skill', 'dc.t4': '参考', 'dc.t5': '介绍资料',
   'dc.g1.h': '技术解说（面向技术人员）', 'dc.g1.t': 'Biz Assistant Framework 技术解说',
-  'dc.g1.p': '架构、Bridge v1 与 manifest、主要流程、安全承诺、接入与开发、质量与提供状况。详细的 Markdown 版与 50 页幻灯片。',
+  'dc.g1.p': '架构、Bridge v1 与 manifest、主要流程、安全承诺、接入与开发、质量与提供状况。提供日文、英文、中文三种语言。',
   'dc.g2.h': '开发指南与架构', 'dc.g2a.t': '开发指南（GUIDELINE.md）',
-  'dc.g2a.p': '检查清单、步骤、扩展点、MUST / SHOULD 规则、测试、版本管理、FAQ——接入业务系统时的正本。',
+  'dc.g2a.p': '检查清单、步骤、扩展点、MUST / SHOULD 规则、测试、版本管理、FAQ——接入业务系统时的正本。提供日文、英文、中文三种语言。',
   'dc.g2b.t': '架构（ARCHITECTURE.md）', 'dc.g2b.p': '业务面与 AI 面、五个层次、事件流、身份与委托、收件人保证、安全与个人信息的承诺。',
   'dc.g3.h': '导入 skill', 'dc.g3.p': '引导 Claude Code 等 AI 编程智能体，把框架导入新系统或既有系统的操作手册（诊断 → 计划 → manifest · hooks · 事件 → 一致性测试 → AI 面配置 → 业务 Web → 完成条件）。',
   'dc.g4.h': '参考', 'dc.g4a': 'packages/protocol/openapi/bridge-v1.yaml —— 用其他语言实现时的正本。',
