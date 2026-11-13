@@ -1,6 +1,6 @@
 # Bizアシスタント（Biz Assistant Framework）公式サイト 設計書
 
-> 版：2026-11-13（初版・レビュー用）。公開先（予定）：https://assistanted-it.myaiportal.net
+> 版：2026-11-13（初版・レビュー用）。公開先（予定）：https://biz-ai.myaiportal.net
 > モック：[`mock/index.html`](mock/index.html)（トップページ。ブラウザで直接開ける 1 ファイル）
 > 参考にしたサイト：https://metacoder.myaiportal.net/ （同じ myaiportal ファミリーの製品サイト。構成と見た目の文法をそろえる）
 > 内容の正本：`docs/slides/manual/biz-assistant-framework-technical-guide.md`（技術解説）、`docs/ARCHITECTURE.md`、`docs/GUIDELINE.md`

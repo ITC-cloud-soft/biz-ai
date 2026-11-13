@@ -5,7 +5,7 @@
   日本語・English・中文の切替つき（`assets/i18n-*.js`）。共通の見た目と動きは `assets/site.css`・`assets/site.js`
 - `mock/technical-guide.html`・`mock/guideline.html`：技術解説と開発ガイドラインを Web ページにしたもの（3 言語。**生成物・手で直さない**）
 
-公開先（予定）：https://assistanted-it.myaiportal.net 。参考：https://metacoder.myaiportal.net/ （同じファミリーの製品サイト）。
+公開先（予定）：https://biz-ai.myaiportal.net 。参考：https://metacoder.myaiportal.net/ （同じファミリーの製品サイト）。
 
 ローカルで見る（ファイルを直接開くか、簡易サーバで）：
 
