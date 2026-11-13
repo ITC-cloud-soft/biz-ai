@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="h.title">Bizアシスタント — どの IT システムも、考えて動く AI 社員の職場へ</title>
+<meta name="description" content="業務システムに小さなブリッジを足すだけで、職員一人ひとりのチャットで知らせ・頼み・下書きし・覚える AI 社員が生まれます。決めるのはいつも人。Biz Assistant Framework（Bridge v1）。">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="home">
+<canvas id="stars" aria-hidden="true"></canvas><div class="grid-bg" aria-hidden="true"></div>
+<header id="site-header"></header>
+
+<main>
+<section class="hero">
+  <div class="wrap">
+    <span class="badge"><span class="dot"></span>BUSINESS SYSTEM × AI EMPLOYEE · Bridge v1</span>
+    <h1 data-i18n="h.h1">どの IT システムも、<br><span class="l2">考えて動く</span><br><span class="l3">AI 社員の職場へ。</span></h1>
+    <p class="sub" data-i18n="h.sub">Bizアシスタントは、登録・照会・更新を「待つ」だけだった業務システムに、小さな「ブリッジ」を足します。すると AI 社員が生まれ、職員一人ひとりのチャットで知らせ、頼み、下書きし、覚えます。業務ロジックの書き換えは不要。決めるのは、いつも人です。</p>
+    <div class="ctas">
+      <a href="contact.html" class="btn btn-primary" data-i18n="c.consult">導入を相談する →</a>
+      <a href="docs.html#guide" class="btn btn-ghost" data-i18n="c.readGuide">技術解説を読む</a>
+      <a href="https://github.com/ITC-cloud-soft/biz-ai" target="_blank" rel="noopener" class="btn btn-ghost">GitHub ↗</a>
+    </div>
+    <div class="note" data-i18n="h.note">既存システムにも新規開発にも ・ Slack / LINE / Teams ほか ・ 52 項目の適合性テストで検証</div>
+
+    <div class="transform" role="img" aria-label="Legacy system → Bridge v1 → AI employee">
+      <div class="pane legacy">
+        <h4><span>LEGACY SYSTEM</span><span>CRUD</span></h4>
+        <table>
+          <tr><th data-i18n="h.lg.no">受注番号</th><th data-i18n="h.lg.st">状態</th><th data-i18n="h.lg.due">出荷期限</th></tr>
+          <tr><td>A-10231</td><td data-i18n="h.lg.recv">受付</td><td>11/12</td></tr>
+          <tr><td>A-10232</td><td data-i18n="h.lg.recv">受付</td><td class="late">11/12 ⚠</td></tr>
+          <tr><td>A-10238</td><td data-i18n="h.lg.wait">確認待ち</td><td class="late">11/12 ⚠</td></tr>
+          <tr><td>A-10240</td><td data-i18n="h.lg.ship">出荷済</td><td>11/10</td></tr>
+          <tr><td>A-10244</td><td data-i18n="h.lg.recv">受付</td><td class="late">11/11 ⚠</td></tr>
+        </table>
+        <div class="wait"><span class="cursor"></span> <span data-i18n="h.lg.waiting">人が画面を開くまで、待っている…</span></div>
+      </div>
+      <div class="bridge">
+        <svg viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="gl" x1="0" x2="1"><stop offset="0" stop-color="#6B7280" stop-opacity=".2"/><stop offset=".5" stop-color="#7C5CFF"/><stop offset="1" stop-color="#00E5FF"/></linearGradient></defs>
+          <path id="p1" d="M0 110 C 140 110, 140 150, 200 150 S 260 110, 400 110" stroke="url(#gl)" stroke-width="1.5" fill="none"/>
+          <path id="p2" d="M0 150 L 400 150" stroke="url(#gl)" stroke-width="1.5" fill="none"/>
+          <path id="p3" d="M0 190 C 140 190, 140 150, 200 150 S 260 190, 400 190" stroke="url(#gl)" stroke-width="1.5" fill="none"/>
+          <g fill="#00E5FF">
+            <circle r="3"><animateMotion dur="2.6s" repeatCount="indefinite"><mpath href="#p1"/></animateMotion></circle>
+            <circle r="3"><animateMotion dur="2.2s" begin=".7s" repeatCount="indefinite"><mpath href="#p2"/></animateMotion></circle>
+            <circle r="3" fill="#FF2BD6"><animateMotion dur="3s" begin="1.2s" repeatCount="indefinite"><mpath href="#p3"/></animateMotion></circle>
+            <circle r="2.5"><animateMotion dur="2.2s" begin="1.6s" repeatCount="indefinite"><mpath href="#p2"/></animateMotion></circle>
+          </g>
+        </svg>
+        <div class="label"><div class="core">BRIDGE<br>v1</div><div class="chips"><span class="chip">manifest</span><span class="chip">events</span><span class="chip">delegation</span></div></div>
+      </div>
+      <div class="pane ai-pane">
+        <div class="chat-head"><span class="avatar">🤖</span><div><b data-i18n="h.ai.name">さくら</b><small data-i18n="h.ai.role">受注管理 AI 秘書 · AI</small></div></div>
+        <div class="msg" data-d="600" data-i18n="h.ai.m1"><span class="lab">【対応のお願い】出荷期限の超過</span><br>出荷期限を過ぎた受注が <b>3 件</b>あります。<br>▶ 受注画面で出荷日を確認してください。<br><span class="act">確認する</span><div class="sig">— さくら（受注管理 AI 秘書）</div></div>
+        <div class="msg urgent" data-d="2200" data-i18n="h.ai.m2"><span class="lab">【至急】確認待ちの受注</span><br>承認待ちが 2 時間を超えました。担当の方にお願いしました。</div>
+        <div class="typing" data-d="3600" style="opacity:0"><i></i><i></i><i></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="wrap">
+    <div class="stat reveal"><b class="grad" data-count="52">52</b><span data-i18n="h.s1">適合性テストの項目（Bridge v1）</span></div>
+    <div class="stat reveal"><b class="grad" data-count="9">9</b><span data-i18n="h.s2">AI 面のプラグイン</span></div>
+    <div class="stat reveal"><b class="grad" data-count="12">12</b><span data-i18n="h.s3">個人ボットで使えるチャット</span></div>
+    <div class="stat reveal"><b class="grad">0</b><span data-i18n="h.s4">AI が確定・承認・支払う操作</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">From legacy to intelligence</span>
+      <h2 data-i18n="h.era.h">IT は「記録する道具」から、<br><span class="grad">「一緒に働く同僚」</span>へ。</h2>
+      <p class="lead" data-i18n="h.era.lead">情報はすでにシステムの中にあります。足りなかったのは、それを人に届け、動かす仕組みでした。</p>
+    </div>
+    <div class="eras reveal">
+      <div class="era old"><div class="node">📒</div><div class="yr">ERA 1</div><h3 data-i18n="h.era1.h">記録の時代</h3><p data-i18n="h.era1.p">台帳と入力。人がデータを入れ、人が探す。</p></div>
+      <div class="era old"><div class="node">🖥️</div><div class="yr">ERA 2</div><h3 data-i18n="h.era2.h">画面の時代</h3><p data-i18n="h.era2.p">CRUD と業務ロジック。人が画面を開き、確かめ、担当者を追いかける。</p></div>
+      <div class="era now"><div class="node">✨</div><div class="yr">ERA 3 · NOW</div><h3 class="grad" data-i18n="h.era3.h">知能の時代</h3><p data-i18n="h.era3.p">AI 社員が見張り、知らせ、頼み、下書きし、覚える。人はチャットで決める。</p></div>
+    </div>
+    <div class="vs">
+      <div class="card before reveal"><h3 data-i18n="h.before.h">BEFORE ── 待つシステム</h3><ul data-i18n="h.before.ul"><li>人が画面を開くまで、何も起きない</li><li>大事な変化に、見に行かないと気づかない</li><li>承認・提出のために担当者を追いかける</li><li>報告書を集めて作る</li></ul></div>
+      <div class="card after glow reveal"><h3 data-i18n="h.after.h">AFTER ── 考えて動くシステム</h3><ul data-i18n="h.after.ul"><li>AI 社員が変化に先に気づく</li><li>関係する人にだけ、その人のチャットに届く</li><li>承認はチャットのワンタップで決まる</li><li>朝と夕方に、まとめが届く</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">Three powers</span>
+      <h2 data-i18n="h.pw.h">考える。覚える。<span class="grad">自分から動く。</span></h2>
+      <p class="lead" data-i18n="h.pw.lead">AI 社員は、職員一人ひとりの権限の範囲で働く AI アシスタントです。</p>
+    </div>
+    <div class="grid3 mt">
+      <div class="card glow power reveal"><div class="ico">🧠</div><h3 data-i18n="h.pw1.h">考える</h3><p data-i18n="h.pw1.p">本人の権限の範囲で業務データを読み、いま大事なことを見分け、計画書や修正の案を下書きします。</p><div class="bubble" data-i18n="h.pw1.b">AI の提案が 2 件あります。採用か見送りかをお決めください。</div></div>
+      <div class="card glow power reveal"><div class="ico">🔖</div><h3 data-i18n="h.pw2.h">覚える</h3><p data-i18n="h.pw2.p">一人ひとりの好みと用件、組織の手順や決めごと、前の会話を覚えます。個人情報は覚えません。</p><div class="bubble" data-i18n="h.pw2.b">承知しました。報告は結論から 3 行にします。</div></div>
+      <div class="card glow power reveal"><div class="ico">⚡</div><h3 data-i18n="h.pw3.h">自分から動く</h3><p data-i18n="h.pw3.p">変化を見張り、関係する人にだけ知らせ、適任者に頼み、進まなければ催促し、定時にまとめます。</p><div class="bubble" data-i18n="h.pw3.b">【至急】09:00 開始予定の出荷作業が、まだ始まっていません。</div></div>
+    </div>
+    <p class="decide reveal" data-i18n="h.decide">AI は読む・提案する。<span>確定・承認・金額の決定は、いつも人。</span></p>
+    <div class="ctas"><a href="capabilities.html" class="btn btn-ghost" data-i18n="h.toCap">すべての機能を見る →</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="reveal"><span class="eyebrow">A day with your AI employee</span><h2 data-i18n="h.day.h">AI 社員のいる、ある一日。</h2></div>
+    <div class="grid4 mt">
+      <div class="slot reveal"><div class="t grad">08:30</div><div class="msg ok static" data-i18n="h.day1"><span class="lab">【定時のご報告】</span><br>対応が必要なこと 2 件、ご参考 1 件をまとめました。</div></div>
+      <div class="slot reveal"><div class="t grad">09:20</div><div class="msg urgent static" data-i18n="h.day2"><span class="lab">【至急】</span><br>09:00 開始予定の作業が、まだ始まっていません。</div></div>
+      <div class="slot reveal"><div class="t grad">14:00</div><div class="msg appr static" data-i18n="h.day3"><span class="lab">【承認のお願い】</span><br>10 月分の請求の確定をお願いします。<br><span class="act">承認</span></div></div>
+      <div class="slot reveal"><div class="t grad">16:00</div><div class="msg static" data-i18n="h.day4"><span class="lab">【対応のお願い】</span><br>AI の提案が 2 件。採用か見送りかをお決めください。</div></div>
+    </div>
+    <p class="caption" data-i18n="c.fictional">画面はすべて架空の例です。</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">How it works</span>
+      <h2 data-i18n="h.how.h">業務システムは、そのまま正本。<br><span class="grad">AI 社員は、ブリッジの向こうで働く。</span></h2>
+      <p class="lead" data-i18n="h.how.lead">業務面と AI 面を、版の付いた小さな HTTP プロトコル Bridge v1 と、機械が読める自己紹介 manifest でつなぎます。</p>
+    </div>
+    <div class="arch reveal">
+      <div class="block" data-i18n="c.arch.biz"><h4>🏢 業務システム</h4><ul><li>業務データ・職員と役割</li><li>規則・承認・金額・監査</li><li>通知の受信者</li></ul></div>
+      <div class="flow"></div>
+      <div class="block b-bridge"><h4>Bridge v1</h4><div style="color:var(--muted);font-size:13px">＋ manifest</div><div class="layers" style="margin-top:12px"><span class="chip">OpenAPI 3.1</span></div></div>
+      <div class="flow"></div>
+      <div class="block b-ai" data-i18n="c.arch.ai"><h4>🤖 AI 面</h4><ul><li>会話・長期記憶</li><li>自動タスク・定時報告</li><li>9 つのプラグイン</li></ul></div>
+      <div class="flow"></div>
+      <div class="block" data-i18n="c.arch.chat"><h4>💬 チャット</h4><ul><li>Slack</li><li>LINE</li><li>Teams ほか</li></ul></div>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><b>01</b><p data-i18n="h.st1">業務の変化を、業務と<strong>同じトランザクション</strong>で記録する</p></div>
+      <div class="step reveal"><b>02</b><p data-i18n="h.st2">誰に届けるかを、<strong>業務システムが</strong>決める</p></div>
+      <div class="step reveal"><b>03</b><p data-i18n="h.st3">AI 社員が<strong>本人の権限で</strong>読み、案を出す</p></div>
+      <div class="step reveal"><b>04</b><p data-i18n="h.st4">人がチャットで決め、結果は業務システムに記録される</p></div>
+    </div>
+    <div class="layers reveal"><span class="chip">L1 protocol</span><span class="chip">L2 server-kit</span><span class="chip">L3 AI · 9 plugins</span><span class="chip">L4 web-kit · gateway</span><span class="chip" data-i18n="c.l5">L5 あなたのシステム</span></div>
+    <div class="ctas"><a href="how-it-works.html" class="btn btn-ghost" data-i18n="h.toHow">仕組みを詳しく →</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="reveal"><span class="eyebrow">Trust by design</span><h2 data-i18n="h.tr.h">安全は、プロンプトではなく<br><span class="grad">コードと設定で守る。</span></h2></div>
+    <div class="grid3 mt trust">
+      <div class="card key glow reveal"><div class="shield">✋</div><h3 data-i18n="c.t1.h">決めるのは人</h3><p data-i18n="c.t1.p">AI の書込みは「提案」だけ。採用・承認は人が 1 回。</p></div>
+      <div class="card glow reveal"><div class="shield">🔑</div><h3 data-i18n="c.t2.h">本人の権限まで</h3><p data-i18n="c.t2.p">AI の権限 ＝ AI に許した操作 ∩ その職員の役割。最長 5 分のトークン。</p></div>
+      <div class="card glow reveal"><div class="shield">🎯</div><h3 data-i18n="c.t3.h">届け先は業務システムが決める</h3><p data-i18n="c.t3.p">AI は宛先を選ばない。関係する人にだけ届く。</p></div>
+      <div class="card glow reveal"><div class="shield">🛡️</div><h3 data-i18n="c.t4.h">個人情報を載せない</h3><p data-i18n="c.t4.p">event は ID・日付・件数だけ。送信前の検査と固定の文面。</p></div>
+      <div class="card glow reveal"><div class="shield">🔒</div><h3 data-i18n="c.t5.h">閉じた既定</h3><p data-i18n="c.t5.p">グループ会話・無人の処理・送信先は、既定で閉じている。</p></div>
+      <div class="card glow reveal"><div class="shield">✅</div><h3 data-i18n="c.t6.h">52 項目で検証</h3><p data-i18n="c.t6.p">約束は適合性テストで確かめる。リリースは 52 / 52・skip なし。</p></div>
+    </div>
+    <div class="ctas"><a href="trust.html" class="btn btn-ghost" data-i18n="h.toTrust">安全の詳細 →</a></div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">Integration paths</span>
+      <h2 data-i18n="h.int.h">旧いシステムにも、新しいシステムにも。</h2>
+      <p class="lead" data-i18n="h.int.lead">業務ロジックの書き換えは不要。ただし、何も変えずにつながるわけではありません。足すものを最初の診断で一覧にします。</p>
+    </div>
+    <div class="tabs" data-group="hint" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="t1" data-i18n="c.tab.exist">既存のシステム</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="t2" data-i18n="c.tab.new">新規開発</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="t3" data-i18n="c.tab.ext">外付けモード <span class="tag trial">試行</span></button>
+    </div>
+    <div class="tabpanel on" data-group="hint" id="t1" role="tabpanel">
+      <div class="card"><h3 data-i18n="c.ex.h">足すのは「ブリッジ」</h3><ul class="plus" data-i18n="c.ex.ul"><li>業務データを読む口と、AI の提案を受ける口</li><li>manifest（システムの自己紹介）</li><li>本人の SNS 連携（システム自身のログインで）</li><li>受信者を業務システムが決める規則</li><li>状態変化を同じトランザクションで event に</li><li>承認の規則・定時報告（件数だけ）</li></ul></div>
+      <div class="seven" data-i18n="c.seven"><div><i>1</i>manifest を書いて検証</div><div><i>2</i>hooks を実装（または別名）</div><div><i>3</i>トランザクションで event</div><div><i>4</i>適合性テスト 52 / 52</div><div><i>5</i>AI 面の profile に登録</div><div><i>6</i>業務 Web に画面と BFF</div><div><i>7</i>自動タスクを有効化</div></div>
+    </div>
+    <div class="tabpanel" data-group="hint" id="t2" role="tabpanel">
+      <div class="card"><h3 data-i18n="c.nw.h">生まれたときから、AI 社員と働く</h3><ul class="plus" data-i18n="c.nw.ul"><li>server-kit の上で作れば、Bridge の部分は部品が持つ</li><li>書くのは業務・hooks・manifest・画面だけ</li><li>見本の業務システムで、構成と書き方を確かめられる</li></ul></div>
+      <div class="code"><div class="bar"><i></i><i></i><i></i><span>server.mjs</span></div><pre><span class="k">const</span> bridge = <span class="k">await</span> <span class="f">createBridgeApp</span>({
+  manifest: { file: <span class="s">'./bridge.manifest.yaml'</span> },
+  store, serviceToken, bffSecret,
+  hooks: { employees, authenticate, isSessionLive,
+           recipientsFor, approvals, proposalKinds,
+           reports, piiScan },
+})</pre></div>
+    </div>
+    <div class="tabpanel" data-group="hint" id="t3" role="tabpanel">
+      <div class="card"><h3 data-i18n="c.xt.h">コードを変えずに、外にブリッジを置く</h3><ul class="plus" data-i18n="c.xt.ul"><li>ログインを外から確かめられる（OIDC / SAML）</li><li>本人として呼べる API がある</li><li>commit 後の変化の知らせ（webhook / CDC）がある</li><li>承認と書込みの API がある</li></ul></div>
+      <div class="seven" data-i18n="c.xt.abc"><div><i>A</i>4 つともある → 全機能</div><div><i>B</i>API はあるが本人として呼べない → 知らせと報告まで</div><div><i>C</i>画面しか無い → API を足すか、新規で</div></div>
+    </div>
+    <div class="ctas"><a href="integration.html" class="btn btn-ghost" data-i18n="h.toInt">つなぎ方を詳しく →</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">For developers</span>
+      <h2 data-i18n="h.dev.h">仕様は OpenAPI。<span class="grad">約束はテストで。</span></h2>
+      <p class="lead" data-i18n="h.dev.lead">manifest でシステムを説明し、hooks をつなぎ、52 項目の適合性テストで確かめる。ソースは GitHub で公開。AI コーディングエージェント用の導入 skill も用意しています。</p>
+    </div>
+    <div class="grid2 mt">
+      <div class="code reveal"><div class="bar"><i></i><i></i><i></i><span>bridge.manifest.yaml</span></div><pre><span class="k">bridge</span>: <span class="n">1</span>
+<span class="k">system</span>: { id: <span class="s">order-desk</span>, name: <span class="s">Order Desk</span> }
+<span class="k">roles</span>:
+  manager: { delegation: <span class="s">propose</span> }
+  staff:   { delegation: <span class="s">read</span> }
+<span class="k">events</span>:
+  order.overdue:
+    payload: [orderId, dueDate, count]  <span class="c"># IDs, dates, counts only</span>
+    notify: { template: <span class="s">order.overdue</span> }
+<span class="k">tools</span>:
+  - name: <span class="s">order_list_overdue</span>
+    http: GET /api/orders/overdue
+    access: <span class="s">read</span>
+    roles: [manager, staff]</pre></div>
+      <div class="code reveal"><div class="bar"><i></i><i></i><i></i><span>terminal — conformance</span></div><pre class="term"><span class="c">$</span> node --test packages/protocol/conformance/http.test.mjs
+<span class="c">  ✔ P1–P6  protocol hygiene</span>
+<span class="c">  ✔ L1–L10 link yourself only · B1–B4 personal bots</span>
+<span class="c">  ✔ D1–D7  delegation = allow-list ∩ role</span>
+<span class="c">  ✔ S1–S5  assistant tickets bound to the session</span>
+<span class="c">  ✔ PR1–PR3 · A1–A4  AI proposes, people decide</span>
+<span class="c">  ✔ E1–E4 · N1–N3 · R1–R3 · M1–M3  no personal data</span>
+<span class="ok">  52 passed, 0 known gaps, 0 skipped</span><span class="cursor" style="background:var(--mint);margin-left:6px"></span></pre></div>
+    </div>
+    <div class="devlinks reveal">
+      <a class="btn btn-ghost btn-sm" href="developers.html" data-i18n="h.toDev">開発者ページ →</a>
+      <a class="btn btn-ghost btn-sm" href="docs.html#skill" data-i18n="c.skill">🧩 導入 skill（AI エージェント用）</a>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/ITC-cloud-soft/biz-ai" target="_blank" rel="noopener">⌥ GitHub ↗</a>
+      <a class="btn btn-ghost btn-sm" href="community.html" data-i18n="c.toComm">💬 コミュニティで質問する</a>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:40px">
+  <div class="wrap" style="text-align:center">
+    <div class="reveal"><span class="eyebrow">Works where your team talks</span><h2 data-i18n="h.chat.h">いつものチャットが、AI 社員の職場になる。</h2></div>
+    <div class="chats reveal">
+      <span class="org">Slack</span><span class="org">LINE</span><span class="org">Microsoft Teams</span><span class="org">WeCom</span><span class="org">WeChat</span><span class="org">Lark</span>
+      <span>Telegram</span><span>Discord</span><span>WhatsApp</span><span>QQ</span><span>DingTalk</span><span>Matrix</span>
+    </div>
+    <p class="caption" data-i18n="c.chatcap">青い枠：組織のボット ／ すべて：職員が自分でつなぐ個人ボット ／ email は通知だけ</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap ops">
+    <div class="reveal">
+      <span class="eyebrow">Sister product · 運用AI Bot</span>
+      <h2 data-i18n="h.ops.h">そして、<br><span class="grad">システムも自分で育つ。</span></h2>
+      <p class="lead" data-i18n="h.ops.lead">運用AI Bot は、システムそのものを見守り、直し、育てる AI。課題を受け付け、調べ、修正とテストを行い、PR を出し、承認を経て反映し、学んだことを覚えます。本番はいつも人の承認。</p>
+      <div style="margin-top:26px"><a class="btn btn-ghost" href="ops-ai-bot.html" data-i18n="h.toOps">運用AI Bot を見る →</a></div>
+    </div>
+    <div class="loop reveal" role="img" aria-label="loop" data-i18n="c.loop">
+      <div class="ring"></div><div class="center"><span>運用AI Bot<br><span class="grad">使うほど育つ</span></span></div>
+      <span class="pt" style="left:50%;top:10%">見つける</span><span class="pt" style="left:84%;top:28%">調べる</span><span class="pt" style="left:90%;top:62%">直す・試す</span>
+      <span class="pt h" style="left:66%;top:88%">人が承認</span><span class="pt" style="left:30%;top:88%">反映</span><span class="pt" style="left:12%;top:58%">報告</span><span class="pt" style="left:18%;top:26%">覚える</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="reveal" style="text-align:center"><span class="eyebrow">FAQ</span><h2 data-i18n="c.faq.h">よくある質問</h2></div>
+    <div class="faq">
+      <details><summary data-i18n="f.q1">既存システムのコードは変えずに済みますか？</summary><p data-i18n="f.a1">業務ロジックの書き換えは不要ですが、ブリッジ（読む口と提案の口・manifest・本人の SNS 連携・受信者の規則・event の記録など）の追加は必要です。最初の診断で、足すものと量を一覧にします。</p></details>
+      <details><summary data-i18n="f.q2">AI が勝手に承認や支払いをしませんか？</summary><p data-i18n="f.a2">できない作りです。AI の書込みは「提案」だけで、確定・承認・支払・金額の決定は人が業務システムで行います。プロトコルとテストで確かめています。</p></details>
+      <details><summary data-i18n="f.q3">どのチャットで使えますか？</summary><p data-i18n="f.a3">Slack・LINE・Microsoft Teams・WeCom・WeChat・Lark など。職員が自分のボットをつなぐ「個人ボット」は 12 種類のチャットに対応しています。email は通知だけに使います。</p></details>
+      <details><summary data-i18n="f.q4">個人情報はどう扱いますか？</summary><p data-i18n="f.a4">業務の変化の記録（event）と通知には ID・日付・件数だけを載せ、送る前に検査します。AI 社員の記憶にも個人情報は残しません。</p></details>
+    </div>
+    <div class="ctas"><a href="faq.html" class="btn btn-ghost" data-i18n="h.toFaq">すべての質問を見る →</a></div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap reveal">
+    <span class="eyebrow">Get started</span>
+    <h2 data-i18n="c.final.h">あなたの IT を、<br><span class="grad">次の時代へ。</span></h2>
+    <p class="lead" data-i18n="c.final.p">まずは、ひとつの業務から。足すものを見積もり、適合性テストで確かめながら広げます。</p>
+    <div class="ctas"><a href="contact.html" class="btn btn-primary" data-i18n="c.consult">導入を相談する →</a><a href="https://github.com/ITC-cloud-soft/biz-ai" target="_blank" rel="noopener" class="btn btn-ghost" data-i18n="c.viewGh">GitHub でソースを見る ↗</a></div>
+  </div>
+</section>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="assets/i18n-en.js"></script><script src="assets/i18n-zh.js"></script><script src="assets/site.js"></script>
+</body>
+</html>

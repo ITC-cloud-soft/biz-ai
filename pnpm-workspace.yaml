@@ -1,0 +1,7 @@
+# vendor/* (dsh-im / dsh-auto-tasks / dsh-proactive forks) are NOT workspace packages: they keep their own npm setup
+# (package-lock.json, `npm ci`) so that they stay diffable against upstream.
+packages:
+  - "packages/*"
+  - "plugins/*"
+  - "examples/*"
+  - "profile"

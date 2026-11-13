@@ -1,0 +1,27 @@
+{
+  "name": "@dsh-bridge/telemetry",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "DSH Business Bridge — one log format for every service of a business system (RSI_SELF_IMPROVING_SYSTEM.md §5.1): JSON lines, masking by default, W3C traceparent, error fingerprints, access and security events (no dependencies, no I/O except the write function you pass)",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./mask": "./src/mask.mjs",
+    "./trace": "./src/trace.mjs",
+    "./fingerprint": "./src/fingerprint.mjs",
+    "./http": "./src/http.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none test/*.test.mjs"
+  }
+}

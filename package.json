@@ -1,0 +1,24 @@
+{
+  "name": "dsh-bridge-framework",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "DSH Business Bridge framework: connect business systems to DSH AI employees over IM (protocol, DSH core, gateway, plugins, profile)",
+  "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "test": "pnpm run test:protocol && pnpm run test:core && pnpm run test:gateway && pnpm run test:testing && pnpm run test:kits && pnpm run test:plugins && pnpm run test:profile && pnpm run test:examples",
+    "test:protocol": "pnpm --filter @dsh-bridge/protocol test",
+    "test:core": "pnpm --filter @dsh-bridge/dsh-core test",
+    "test:gateway": "pnpm --filter @dsh-bridge/gateway test",
+    "test:testing": "pnpm --filter @dsh-bridge/testing test",
+    "test:kits": "pnpm -r --if-present --filter ./packages/server-kit --filter ./packages/web-kit test",
+    "test:plugins": "pnpm -r --if-present --filter \"./plugins/*\" test",
+    "test:profile": "pnpm --filter @dsh-bridge/profile test",
+    "test:examples": "pnpm -r --if-present --filter \"./examples/*\" test",
+    "validate": "node packages/protocol/bin/bridge-validate.mjs all",
+    "e2e": "node packages/testing/e2e/run.mjs"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@dsh-bridge/protocol",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "DSH Business Bridge protocol v1: OpenAPI 3.1, manifest / event JSON Schemas, validators, the conformance suite and the bridge-validate CLI",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./yaml": "./src/yaml.mjs",
+    "./jsonschema": "./src/jsonschema.mjs",
+    "./openapi": "./src/openapi.mjs",
+    "./conformance": "./conformance/suite.mjs",
+    "./conformance/target": "./conformance/lib/target.mjs",
+    "./conformance/http": "./conformance/adapters/http.mjs",
+    "./conformance/context": "./conformance/lib/context.mjs",
+    "./schema/manifest.schema.json": "./schema/manifest.schema.json",
+    "./schema/event-envelope.schema.json": "./schema/event-envelope.schema.json",
+    "./openapi/bridge-v1.yaml": "./openapi/bridge-v1.yaml",
+    "./manifests/example.manifest.yaml": "./manifests/example.manifest.yaml",
+    "./manifests/equipment-inspection.manifest.yaml": "./manifests/equipment-inspection.manifest.yaml",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "bridge-validate": "./bin/bridge-validate.mjs"
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "validate": "node bin/bridge-validate.mjs all",
+    "test": "node --test --test-isolation=none --test-concurrency=1 test/*.test.mjs conformance/http.test.mjs",
+    "test:unit": "node --test --test-isolation=none test/*.test.mjs",
+    "test:conformance": "node --test --test-isolation=none conformance/http.test.mjs"
+  }
+}

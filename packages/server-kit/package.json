@@ -1,0 +1,43 @@
+{
+  "name": "@dsh-bridge/server-kit",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "L2 of the DSH Business Bridge: Node parts for a business system that implements Bridge protocol v1 (node:http handler, gate, stores, hooks)",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./memory": "./src/store/memory.mjs",
+    "./postgres": "./src/store/postgres.mjs",
+    "./pg": "./src/store/pg.mjs",
+    "./alias": "./src/alias.mjs",
+    "./extract": "./src/extract/index.mjs",
+    "./connectors": "./src/connectors/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 test/*.test.mjs"
+  },
+  "dependencies": {
+    "@dsh-bridge/protocol": "workspace:*"
+  },
+  "peerDependencies": {
+    "pg": "^8.23.1"
+  },
+  "peerDependenciesMeta": {
+    "pg": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "pg": "^8.23.1"
+  }
+}

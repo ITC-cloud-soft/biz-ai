@@ -1,0 +1,35 @@
+{
+  "name": "@dsh-bridge/plugin-events",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "DSH Business Bridge plugin bridge-events: per-application event cursors, dispatch to DSH plugins and auto-tasks, manifest playbook deployment",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "peerDependencies": {
+    "@dsh-bridge/dsh-core": "*"
+  },
+  "devDependencies": {
+    "@dsh-bridge/dsh-core": "workspace:*"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none test/*.test.mjs"
+  }
+}

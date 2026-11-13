@@ -1,0 +1,24 @@
+{
+  "name": "@dsh-bridge/help",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "DSH Business Bridge — answering how-to questions on SNS from the business system's own manual: manual parsing, the help index, CI checks against the screens, role-aware search with link building (no I/O except reading files you name)",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./manual": "./src/manual.mjs",
+    "./routes": "./src/routes.mjs",
+    "./build": "./src/build.mjs",
+    "./check": "./src/check.mjs",
+    "./search": "./src/search.mjs",
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none test/*.test.mjs"
+  }
+}

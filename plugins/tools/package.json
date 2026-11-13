@@ -1,0 +1,37 @@
+{
+  "name": "@dsh-bridge/plugin-tools",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "DSH Business Bridge plugin bridge-tools: delegation gate, manifest-generated read tools, propose-tool registration and automatic-task proposal restrictions",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./propose": "./src/propose.js",
+    "./examples/equipment-inspection": "./src/examples/equipment-inspection.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "peerDependencies": {
+    "@dsh-bridge/dsh-core": "*"
+  },
+  "devDependencies": {
+    "@dsh-bridge/dsh-core": "workspace:*"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none test/*.test.mjs"
+  }
+}

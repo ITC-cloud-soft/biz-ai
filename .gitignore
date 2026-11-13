@@ -1,0 +1,15 @@
+node_modules/
+.work/
+.dsh-home*/
+out/
+dist/
+*.log
+.env
+.env.*
+!.env.example
+
+# Office lock files
+~$*
+
+# the marketing deck's contact line (company contact, not committed)
+docs/slides/marketing/src/contact.local.json

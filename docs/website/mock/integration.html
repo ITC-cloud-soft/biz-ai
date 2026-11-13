@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="in.title">つなぎ方 — Bizアシスタント</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="int">
+<canvas id="stars" aria-hidden="true"></canvas><div class="grid-bg" aria-hidden="true"></div>
+<header id="site-header"></header>
+<main>
+<section class="page-hero">
+  <div class="wrap">
+    <div class="crumb"><a href="index.html">Home</a> / <span data-i18n="nav.int">つなぎ方</span></div>
+    <span class="eyebrow" style="margin-top:18px">Integration</span>
+    <h1 data-i18n="in.h1">旧いシステムにも、<br><span class="grad">新しいシステムにも。</span></h1>
+    <p class="lead" data-i18n="in.lead">業務ロジックの書き換えは不要。ただし、何も変えずにつながるわけではありません。業務システムに「ブリッジ」を足し、残りはフレームワークが用意します。</p>
+  </div>
+</section>
+
+<section style="padding-top:20px">
+  <div class="wrap">
+    <div class="tabs" data-group="paths" role="tablist" style="margin-top:0">
+      <button class="tab" role="tab" aria-selected="true" data-tab="p1" data-i18n="c.tab.exist">既存のシステム</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="p2" data-i18n="c.tab.new">新規開発</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="p3" data-i18n="c.tab.ext">外付けモード <span class="tag trial">試行</span></button>
+    </div>
+    <div class="tabpanel on" data-group="paths" id="p1" role="tabpanel">
+      <div class="card"><h3 data-i18n="c.ex.h">足すのは「ブリッジ」</h3><ul class="plus" data-i18n="c.ex.ul"><li>業務データを読む口と、AI の提案を受ける口</li><li>manifest（システムの自己紹介）</li><li>本人の SNS 連携（システム自身のログインで）</li><li>受信者を業務システムが決める規則</li><li>状態変化を同じトランザクションで event に</li><li>承認の規則・定時報告（件数だけ）</li></ul></div>
+      <div class="card"><h3 data-i18n="in.ex2.h">載せ方は 3 通り</h3><ul class="plus" data-i18n="in.ex2.ul"><li>Node.js：既存のサーバに server-kit を載せ、hooks を既存の表と関数につなぐ</li><li>同じ働きの API がある：/bridge/v1 を既存のルートに別名で載せる</li><li>Node.js 以外：OpenAPI 3.1 をその言語で実装し、適合性テストで確かめる</li></ul></div>
+    </div>
+    <div class="tabpanel" data-group="paths" id="p2" role="tabpanel">
+      <div class="card"><h3 data-i18n="c.nw.h">生まれたときから、AI 社員と働く</h3><ul class="plus" data-i18n="c.nw.ul"><li>server-kit の上で作れば、Bridge の部分は部品が持つ</li><li>書くのは業務・hooks・manifest・画面だけ</li><li>見本の業務システムで、構成と書き方を確かめられる</li></ul></div>
+      <div class="code"><div class="bar"><i></i><i></i><i></i><span>project layout</span></div><pre>bridge.manifest.yaml   <span class="c"># self-description</span>
+src/auth.mjs           <span class="c"># authenticate · isSessionLive</span>
+src/domain.mjs         <span class="c"># business rules · tx + emitEvent</span>
+src/hooks.mjs          <span class="c"># employees · recipientsFor · approvals</span>
+src/routes.mjs         <span class="c"># /api/* · readToolPolicy</span>
+manual/NN-*.md         <span class="c"># one screen = one section</span>
+test/conformance.test.mjs
+web/  bff/             <span class="c"># web-kit · gateway</span></pre></div>
+    </div>
+    <div class="tabpanel" data-group="paths" id="p3" role="tabpanel">
+      <div class="card"><h3 data-i18n="c.xt.h">コードを変えずに、外にブリッジを置く</h3><ul class="plus" data-i18n="c.xt.ul"><li>ログインを外から確かめられる（OIDC / SAML）</li><li>本人として呼べる API がある</li><li>commit 後の変化の知らせ（webhook / CDC）がある</li><li>承認と書込みの API がある</li></ul></div>
+      <div class="seven" data-i18n="c.xt.abc"><div><i>A</i>4 つともある → 全機能</div><div><i>B</i>API はあるが本人として呼べない → 知らせと報告まで</div><div><i>C</i>画面しか無い → API を足すか、新規で</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="reveal"><span class="eyebrow">Checklist</span><h2 data-i18n="in.ck.h">業務システムに足すもの（13 項目）</h2><p class="lead" data-i18n="in.ck.lead">承認と定時報告は、業務で使わなくても最小の形で持ちます（適合性テストを skip なしで通すため）。</p></div>
+    <div class="tbl-wrap mt reveal"><table class="tbl" data-i18n="in.ck.t">
+      <tr><th>#</th><th>足すもの</th><th>区分</th></tr>
+      <tr><td>1</td><td>業務データを読む口と、AI の提案を受ける口</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>2</td><td>manifest（--strict で警告なし）</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>3</td><td>本人の SNS 連携の画面（システム自身のログインで）</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>4</td><td>受信者を業務システムが決める規則（Web の認可と同じ判定）</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>5</td><td>状態変化を同じトランザクションで event に</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>6</td><td>職員と役割（有効・無効を含む）</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>7</td><td>承認の規則を 1 か所の関数に</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>8</td><td>Web のセッションの確認</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>9</td><td>職員向けのマニュアル（1 画面 = 1 節）</td><td><span class="tag">推奨</span></td></tr>
+      <tr><td>10</td><td>名簿に基づく個人情報の検査</td><td><span class="tag">推奨</span></td></tr>
+      <tr><td>11</td><td>AI 社員のプロフィールの編集</td><td><span class="tag">推奨</span></td></tr>
+      <tr><td>12</td><td>定時報告（件数だけ）</td><td><span class="tag ok">必須</span></td></tr>
+      <tr><td>13</td><td>外部連携（接続先・操作・規則）</td><td><span class="tag next">任意</span></td></tr>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="reveal"><span class="eyebrow">Seven steps</span><h2 data-i18n="in.st.h">7 ステップと、完了の条件</h2></div>
+    <div class="grid2 mt">
+      <div class="seven reveal" data-i18n="c.seven"><div><i>1</i>manifest を書いて検証</div><div><i>2</i>hooks を実装（または別名）</div><div><i>3</i>トランザクションで event</div><div><i>4</i>適合性テスト 52 / 52</div><div><i>5</i>AI 面の profile に登録</div><div><i>6</i>業務 Web に画面と BFF</div><div><i>7</i>自動タスクを有効化</div></div>
+      <div class="code reveal"><div class="bar"><i></i><i></i><i></i><span>done when</span></div><pre class="term"><span class="c"># 1 manifest</span>
+bridge-validate manifest bridge.manifest.yaml --strict   <span class="ok">exit 0</span>
+<span class="c"># 2 conformance (TEST environment)</span>
+node --test conformance/http.test.mjs   <span class="ok">52 passed · 0 skipped</span>
+<span class="c"># 3 your own tests</span>
+node --test test/*.test.mjs             <span class="ok">all pass</span>
+<span class="c"># 5–6 product profile · outbound settings closed</span>
+node profile/scripts/check.mjs cordis.patch.yml   <span class="ok">exit 0</span>
+<span class="c"># 8 business web</span>
+tsc --noEmit                            <span class="ok">no errors</span></pre></div>
+    </div>
+    <div class="grid3 mt">
+      <div class="card reveal"><div class="ico">🎯</div><h3 data-i18n="in.tp1.h">ひとつの業務から</h3><p data-i18n="in.tp1.p">請求の承認・期限の超過など 1 つから始め、既存の画面と並行して確かめてから広げる。</p></div>
+      <div class="card reveal"><div class="ico">📐</div><h3 data-i18n="in.tp2.h">最初に見積もる</h3><p data-i18n="in.tp2.p">読取 API とログインは作りの根本。足す量はシステムによって大きく違う。</p></div>
+      <div class="card reveal"><div class="ico">🧩</div><h3 data-i18n="in.tp3.h">AI エージェントと進める</h3><p data-i18n="in.tp3.p">導入 skill が、診断 → 計画 → 実装 → 検証を AI コーディングエージェントに案内する。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap reveal">
+    <h2 data-i18n="in.cta.h">足すものを、<span class="grad">一緒に見積もる。</span></h2>
+    <div class="ctas"><a href="contact.html" class="btn btn-primary" data-i18n="c.consult">導入を相談する →</a><a href="docs.html#skill" class="btn btn-ghost" data-i18n="c.skill">🧩 導入 skill（AI エージェント用）</a></div>
+  </div>
+</section>
+</main>
+<footer id="site-footer"></footer>
+<script src="assets/i18n-en.js"></script><script src="assets/i18n-zh.js"></script><script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "@dsh-bridge/plugin-reader",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "Biz Assistant Framework plugin bridge-reader: scanned documents the business system could not read (images, PDFs without text) are read by the image-reading model in one request each and the text goes back (GET /bridge/v1/document-reads, POST .../result)",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "peerDependencies": {
+    "@dsh-bridge/dsh-core": "*"
+  },
+  "devDependencies": {
+    "@dsh-bridge/dsh-core": "workspace:*"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none test/*.test.mjs"
+  }
+}

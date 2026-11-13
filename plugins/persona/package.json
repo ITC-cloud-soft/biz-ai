@@ -1,0 +1,35 @@
+{
+  "name": "@dsh-bridge/plugin-persona",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "Biz Assistant Framework plugin bridge-persona: the AI employee's profile (nickname, tone, company introduction, personality, background) from the business system as a system prompt section after the fixed rules, fixed per conversation",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "peerDependencies": {
+    "@dsh-bridge/dsh-core": "*"
+  },
+  "devDependencies": {
+    "@dsh-bridge/dsh-core": "workspace:*"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none test/*.test.mjs"
+  }
+}
