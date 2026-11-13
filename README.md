@@ -1,6 +1,6 @@
 # Biz Assistant Framework
 
-**English** · [简体中文](README.zh-CN.md)
+**English** · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
 **Every IT system, a workplace of AI employees that think and act.**<br>
 あらゆる IT システムを、考えて動く AI 社員の職場に。 · 让每一个 IT 系统，都成为会思考、会行动的 AI 员工的职场。
