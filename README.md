@@ -8,8 +8,7 @@
 
 **English** · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
-**Every IT system, a workplace of AI employees that think and act.**<br>
-あらゆる IT システムを、考えて動く AI 社員の職場に。 · 让每一个 IT 系统，都成为会思考、会行动的 AI 员工的职场。
+**Every IT system, a workplace of AI employees that think and act.**
 
 [Integration skill](#bring-it-into-your-system-with-the-integration-skill) ·
 [Quick start](#quick-start) ·
@@ -18,7 +17,7 @@
 [Discussions](https://github.com/ITC-cloud-soft/biz-ai/discussions) ·
 [Issues](https://github.com/ITC-cloud-soft/biz-ai/issues)
 
-Biz Assistant (Bizアシスタント, packages `@dsh-bridge/*`) adds a small **bridge** to business systems that used to just wait for
+Biz Assistant (packages `@dsh-bridge/*`) adds a small **bridge** to business systems that used to just wait for
 create, read and update. **AI employees** come alive and, in each employee's own chat (Slack, LINE, Teams, WeCom, Feishu, …),
 **notify, ask, draft and remember**. No rewrite of business logic. People always decide.
 
@@ -37,29 +36,17 @@ npm install -g @deepseek-ai/dsh@0.2.1-rc.2
 pnpm demo        # a throwaway PostgreSQL in Docker; prints the conversation and PASS / FAIL per scenario
 ```
 
-An excerpt of what it prints — the employee asks, the system notices, the AI employee asks the right person, a person decides:
+What it prints (the example system serves a Japanese facility, so its messages are Japanese):
 
-```text
-manager（設備責任者） ▶ 期限切れの点検は？
-  AI 社員 ▶ manager（設備責任者）
-    │ 期限切れの点検は 1 件です（FE-002）。
+![pnpm demo: the conversation between employees and the AI employee, then PASS for every scenario](docs/images/pnpm-demo.gif)
 
-業務システム ▶ (業務システム：点検の期限切れを検出（inspection.overdue）)
-  AI 社員 ▶ inspector1（点検員）  ［自分から］
-    │ 【対応のお願い】点検期限の超過
-    │ お疲れさまです。点検期限を 3 日過ぎた設備があります（期限 2026-11-11）。…
-    │ [ 業務 Web を開いて対応 ]
-
-inspector1（点検員） ▶ (アプリで修理依頼を登録（見積 12000 円）)
-  AI 社員 ▶ manager（設備責任者）  ［自分から］
-    │ 【承認のお願い】修理依頼の承認  設備コード FE-002 · 見積額 12000円
-    │ 文字で返信する場合：「承認 321904」／「差戻 321904 理由」
-    │ [ 承認 ] [ 差戻 ] [ 業務Webで詳細を見る ]
-
-manager（設備責任者） ▶ (カードの［承認］を押す)
-  AI 社員 ▶ manager（設備責任者）
-    │ 承認しました。ありがとうございます。結果はカードにも反映します。
-```
+1. The manager asks *"Which inspections are overdue?"* — the AI employee calls a tool generated from the manifest, with the manager's
+   own rights, and answers *"1 (FE-002)"*. The inspector asks the same and is refused by the business system (403): not their role.
+2. The business system detects an overdue inspection — the AI employee tells only the people the system names, on its own, with
+   what to do and a link to the business web app.
+3. An inspector files a repair request (12,000 yen) — an approval card reaches the approver (never the requester) with
+   [Approve] [Reject] buttons and a reply code.
+4. The manager presses Approve — the decision is recorded **in the business system**, and the card is updated to "approved".
 
 **For DeepSeek Harness users:** the AI plane is a set of ordinary dsh plugins (`plugins/*`, `@dsh-bridge/plugin-*`) on
 `@dsh-bridge/dsh-core` — identity, tools generated from the manifest, events, notifications, approvals, the assistant, memory,
@@ -129,9 +116,11 @@ Open the agent in the business system's repository and ask in your own words —
 
 ```text
 Integrate Biz Assistant Framework into this system.
-この業務システムに Bizアシスタントを導入して。最初は請求の承認から。
-把 biz assistant framework 导入这个既有系统，先从巡检超期提醒开始。
+Add AI employees to our billing system; start with invoice approvals.
+Connect this existing app to Biz Assistant, beginning with overdue-inspection reminders.
 ```
+
+Requests in other languages work the same way; the skill itself is written in English.
 
 Tip from the field: **start with one process** (billing approvals, overdue deadlines, …), run it next to the existing screens, then widen.
 
@@ -172,10 +161,10 @@ And it keeps the framework's rules while it works: it never edits the framework 
 chat linking only by the person, through your own login; no secrets in the repository, config, logs or chat; tests only on fictional
 data and a TEST environment; and it never claims "connects with zero changes".
 
-The skill (Japanese, `SKILL.md` + 10 references + a plan template) is a route map over [`docs/GUIDELINE.md`](docs/GUIDELINE.md);
+The skill (English, `SKILL.md` + 10 references + a plan template) is a route map over [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md);
 details always come from the repository. Contents: [`docs/skill/README.md`](docs/skill/README.md).
-Prefer to do it by hand? Read [`docs/GUIDELINE.md`](docs/GUIDELINE.md) — start with
-[「既存の業務システムをつなぐ：チェックリスト」](docs/GUIDELINE.md#既存の業務システムをつなぐチェックリスト) — and the
+Prefer to do it by hand? Read [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) — start with
+["Connecting an existing business system: checklist"](docs/GUIDELINE.en.md#connecting-an-existing-business-system-checklist) — and the
 [sample system](examples/equipment-inspection/README.md) (52 / 52).
 
 ## What's inside
@@ -263,21 +252,21 @@ system's own manual** — never from the model's guesses — with **the URL of t
 - the business system searches it per role (`server-kit` `help` option → `GET /bridge/v1/help/*`, optional in Bridge v1): a screen the
   asker cannot open has no URL, only whom to ask;
 - the DSH generates the manual search tool from the manifest's `help.tool` (`@dsh-bridge/dsh-core` help-tool); the AI answers in the
-  【ご案内】 frame and copies only the URLs it was given; bridge-identity drops any link that is not one of the manifest's `web.routes`
+  "guidance" (【ご案内】) frame and copies only the URLs it was given; bridge-identity drops any link that is not one of the manifest's `web.routes`
   before the answer leaves, and answers a sender that is not linked yet from the public sections (sign-in, SNS linking) without the AI.
 
 How to add it: [`packages/help/README.md`](packages/help/README.md), `docs/GUIDELINE.md` (checklist #9, b.8). The sample system has a
-small manual (`examples/equipment-inspection/manual`); ケアビリング's has 164 sections.
+small manual (`examples/equipment-inspection/manual`); Care Billing's (the reference system) has 164 sections.
 
 ## The AI employee's profile and long-term memory
 
-- **Profile** (`plugins/persona`, `docs/AI_EMPLOYEE_PROFILE.md`): the administrator sets the AI employee's nickname (e.g. さくら),
+- **Profile** (`plugins/persona`, `docs/AI_EMPLOYEE_PROFILE.md`): the administrator sets the AI employee's nickname (e.g. "Sakura"),
   first person and tone, company introduction, personality, background, speaking examples and per-AI-employee overrides on the business
   web (web-kit `AiProfilePage`). The business system is the source of record (server-kit: `GET /bridge/v1/ai-profile` with an etag,
   admin `GET / PUT /bridge/v1/admin/ai-profile` and restore, versions and audit with the version number only; checked by the protocol's
   `validateAiProfile`: rule-override wording and personal data are refused). The DSH reads it at start-up and every 60 s (dsh-core
   holder); bridge-persona puts the fixed rules first, then the persona as settings that cannot override them, then the company as
-  reference, fixed per conversation. Signatures become 「— <呼び名>（<アプリ名> AI 秘書）」 at once. External connectors (P2・P3): the
+  reference, fixed per conversation. Signatures become "— <nickname> (<app name> AI secretary)" at once. External connectors (P2, P3): the
   company's own and third-party APIs registered by an administrator, run by the business system (allowed https hosts, sealed
   secrets, allow-listed response fields); the AI reads as the employee and proposes writes, a person approves, rules react to events / cron.
 - **Long-term memory** (`plugins/memory`): personal memory (only the owner), organization memory, conversation recall (90 days);
@@ -295,11 +284,11 @@ English and Chinese: [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) · [`docs/GU
 | document | for | what |
 |---|---|---|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | everyone | what the framework is (business plane = SoR, AI plane = DSH), what a system adds, layers L1–L5, the event flow, identity, personal bots and delegation (classes, per event), multi-application DSH and per-application sessions, the recipient guarantees (who decides, the guards on every outbound path, fail-closed settings), safety and privacy promises, the forks |
-| [`docs/GUIDELINE.md`](docs/GUIDELINE.md) | developers | the integration checklist, quick start, connecting a business system step by step, extension points, MUST / SHOULD rules (AI secretary wording, per-platform notes, recipients, group chats, unattended delegation, outbound screening, config switches, personal bots), testing, versioning, FAQ, ケアビリング as the reference |
+| [`docs/GUIDELINE.md`](docs/GUIDELINE.md) | developers | the integration checklist, quick start, connecting a business system step by step, extension points, MUST / SHOULD rules (AI secretary wording, per-platform notes, recipients, group chats, unattended delegation, outbound screening, config switches, personal bots), testing, versioning, FAQ, Care Billing as the reference |
 | [`docs/slides/biz-assistant-framework.pptx`](docs/slides/biz-assistant-framework.pptx) ([PDF](docs/slides/biz-assistant-framework.pdf)) | technical audience | the framework in 31 slides with speaker notes (generated from [`docs/slides/src`](docs/slides/src/README.md)) |
-| [`docs/slides/marketing/biz-assistant-for-executives.pptx`](docs/slides/marketing/biz-assistant-for-executives.pptx) ([PDF](docs/slides/marketing/biz-assistant-for-executives.pdf)) | executives | Bizアシスタント: any IT system as an AI agent / AI assistant, AI employees with the company's name and personality in everyone's chat, 23 slides (generated from [`docs/slides/marketing/src`](docs/slides/marketing/src/README.md)) |
+| [`docs/slides/marketing/biz-assistant-for-executives.pptx`](docs/slides/marketing/biz-assistant-for-executives.pptx) ([PDF](docs/slides/marketing/biz-assistant-for-executives.pdf)) | executives | Biz Assistant: any IT system as an AI agent / AI assistant, AI employees with the company's name and personality in everyone's chat, 23 slides (generated from [`docs/slides/marketing/src`](docs/slides/marketing/src/README.md)) |
 | [`docs/slides/manual/biz-assistant-framework-technical-guide.md`](docs/slides/manual/biz-assistant-framework-technical-guide.md) ([PPTX](docs/slides/manual/biz-assistant-framework-technical-guide.pptx) / [PDF](docs/slides/manual/biz-assistant-framework-technical-guide.pdf)) | customer engineers | the technical guide (Japanese, 50 slides + a detailed Markdown version, no internal names): architecture, Bridge v1 and the manifest, the main flows, the safety promises, connecting / building a system, quality and status — also the draft for the official web site |
-| [`docs/skill/biz-assistant-integration`](docs/skill/README.md) | AI coding agents | a skill (Claude Code `SKILL.md` + references) that walks an agent through bringing the framework into a new or an existing business system: assessment, plan, manifest, hooks, events, conformance 52 / 52, DSH profile, web and BFF, automatic tasks, completion checks |
+| [`docs/skill/biz-assistant-integration`](docs/skill/README.md) | AI coding agents | a skill in English (Claude Code `SKILL.md` + references) that walks an agent through bringing the framework into a new or an existing business system: assessment, plan, manifest, hooks, events, conformance 52 / 52, DSH profile, web and BFF, automatic tasks, completion checks |
 | [`docs/AI_EMPLOYEE_PROFILE.md`](docs/AI_EMPLOYEE_PROFILE.md) | developers | the AI employee's profile (P1) and the external connectors / rules (P2・P3), implemented |
 | [`docs/ASSISTANT_ATTACHMENTS.md`](docs/ASSISTANT_ATTACHMENTS.md) | developers | file attachments and Markdown answers in the assistant panel (proposal, being implemented) |
 | [`packages/protocol/README.md`](packages/protocol/README.md) | system integrators | Bridge v1, the manifest, the conformance suite and its 52 checks |

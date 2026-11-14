@@ -1,75 +1,75 @@
-# 09 規則の要約（MUST / SHOULD）
+# 09 Summary of the rules (MUST / SHOULD)
 
-正本：`docs/GUIDELINE.md` d 節（d.1〜d.13）。ここは見直し用の要約。迷ったら原文を読む。
+Source of truth: `docs/GUIDELINE.en.md` section d (d.1–d.13). This is a summary for review. When in doubt, read the original.
 
-## d.1 AI は決めない
+## d.1 The AI does not decide
 
-- MUST AI のツールは read（GET）か propose（`POST /bridge/v1/proposals`）だけ。業務の書込み API は委託を 403 にする。
-- MUST DSH 側のコード（toolModules・templateModules・独自のプラグイン）は業務 DB と業務システムの秘密に触れず、`kit.requestJson` / `kit.proposeTool` だけを使う。
-- MUST 確定・承認・発行・支払・送付は人が業務システムで行う。提案の採択・却下も人だけ、1 回限り。
-- MUST 金額は AI が決めない・書かない（提案の引数に金額を入れない）。
-- MUST playbook と AI 社員の指示に禁止事項を書く（何も確定しない、個人情報をメモ・報告に書かない、業務データはツールだけで読む）。
+- MUST AI tools are only read (GET) or propose (`POST /bridge/v1/proposals`). Business write APIs return 403 to delegations.
+- MUST Code on the DSH side (toolModules, templateModules, custom plugins) does not touch the business DB or the business system's secrets, and uses only `kit.requestJson` / `kit.proposeTool`.
+- MUST Finalizing, approving, issuing, paying and sending are done by people in the business system. Accepting or rejecting a proposal is also done only by people, once.
+- MUST The AI does not decide or write amounts (do not put amounts in proposal arguments).
+- MUST Write the prohibitions in the playbook and in the AI employee's instructions (finalize nothing, do not write personal data in notes or reports, read business data only through tools).
 
-## d.2 個人情報を載せない
+## d.2 Keep personal data out
 
-- MUST event の payload は ID・日付・件数・状態だけ（型ごとの許可リスト）。氏名・連絡先・自由記述・健康情報・金額の内訳を入れない。
-- MUST テンプレートの引数は数値・日付・時刻・月・フラグだけ。
-- MUST リンクは ID だけの業務 Web のパス（開いたときに業務 Web が改めて認可する）。
-- SHOULD CI で manifest を検証し、業務システムは `/pii-scan` で文字列を検査する。
+- MUST Event payloads carry only IDs, dates, counts and states (an allowlist per type). Do not include names, contact details, free text, health information or amount breakdowns.
+- MUST Template arguments are only numbers, dates, times, months and flags.
+- MUST Links are business web app paths containing only IDs (the business web app authorizes again when the link is opened).
+- SHOULD Validate the manifest in CI, and have the business system check strings with `/pii-scan`.
 
-## d.3 冪等と 1 回
+## d.3 Idempotency and once-only
 
-- MUST 送信には冪等キー。event の処理は少なくとも 1 回なので、受け手は重複に耐える（`dedupeKey`）。
-- MUST 承認は誰か 1 人の決定で確定し、他のカードはすべて無効。Web で決めたときもカードを無効にする。
-- MUST 連携コード・カードの token・返信コードは 1 回限り。誤りは数えてロックする。
+- MUST Every send has an idempotency key. Event processing is at-least-once, so receivers tolerate duplicates (`dedupeKey`).
+- MUST An approval is finalized by the decision of any one person, and all other cards become invalid. Cards are also invalidated when the decision is made on the web.
+- MUST Link codes, card tokens and reply codes are single-use. Wrong attempts are counted and lead to a lock.
 
-## d.4 時刻
+## d.4 Time
 
-- MUST 本人の通知を控える時間帯を守る。夜に届けてよいのは `notify.quiet: exempt` の種別だけ。
-- SHOULD 頻繁な種別はまとめ送信。
+- MUST Respect the person's quiet hours. Only types marked `notify.quiet: exempt` may be delivered at night.
+- SHOULD Send frequent types as digests.
 
-## d.5 AI 秘書の文面
+## d.5 AI secretary message wording
 
-- 1 行目にラベル（【ご報告】【対応のお願い】【至急】【承認のお願い】【ご相談】）。事実は件数・日付だけ。名前を使わない。「▶ お願いしたいこと」か「ご対応は不要です」。署名。
-- すべてのテンプレートに `intent`、action / urgent には `action`。
+- A label on line 1 (Report, Action requested, Urgent, Approval requested, Consultation; the exact label strings are in GUIDELINE d.5). Facts are counts and dates only. Do not use names. Then either a "▶ What we ask" line or "No action is needed". A signature.
+- `intent` on every template, `action` for action / urgent.
 
-## d.6 プラットフォーム
+## d.6 Platforms
 
-- ボタンの無いチャットは返信コード。送れない理由（ボット未接続・宛先不正・月間上限など）は記録する。email は通知だけ。
+- Chats without buttons use reply codes. Record the reason a send failed (bot not connected, invalid destination, monthly limit, etc.). email is for notifications only.
 
-## d.7 秘密と環境
+## d.7 Secrets and environment
 
-- MUST トークン・秘密を yml・リポジトリ・ログに書かない。設定には環境変数の名前だけ。
-- MUST DSH は隔離した home で動かす。launch token はブラウザに出さない。
-- MUST テストは架空のデータ・テスト用の値・ループバックだけ。デモ環境・本番のポートと DB を使わない。
+- MUST Do not write tokens or secrets in yml, the repository or logs. Settings hold only the names of environment variables.
+- MUST Run DSH in an isolated home. Do not expose the launch token to the browser.
+- MUST Tests use only fictitious data, test values and loopback. Do not use the demo environment or production ports and DBs.
 
-## d.8 受信者の保証と送信の設定
+## d.8 Recipient guarantees and outbound settings
 
-- MUST 受信者は業務システムが決める。役割の全員に送るのは、その event が本当に法人全体のものだけ。範囲が決まらなければ送らない。
-- MUST AI に宛先を選ばせない（モデルのツールに宛先の指定を残さない）。
-- MUST グループ会話では業務を扱わない（`groupChat: deny`）。
-- MUST 発信者のいないターンの委託は、仕事の種類ごとに狭い職員（`<class>`）か、起動 event の本人（`<class>=each`）。
-- MUST AI の自由文を本人以外に送らない（自動タスクの報告は固定の文面、定時報告は本人の 1:1 だけ）。
-- MUST 雛形の閉じた値を残す。開けるのは明示の opt-in と理由のコメント。
-- SHOULD 本文の検査（`screenOutboundText`）を当てにしすぎない。防御の中心は構造（件数しか読まない・本人の 1:1 だけ）。
+- MUST The business system decides the recipients. Send to everyone in a role only when the event really concerns the whole organization. If the scope is not decided, do not send.
+- MUST Do not let the AI choose destinations (leave no model tool that can specify a destination).
+- MUST Do not handle business in group conversations (`groupChat: deny`).
+- MUST Delegation in turns with no sender is a narrow employee per kind of work (`<class>`) or the person in the triggering event (`<class>=each`).
+- MUST Do not send AI free text to anyone other than the person themself (automatic task reports use fixed wording; scheduled reports go only to the person's 1:1).
+- MUST Keep the template's closed values. Open them only by explicit opt-in with a reason comment.
+- SHOULD Do not rely too much on the body check (`screenOutboundText`). The core of the defense is structure (read only counts, send only to the person's 1:1).
 
-## d.9 個人ボット
+## d.9 Personal bots
 
-- MUST 各職員は自分の接続だけを設定する。他人の接続を見る・作る・解除する画面や API を作らない（管理者を含む）。
-- MUST 個人ボットの作成・変更は BFF の本人用 RPC（許可リスト・本人の botId だけ・`createOnly`）。
-- MUST `POST /me/personal-bots` に秘密を付けるのは createOnly の作成に成功した直後の BFF だけ。
-- MUST 身元の照会は、個人ボットなら連携先が持ち主のときだけ連携済み。
+- MUST Each employee configures only their own connections. Do not build screens or APIs that view, create or remove other people's connections (administrators included).
+- MUST Personal bots are created and changed through the BFF's self-service RPC (allowlist, only the person's own botId, `createOnly`).
+- MUST Only the BFF, right after a successful createOnly creation, attaches the secret to `POST /me/personal-bots`.
+- MUST In identity lookups, a personal bot counts as linked only when the link belongs to its owner.
 
-## d.10〜d.13 任意の機能
+## d.10–d.13 Optional features
 
-- 記憶：個人情報を保存しない（保存前の二重の検査、届かなければ保存しない）。名前を持つシステムは `hooks.piiScan`。個人の記憶は本人だけ。
-- プロフィール：正本は業務システム、管理者だけが編集、版と監査。`validateAiProfile`。規則を変えない。AI であることを示す。
-- 添付：拡張子と先頭バイトで判定、保存しない、参考情報として渡す、安全な Markdown、スキャン PDF の扱いを決める。
-- 外部連携：秘密は業務システムだけ、AI は read だけ、write は承認、https と許可したホストだけ、記録は ID・件数・状態だけ。
+- Memory: do not store personal data (a double check before storing; if the check cannot be reached, do not store). Systems that hold names use `hooks.piiScan`. Personal memories are for the person only.
+- Profile: the business system is the source of truth, only administrators edit it, with versions and an audit. `validateAiProfile`. It does not change the rules. Show that it is an AI.
+- Attachments: determine the type by extension and leading bytes, do not store, pass as reference information, safe Markdown, decide how scanned PDFs are handled.
+- External connectors: secrets only in the business system, the AI only reads, writes need approval, https and allowed hosts only, records contain only IDs, counts and states.
 
-## このスキルを使う作業者の追加の約束
+## Additional commitments for the agent using this skill
 
-- framework の中を書き換えない。足りないものは issue にする。
-- 秘密の値をユーザーに代わって作らない・入力しない（ボットの認証情報・トークン・鍵はユーザーが入れる）。
-- 本番・デモ環境に対して conformance やテストを走らせない。
-- 「何も変えずにつながる」とは言わない。計画書に足すものを書く。
+- Do not rewrite anything inside the framework. File an issue for anything missing.
+- Do not create or enter secret values on the user's behalf (the user enters bot credentials, tokens and keys).
+- Do not run conformance or tests against production or the demo environment.
+- Do not say it "connects without changing anything". Write what needs to be added in the plan.

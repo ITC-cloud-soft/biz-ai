@@ -1,63 +1,63 @@
-# 01 診断：何を足すか、どの道で進めるか
+# 01 Assessment: what to add, and which path to take
 
-正本：`docs/GUIDELINE.md`「既存の業務システムをつなぐ：チェックリスト」・b.10（外付けモード）・`docs/EXTERNAL_LAYER_FEASIBILITY.md`。
+Source of truth: `docs/GUIDELINE.en.md` "Connecting an existing business system: checklist", b.10 (external mode), `docs/EXTERNAL_LAYER_FEASIBILITY.md`.
 
-## 1. 13 項目の診断表
+## 1. The 13-item assessment table
 
-対象のシステムを読み、項目ごとに **ある（そのまま使える）／別名（同じ働きのものがある）／足す（無い）** を判定し、根拠（ファイル・関数・テーブル）を書く。
-結果は計画書（`templates/integration-plan.md`）の表に写す。
+Read the target system and, for each item, judge it as **present (usable as is) / alias (something with the same function exists) / add (missing)**, and write down the evidence (files, functions, tables).
+Copy the result into the table in the plan (`templates/integration-plan.md`).
 
-| # | 業務システムに足すもの | 区分 | 確かめること（対象システムで） |
+| # | What to add to the business system | Category | What to check (in the target system) |
 |---|---|---|---|
-| 1 | 業務データを読む HTTP API と、AI の提案を受ける口 | 必須 | AI に読ませたい一覧・詳細の GET があるか。画面と業務ロジックが一体（サーバ描画だけ・デスクトップ・DB 直結）なら読取 API を足す必要がある |
-| 2 | manifest | 必須 | 役割・業務の変化・知らせたいことを書き出せるか（コードは変えない） |
-| 3 | 本人の SNS 連携の画面（**システム自身のログイン**で） | 必須 | 既存のログインとセッションを BFF から確かめられるか（`authenticate(req)` → `{ user: { id, role }, sessionId }`）。外から確かめられない作りなら確かめる口を足す。**別の本人確認は作らない** |
-| 4 | 通知の受信者を業務システムが決める規則 | 必須 | 「誰に知らせるか」がコードにあるか、人の運用にしかないか。担当・所属・範囲を引けるか。Web の認可の関数を再利用できるか |
-| 5 | 状態変化を同じトランザクションで event に記録（outbox） | 必須 | 状態を変える処理の場所と、トランザクションの張り方。そこに 1 行足せるか |
-| 6 | 職員と役割（有効・無効を含む）を引ける | 必須 | 職員の表と役割の表 |
-| 7 | 承認の規則を 1 か所の関数に | 必須（52 / 52 のため） | 承認の規則が画面のコードに散っていないか。散っていれば 1 つの関数に寄せる。承認が無い業務でも最小の 1 種類を持つ |
-| 8 | Web のセッションが生きているかを確かめられる | 必須（S4 のため） | セッションの表・ストア |
-| 9 | 職員向けのマニュアル（1 画面 = 1 節） | 推奨 | 既存のマニュアルの有無、画面の経路の表（ルーターと Guard）を読み出せるか |
-| 10 | 名簿に基づく個人情報の検査（`hooks.piiScan`） | 推奨（名前を持つシステムは実質必須） | 職員・顧客・取引先などの名前の表 |
-| 11 | AI 社員のプロフィールの編集 | 推奨 | server-kit なら既定で持つ。自前なら版の表と管理者の画面 |
-| 12 | 定時報告（件数だけ） | 必須（52 / 52 のため） | 「今日の件数」程度のセクションを 1〜4 個決められるか |
-| 13 | 外部連携（接続先・操作・規則） | 任意 | 自社の別 API・第三者 API を AI に使わせたいか |
+| 1 | An HTTP API that reads business data, and an entry point that receives the AI's proposals | Required | Are there GET endpoints for the lists and details you want the AI to read? If screens and business logic are fused (server rendering only, desktop app, direct DB access), a read API must be added |
+| 2 | manifest | Required | Can the roles, business changes and things to notify be written down (no code changes) |
+| 3 | A screen for the person's own chat link (using **the system's own login**) | Required | Can the BFF verify the existing login and session (`authenticate(req)` → `{ user: { id, role }, sessionId }`)? If the design cannot be verified from outside, add an entry point that verifies it. **Do not build a separate identity check** |
+| 4 | Rules by which the business system decides notification recipients | Required | Is "who to notify" in the code, or only in human operating practice? Can assignees, affiliations and scopes be looked up? Can the web authorization functions be reused? |
+| 5 | Record state changes as events in the same transaction (outbox) | Required | Where the state-changing processes are, and how transactions are opened. Can one line be added there? |
+| 6 | Employees and roles (including active / inactive) can be looked up | Required | The employee table and the role table |
+| 7 | Approval rules in a single function | Required (for 52 / 52) | Are approval rules scattered across screen code? If so, consolidate them into one function. Even a business without approvals keeps a minimal single kind |
+| 8 | Whether a web session is still alive can be checked | Required (for S4) | The session table / store |
+| 9 | An employee manual (1 screen = 1 section) | Recommended | Whether a manual already exists, and whether the table of screen routes (router and guards) can be extracted |
+| 10 | Personal-data scanning based on the name roster (`hooks.piiScan`) | Recommended (effectively required for systems that hold names) | Name tables for employees, customers, business partners, etc. |
+| 11 | Editing the AI employee's profile | Recommended | Built in with server-kit. If self-implemented, a version table and an admin screen |
+| 12 | Scheduled report (counts only) | Required (for 52 / 52) | Can 1–4 sections at the level of "today's counts" be defined? |
+| 13 | External connectors (connections, operations, rules) | Optional | Do you want the AI to use your company's other APIs or third-party APIs? |
 
-## 2. 見積もりの勘所
+## 2. Estimation tips
 
-- 1（読取 API）と 3（ログイン）は作りの根本に関わるので、足す量がシステムによって大きく違う。最初に見積もる。
-- 5 は「状態を変える処理の数」に比例する。最初の業務に関係する処理だけでよい。
-- 7・12 は業務で使わなくても最小の形で持つ（conformance を skip 無しで通すため）。
-- 個人ボット（職員が自分のボットをつなぐ）の登録と持ち主の規則は server-kit が既定で持つ。使うなら BFF に本人用 RPC が要る（`07-web-and-bff.md`）。
+- 1 (read API) and 3 (login) touch the foundations of the design, so the amount to add varies greatly by system. Estimate them first.
+- 5 scales with "the number of state-changing processes". Only the processes related to the first business are needed.
+- 7 and 12 are kept in minimal form even if the business does not use them (to pass conformance with no skips).
+- Registration of personal bots (employees connecting their own bots) and the ownership rules are built into server-kit by default. If you use them, the BFF needs RPCs for the person themself (`07-web-and-bff.md`).
 
-## 3. 道の判定
+## 3. Choosing the path
 
-| 結果 | 道 |
+| Result | Path |
 |---|---|
-| Node.js、コードを変えてよい | server-kit を既存のサーバに載せる |
-| 同じ働きの API がすでにある | `/bridge/v1` を別名で載せ、無い項目だけ足す |
-| Node.js 以外 | `bridge-v1.yaml` を実装し conformance で検証 |
-| コードを変えたくない | 外付けモード（試行）を、下の 4 能力で判定 |
-| 足す量が大きすぎる | 新規（`02-new-system.md`）で作る／業務を 1 つずつ移す |
+| Node.js, code may be changed | Mount server-kit on the existing server |
+| APIs with the same function already exist | Mount `/bridge/v1` as aliases and add only the missing items |
+| Not Node.js | Implement `bridge-v1.yaml` and verify with conformance |
+| Code must not be changed | Judge external mode (trial) by the 4 capabilities below |
+| Too much to add | Build new (`02-new-system.md`) / move businesses over one at a time |
 
-### 外付けモードの 4 能力（GUIDELINE b.10）
+### The 4 capabilities for external mode (GUIDELINE b.10)
 
-| 能力 | 無いとき |
+| Capability | When missing |
 |---|---|
-| ログインを外から確かめられる（OIDC / SAML の IdP、または「このセッションは誰か」を返す口） | 項目 3 を満たせないので外付けモードは使えない |
-| 本人として API を呼べる（利用者ごとの OAuth、トークン交換〔RFC 8693〕など） | 読取は役割だけで決まる範囲に限り、承認・書込みは使わない |
-| 変化を知らせる（commit 後に送り・変化 ID があり・2xx まで再送し・署名があり・取り直せる webhook、または CDC） | 承認など正確さの要る event を出せない（ポーリングは状態の知らせだけ） |
-| 承認と書込みの API | 提案の採択とチャットでの承認ができない |
+| Login can be verified from outside (an OIDC / SAML IdP, or an entry point that returns "who this session belongs to") | Item 3 cannot be met, so external mode cannot be used |
+| APIs can be called as the person (per-user OAuth, token exchange [RFC 8693], etc.) | Limit reads to what is determined by role alone; do not use approvals or writes |
+| Changes are notified (a webhook that sends after commit, carries a change ID, retries until 2xx, is signed and can be re-fetched; or CDC) | Events that need accuracy, such as approvals, cannot be emitted (polling is for status notices only) |
+| Approval and write APIs | Adopting proposals and approving in chat are not possible |
 
-- A 型（4 つともある）：外付けで全項目を満たせる。
-- B 型（API はあるが本人として呼べない・変化の知らせが無い）：状態の知らせ・定時報告・読取の質問まで。承認を満たせなければ 52 / 52 にならない。
-- C 型（画面しか無い）：外付けモードは使わない。API を足すか新規で作る。
+- Type A (all 4 present): external mode can meet every item.
+- Type B (APIs exist but cannot be called as the person / no change notification): status notices, scheduled reports and read questions only. If approvals cannot be met, it does not reach 52 / 52.
+- Type C (screens only): do not use external mode. Add APIs or build new.
 
-外付けモードは**試行**（実システムでの PoC 前）。採用するならユーザーにその旨を伝え、リリースの条件（52 / 52・skip 無し）は変えない。
+External mode is a **trial** (before a PoC on a real system). If you adopt it, tell the user so, and do not change the release conditions (52 / 52, no skips).
 
-## 4. 診断の出力
+## 4. Assessment output
 
-- 13 項目の表（判定・根拠・足す量の目安）
-- 選んだ道と理由
-- 最初に扱う業務 1 つ
-- 人に決めてもらうこと（SKILL.md の 4 節）の一覧と推奨
+- The 13-item table (judgment, evidence, rough amount to add)
+- The chosen path and the reason
+- The one business to handle first
+- A list of things for humans to decide (section 4 of SKILL.md), with recommendations

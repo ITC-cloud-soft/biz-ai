@@ -206,12 +206,13 @@ flowchart LR
 既存のシステムに足すのでなく、framework の上で新しい業務システムを作るとき（見本：`examples/equipment-inspection`）。Bridge の部分は server-kit が持ち、
 業務システムが書くのは業務そのもの・hooks・manifest・マニュアル・テスト・製品 profile と、業務 Web・BFF（web-kit・gateway を使う）だけ。
 
-**置き場所と依存**（`@dsh-bridge/*` は private の 0.1.0 で npm には公開していない。パッケージどうしの依存は `workspace:*`）：
+**置き場所と依存**（`@dsh-bridge/*` は 0.1.0 から npm で公開している：https://www.npmjs.com/org/dsh-bridge 。framework の中でのパッケージどうしの依存は `workspace:*`）：
 
 | 置き場所 | 依存の書き方 | 向くとき |
 |---|---|---|
 | framework の workspace の中：`examples/<system-id>/`（`pnpm-workspace.yaml` が `examples/*` を含む） | `"@dsh-bridge/server-kit": "workspace:*"` など。framework の直下で `pnpm install` | 見本・検証・framework と一緒に試す段階 |
-| 別のリポジトリ（製品） | 先に framework の checkout で `pnpm install` を済ませ、業務システムの `package.json` に `"@dsh-bridge/server-kit": "file:<framework>/packages/server-kit"` などを書いて **npm** で入れる（`npm install`。npm はリンクを張るだけで、パッケージの中の `workspace:*` は framework の checkout の `node_modules` で解決される）。pnpm の `file:` は `workspace:*` を解決できず `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` で止まる。server-kit README の `pnpm add` は公開した後の形 | 製品のリポジトリ |
+| 別のリポジトリ（製品） | `npm install @dsh-bridge/server-kit`（または `pnpm add`）。検証した版に固定する | 製品のリポジトリ |
+| 別のリポジトリで、まだ公開していない framework の変更が要るとき | 先に framework の checkout で `pnpm install` を済ませ、業務システムの `package.json` に `"@dsh-bridge/server-kit": "file:<framework>/packages/server-kit"` などを書いて **npm** で入れる（`npm install`。npm はリンクを張るだけで、パッケージの中の `workspace:*` は framework の checkout の `node_modules` で解決される）。pnpm の `file:` は `workspace:*` を解決できず `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` で止まる。その変更が公開されるまでの間だけ使う | 未公開の変更を試すとき |
 
 `pg` は server-kit の peer（PostgreSQL の store を使うなら業務システムの依存に足す）。web-kit は `.ts` のまま配るので、業務 Web のバンドラ（Vite など）で読む。
 

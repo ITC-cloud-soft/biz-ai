@@ -206,12 +206,13 @@ flowchart LR
 When you build a new business system on top of the framework instead of adding to an existing one (sample: `examples/equipment-inspection`). server-kit owns the Bridge part;
 the business system writes only the business itself, hooks, the manifest, the manual, tests, the product profile, and the business web app and BFF (using web-kit and gateway).
 
-**Location and dependencies** (`@dsh-bridge/*` is private 0.1.0 and not published to npm. Dependencies between packages use `workspace:*`):
+**Location and dependencies** (`@dsh-bridge/*` is published on npm since 0.1.0, https://www.npmjs.com/org/dsh-bridge. Inside the framework, dependencies between packages use `workspace:*`):
 
 | Location | How to declare dependencies | Suited for |
 |---|---|---|
 | Inside the framework workspace: `examples/<system-id>/` (`pnpm-workspace.yaml` includes `examples/*`) | `"@dsh-bridge/server-kit": "workspace:*"` and so on. Run `pnpm install` at the framework root | Samples, validation, trying things together with the framework |
-| A separate repository (product) | First run `pnpm install` in the framework checkout, then write `"@dsh-bridge/server-kit": "file:<framework>/packages/server-kit"` etc. in the business system's `package.json` and install with **npm** (`npm install`. npm only creates links, and the `workspace:*` inside the packages is resolved from the `node_modules` of the framework checkout). pnpm's `file:` cannot resolve `workspace:*` and stops with `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND`. The `pnpm add` in the server-kit README is the form for after publication | Product repositories |
+| A separate repository (product) | `npm install @dsh-bridge/server-kit` (or `pnpm add`), pinning the version you verified with | Product repositories |
+| A separate repository that needs an unreleased framework change | First run `pnpm install` in the framework checkout, then write `"@dsh-bridge/server-kit": "file:<framework>/packages/server-kit"` etc. in the business system's `package.json` and install with **npm** (`npm install`. npm only creates links, and the `workspace:*` inside the packages is resolved from the `node_modules` of the framework checkout). pnpm's `file:` cannot resolve `workspace:*` and stops with `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND`. Use this only until the change is released | Trying unreleased changes |
 
 `pg` is a peer of server-kit (add it to the business system's dependencies if you use the PostgreSQL store). web-kit is distributed as `.ts`, so load it with the business web app's bundler (Vite, etc.).
 

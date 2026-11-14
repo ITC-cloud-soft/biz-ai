@@ -37,6 +37,8 @@ npm install -g @deepseek-ai/dsh@0.2.1-rc.2
 pnpm demo        # 用 Docker 起一个临时 PostgreSQL；打印对话记录和每个场景的 PASS / FAIL
 ```
 
+![pnpm demo：员工与 AI 员工的对话，最后各场景 PASS](docs/images/pnpm-demo.gif)
+
 输出的对话节选（示例系统是日语）：员工提问，系统发现问题，AI 员工去找该做决定的人，由人来决定。
 
 ```text
@@ -167,7 +169,7 @@ AI 可以读取什么（工具和角色，每个角色 `none | read | propose`�
 SNS 绑定只能由本人通过你自己的登录完成；仓库、配置、日志和聊天中不含密钥；测试只使用虚构数据和 TEST 环境；
 并且绝不声称“零改动即可连接”。
 
-该 skill（日语，`SKILL.md` + 10 份参考资料 + 一份计划模板）是 [`docs/GUIDELINE.md`](docs/GUIDELINE.md) 的路线图；
+该 skill（英文，`SKILL.md` + 10 份参考资料 + 一份计划模板）是 [`docs/GUIDELINE.md`](docs/GUIDELINE.md) 的路线图；
 细节始终以仓库为准。目录：[`docs/skill/README.md`](docs/skill/README.md)。
 想手动完成？请阅读 [`docs/GUIDELINE.md`](docs/GUIDELINE.md)——从
 [「既存の業務システムをつなぐ：チェックリスト」（连接既有业务系统：检查清单）](docs/GUIDELINE.md#既存の業務システムをつなぐチェックリスト) 开始——以及

@@ -37,6 +37,8 @@ npm install -g @deepseek-ai/dsh@0.2.1-rc.2
 pnpm demo        # Docker で使い捨ての PostgreSQL。会話の記録とシナリオごとの PASS / FAIL を表示
 ```
 
+![pnpm demo：職員と AI 社員の会話、最後に全シナリオの PASS](docs/images/pnpm-demo.gif)
+
 表示される会話の一部です。職員が尋ね、システムが気づき、AI 社員が決める人に頼み、人が決めます。
 
 ```text
@@ -171,7 +173,7 @@ AI が読んでよいもの（tools と役割、役割ごとに `none | read | p
 SNS 連携は本人だけが、業務システム自身のログインを通して行う。秘密情報をリポジトリ・設定・ログ・チャットに置かない。テストは架空の
 データと TEST 環境だけで行う。そして「何も変えずにつながる」とは決して言わない。
 
-skill（日本語、`SKILL.md` + 10 の references + 計画の雛形）は [`docs/GUIDELINE.md`](docs/GUIDELINE.md) の上の道案内で、
+skill（英語、`SKILL.md` + 10 の references + 計画の雛形）は [`docs/GUIDELINE.md`](docs/GUIDELINE.md) の上の道案内で、
 詳細は常にリポジトリから取る。内容：[`docs/skill/README.md`](docs/skill/README.md)。
 手で進めたい場合は [`docs/GUIDELINE.md`](docs/GUIDELINE.md) を読む — まずは
 [「既存の業務システムをつなぐ：チェックリスト」](docs/GUIDELINE.md#既存の業務システムをつなぐチェックリスト) から — そして

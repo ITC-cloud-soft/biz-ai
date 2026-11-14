@@ -1,72 +1,72 @@
-# 03 既存の業務システムにつなぐ
+# 03 Connecting to an existing business system
 
-正本：`docs/GUIDELINE.md` b.2・b.2'・b.10、`packages/server-kit/README.md`、`packages/protocol/README.md`、`packages/protocol/openapi/bridge-v1.yaml`。
+Source of truth: `docs/GUIDELINE.en.md` b.2, b.2', b.10, `packages/server-kit/README.md`, `packages/protocol/README.md`, `packages/protocol/openapi/bridge-v1.yaml`.
 
-## A. Node.js のシステムに server-kit を載せる
+## A. Mounting server-kit on a Node.js system
 
-既存のサーバに `createBridgeApp` を足し、hooks を既存の表・関数につなぐ。Bridge の部分（連携コード・委託・outbox・通知の解決・承認カード・報告・提案・manifest 配信・
-個人ボットの登録・プロフィール・添付・pii-scan）は kit が持つ。
+Add `createBridgeApp` to the existing server and wire the hooks to the existing tables and functions. The Bridge part (link codes, delegation, outbox, recipient resolution, approval cards, reports, proposals, manifest serving,
+personal bot registration, profile, attachments, pii-scan) is handled by the kit.
 
 ```js
 import { createBridgeApp, createPool, createPostgresStore } from '@dsh-bridge/server-kit'
 const store = createPostgresStore({ pool: await createPool(process.env.MY_DATABASE_URL) })
-await store.migrate()                                   // bridge_* の表（冪等）
+await store.migrate()                                   // bridge_* tables (idempotent)
 const bridge = await createBridgeApp({
   manifest: { file: './bridge.manifest.yaml' },
   store,
-  serviceToken: process.env.MY_SERVICE_TOKEN,           // DSH の x-service-token
-  bffSecret: process.env.MY_BFF_SECRET,                 // 業務 Web の BFF の x-bff-secret
+  serviceToken: process.env.MY_SERVICE_TOKEN,           // DSH's x-service-token
+  bffSecret: process.env.MY_BFF_SECRET,                 // x-bff-secret of the business web app's BFF
   orgId: 'my-org', service: 'my-system', version: '1.0.0',
   hooks: { employees, authenticate, isSessionLive, recipientsFor, approvals, proposalKinds, reports, piiScan },
 })
-// node:http なら bridge.handler、express なら bridge.middleware を既存のサーバに組み込む
+// with node:http, plug bridge.handler into the existing server; with express, bridge.middleware
 ```
 
-- 既存の DB に `bridge_*` の表が足される（業務の表は変えない）。DB の接続は既存と同じでよい。
-- `authenticate(req)` は**既存のセッション**（cookie / bearer）から `{ user: { id, role }, sessionId }` を返す。kit はパスワードを見ない。
-- 状態を変える既存の処理に、同じトランザクションで `kit.emitEvent` を足す（既存のトランザクションの接続を kit に渡せるかを確かめる。
-  渡せなければ、その処理を `kit.tx` の中に移す）。詳しくは `05-business-side.md`。
-- AI に読ませる既存の GET には `readToolPolicy` を付けて委託を受け付ける。書込みの API は委託を 403 にする（`delegation_not_permitted`）。
+- `bridge_*` tables are added to the existing DB (business tables are not changed). The DB connection can be the same as the existing one.
+- `authenticate(req)` returns `{ user: { id, role }, sessionId }` from the **existing session** (cookie / bearer). The kit never sees passwords.
+- Add `kit.emitEvent` in the same transaction to each existing state-changing process (check whether the existing transaction's connection can be passed to the kit;
+  if it cannot, move that process inside `kit.tx`). Details in `05-business-side.md`.
+- Attach `readToolPolicy` to the existing GETs the AI is to read, so they accept delegation. Write APIs return 403 for delegation (`delegation_not_permitted`).
 
-## B. 同じ働きの API がある：別名で載せる
+## B. APIs with the same function exist: mount as aliases
 
 ```js
 import { aliasTableFromOpenApi, camelRows, registerAliasRoutes } from '@dsh-bridge/server-kit'
 const table = [
   { operationId: 'lookupIdentity', method: 'GET', path: '/identity', aliases: [{ method: 'GET', path: '/api/ai/identity', status: 'exact' }] },
   { operationId: 'listMyIdentities', method: 'GET', path: '/me/identities', aliases: [{ method: 'GET', path: '/api/sns-identities', status: 'shape' }] },
-]   // または aliasTableFromOpenApi(注釈付きの bridge-v1.yaml, { key: 'x-alias' })
+]   // or aliasTableFromOpenApi(annotated bridge-v1.yaml, { key: 'x-alias' })
 registerAliasRoutes(router, { table, from: legacyRouter, adapters: { listMyIdentities: camelRows('identities') } })
 ```
 
-- `status`：`exact`（同じ形）・`shape`（変換が要る：`adapters`）・`missing`（まだ無い → 足してから別名を付ける）。主体ごとに別のルートなら `for: ['service' | 'delegated' | 'user']`。
-- 解決できない別名は `skipped` に出し、黙って配信しない。
-- 対応表を注釈付きの `bridge-v1.yaml` の `x-alias` に書けば、`bridge-validate aliases <file> --extension x-alias --label my-app` で一覧、`lintOpenApi` で検査できる。
-- DSH 側は `pathProfiles`（`/bridge/v1` でない経路）でも合わせられる（`06-dsh-profile.md`、GUIDELINE c 節）。
+- `status`: `exact` (same shape), `shape` (needs conversion: `adapters`), `missing` (not there yet → add it, then attach the alias). If each principal has a separate route, use `for: ['service' | 'delegated' | 'user']`.
+- Aliases that cannot be resolved are reported in `skipped` and are not served silently.
+- If you write the mapping into `x-alias` of an annotated `bridge-v1.yaml`, you can list it with `bridge-validate aliases <file> --extension x-alias --label my-app` and check it with `lintOpenApi`.
+- The DSH side can also adapt with `pathProfiles` (routes other than `/bridge/v1`) (`06-dsh-profile.md`, GUIDELINE section c).
 
-## C. Node.js 以外の言語
+## C. Languages other than Node.js
 
-- `packages/protocol/openapi/bridge-v1.yaml` をそのまま実装する。すべての応答に `bridge-protocol: 1`、エラーは `{ ok: false, error: <lower_snake_case> }`。
-- server-kit が持つ規則（連携コードの 1 回限り・試行の制限、委託 ≤ 5 分と「AI 許可リスト ∩ 役割」、payload の許可リスト、承認の 1 回、個人ボットの持ち主の規則、
-  プロフィールの `validateAiProfile` 相当など）を自分で実装する。迷ったら server-kit の該当部分を読む。
-- 検証は conformance suite（汎用の HTTP adapter）で 52 / 52（`10-verification.md`）。
+- Implement `packages/protocol/openapi/bridge-v1.yaml` as is. Every response carries `bridge-protocol: 1`; errors are `{ ok: false, error: <lower_snake_case> }`.
+- Implement yourself the rules that server-kit holds (link codes are single-use with attempt limits, delegation ≤ 5 minutes and "AI allow-list ∩ role", the payload allow-list, approvals decided once, the personal bot ownership rules,
+  the equivalent of the profile's `validateAiProfile`, etc.). When in doubt, read the corresponding part of server-kit.
+- Verify with the conformance suite (generic HTTP adapter) at 52 / 52 (`10-verification.md`).
 
-## D. 外付けモード（試行）
+## D. External mode (trial)
 
-既存システムのコードに手を入れず、外に**ブリッジ専用のサービス**（server-kit の上、`bridge_*` は自分の DB）を置き、既存システムの API を呼んで Bridge v1 を出す。
-判定は `01-assessment.md` の 4 能力。満たし方が変わる項目：
+Without touching the existing system's code, place a **bridge-only service** outside it (on server-kit, with `bridge_*` in its own DB) that calls the existing system's APIs and exposes Bridge v1.
+Judge it by the 4 capabilities in `01-assessment.md`. Items whose way of being met changes:
 
-| # | 外付けでの満たし方 |
+| # | How it is met in external mode |
 |---|---|
-| 1 | 読取ツールは外付けの経路で、中で既存の読取 API を**本人として**呼ぶ。提案は外付けに置き、採択時だけ `apply` が既存の書込み API を採択した人として呼ぶ |
-| 3 | SNS 連携の画面は外付けが配る。ログインは既存の IdP の OIDC / SAML、または既存のセッションを確かめる口。`authenticate` は既存の職員 ID を返す。別の ID 体系を作らない |
-| 4 | `recipientsFor` は既存の API から担当・承認者・所属を取って決める。取れなければ通知しない（外付けで割り当ての規則を作らない） |
-| 5 | 取り込み：CDC か条件を満たす webhook から、**1 つのトランザクション**で「取り込んだ変化 ID の記録」と `kit.emitEvent` を書く（同じ変化 ID の 2 回目は何もしない）。ポーリングは状態の知らせだけ |
-| 6 | `employees` は既存の職員 API から。キャッシュしない。万能のサービスアカウントで読んで外付けで絞らない |
-| 7 | 承認は既存の承認 API を本人として呼ぶ。規則を外付けに写さない |
-| 8 | `isSessionLive` は既存のセッションを確かめる口を呼ぶ |
+| 1 | Read tools are on the external bridge's routes and internally call the existing read APIs **as the person**. Proposals live in the external bridge; only on adoption does `apply` call the existing write API as the person who adopted it |
+| 3 | The external bridge serves the chat link screen. Login is OIDC / SAML via the existing IdP, or an entry point that verifies the existing session. `authenticate` returns the existing employee ID. Do not create a separate ID scheme |
+| 4 | `recipientsFor` decides by fetching assignees, approvers and affiliations from the existing APIs. If they cannot be fetched, do not notify (do not create assignment rules in the external bridge) |
+| 5 | Ingestion: from CDC or a webhook that meets the conditions, write "the record of the ingested change ID" and `kit.emitEvent` in **one transaction** (the second time for the same change ID does nothing). Polling is for status notices only |
+| 6 | `employees` comes from the existing employee API. Do not cache. Do not read with an all-powerful service account and filter in the external bridge |
+| 7 | Approvals call the existing approval API as the person. Do not copy the rules into the external bridge |
+| 8 | `isSessionLive` calls the entry point that verifies the existing session |
 
-- 取り込みのコード例・webhook の 5 条件・遅れの監視・順序の扱いは GUIDELINE b.10 の「試行の規則：event の取り込み」をそのまま守る。
-- 外付けブリッジ自身のテストで「同じ変化を 2 回送っても event は 1 つ」「commit 前に止めて再送しても 1 つ」「2xx は commit の後」を確かめる（52 項目はこれを確かめない）。
-- 説明で言ってよいのは「既存システムに SSO・API・変化の知らせがあれば、コードを変えずにつなげる」まで。「どのシステムも変えずに」とは言わない。
-- 後で業務を 1 つずつ新しいシステム（server-kit）へ移せる（Bridge v1 が継ぎ目なので DSH 側は変わらない）。
+- For ingestion code examples, the 5 webhook conditions, lag monitoring and ordering, follow GUIDELINE b.10 "Trial rule: event ingestion" exactly.
+- In the external bridge's own tests, confirm "sending the same change twice yields one event", "stopping before commit and resending yields one", and "2xx comes after commit" (the 52 items do not check this).
+- In explanations, you may say only as much as "if the existing system has SSO, APIs and change notifications, it can be connected without changing its code". Do not say "without changing any system".
+- Later, businesses can be moved one at a time to a new system (server-kit) (Bridge v1 is the seam, so the DSH side does not change).

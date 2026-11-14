@@ -1,48 +1,48 @@
 # Skills
 
-AI コーディングエージェント（Claude Code など）に読ませる手順書（skill）。
+Step-by-step guides (skills) for AI coding agents such as Claude Code to read.
 
-| skill | 何をする |
+| skill | What it does |
 |---|---|
-| [`biz-assistant-integration`](biz-assistant-integration/SKILL.md) | Biz Assistant Framework を、新しく開発する業務システム、または既存の業務システムに導入する（診断 → 計画 → manifest・hooks・event → conformance 52 / 52 → DSH の profile → 業務 Web と BFF → 自動タスク → 完了の条件） |
+| [`biz-assistant-integration`](biz-assistant-integration/SKILL.md) | Brings the Biz Assistant Framework into a business system you are newly building or into an existing business system (assessment → plan → manifest, hooks and events → conformance 52 / 52 → DSH profile → business web app and BFF → automatic tasks → definition of done) |
 
-## 使い方
+## Usage
 
-前提：このリポジトリ（https://github.com/ITC-cloud-soft/biz-ai）を読めること。skill はリポジトリの文書（`docs/GUIDELINE.md` ほか）を正本として参照する。
+Prerequisite: you can read this repository (https://github.com/ITC-cloud-soft/biz-ai). The skill treats the repository's documents (`docs/GUIDELINE.en.md` (also in Japanese, the original: `docs/GUIDELINE.md`, and Chinese: `docs/GUIDELINE.zh-CN.md`) and others) as the source of truth.
 
-Claude Code で使う場合は、フォルダごと skill の置き場所に写す：
+To use it with Claude Code, copy the whole folder to a skills location:
 
 ```sh
-# 個人で使う（すべてのプロジェクト）
+# personal use (all projects)
 cp -r docs/skill/biz-assistant-integration ~/.claude/skills/
-# 導入先の業務システムのリポジトリで使う（チームで共有）
-cp -r <framework>/docs/skill/biz-assistant-integration <業務システム>/.claude/skills/
+# use in the repository of the target business system (shared with the team)
+cp -r <framework>/docs/skill/biz-assistant-integration <business-system>/.claude/skills/
 ```
 
-そのあと「この業務システムに Bizアシスタントを導入して」「biz assistant framework を既存システムにつなぎたい」などと頼むと、skill が読み込まれる。
-ほかのエージェントでは `SKILL.md` を最初に読ませ、`references/` を必要に応じて読ませる。
+Then ask for something like "add the Biz Assistant to this business system" or "connect the Biz Assistant Framework to our existing system", and the skill is loaded.
+With other agents, have them read `SKILL.md` first and `references/` as needed.
 
-## 構成
+## Layout
 
 ```
 biz-assistant-integration/
-  SKILL.md                     入口：道の選び方・進め方・守ること・人に決めてもらうこと
+  SKILL.md                     entry point: choosing a path, how to proceed, rules to keep, what the user decides
   references/
-    01-assessment.md           既存システムの診断（13 項目・外付けモードの 4 能力）
-    02-new-system.md           新しく作る（置き場所と依存・ファイルの形）
-    03-existing-system.md      既存につなぐ（server-kit・別名・他言語・外付けモード）
-    04-manifest.md             manifest の書き方と検証
-    05-business-side.md        hooks・event・受信者・承認・提案・報告
-    06-dsh-profile.md          DSH の profile・送信の設定・自動タスク
-    07-web-and-bff.md          業務 Web の画面と BFF の規則
-    08-optional-features.md    マニュアル・記憶・プロフィール・添付・外部連携・文書
-    09-rules.md                MUST / SHOULD の要約
-    10-verification.md         conformance・完了の条件・最終チェックリスト
+    01-assessment.md           assessment of an existing system (13 items, the 4 capabilities for external mode)
+    02-new-system.md           building a new system (location and dependencies, file shape)
+    03-existing-system.md      connecting an existing system (server-kit, aliases, other languages, external mode)
+    04-manifest.md             writing and validating the manifest
+    05-business-side.md        hooks, events, recipients, approvals, proposals, reports
+    06-dsh-profile.md          DSH profile, outbound settings, automatic tasks
+    07-web-and-bff.md          business web app screens and BFF rules
+    08-optional-features.md    manual, memory, profile, attachments, external connectors, documents
+    09-rules.md                summary of MUST / SHOULD
+    10-verification.md         conformance, definition of done, final checklist
   templates/
-    integration-plan.md        導入計画書のひな形
+    integration-plan.md        integration plan template
 ```
 
-## 保守
+## Maintenance
 
-- skill は `docs/GUIDELINE.md` の要約と道順。GUIDELINE・プロトコル・profile の雛形を変えたら、対応する `references/` も直す（コマンド・フラグ・ファイルのパスは実物と照合する）。
-- 例は架空（受注管理など）。内部の環境名・ホスト名・顧客名・秘密の値を書かない。
+- The skill is a summary of and a route through `docs/GUIDELINE.en.md`. When you change the GUIDELINE, the protocol or the profile template, update the matching `references/` too (check commands, flags and file paths against the real ones).
+- Examples are fictional (order management and the like). Do not write internal environment names, host names, customer names or secret values.

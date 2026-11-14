@@ -190,12 +190,13 @@ flowchart LR
 不是在既有系统上追加，而是在 framework 之上新建业务系统时（示例：`examples/equipment-inspection`）。Bridge 部分由 server-kit 负责，
 业务系统只需编写业务本身、hooks、manifest、操作手册、测试、产品 profile，以及业务 Web 和 BFF（使用 web-kit 和 gateway）。
 
-**存放位置与依赖**（`@dsh-bridge/*` 为 private 的 0.1.0，未发布到 npm。包之间的依赖为 `workspace:*`）：
+**存放位置与依赖**（`@dsh-bridge/*` 自 0.1.0 起已发布到 npm：https://www.npmjs.com/org/dsh-bridge 。framework 内部包之间的依赖为 `workspace:*`）：
 
 | 存放位置 | 依赖的写法 | 适用场景 |
 |---|---|---|
 | framework 的 workspace 内：`examples/<system-id>/`（`pnpm-workspace.yaml` 包含 `examples/*`） | `"@dsh-bridge/server-kit": "workspace:*"` 等。在 framework 根目录执行 `pnpm install` | 示例、验证、与 framework 一起试用的阶段 |
-| 独立仓库（产品） | 先在 framework 的 checkout 中完成 `pnpm install`，再在业务系统的 `package.json` 中写入 `"@dsh-bridge/server-kit": "file:<framework>/packages/server-kit"` 等，并用 **npm** 安装（`npm install`。npm 只创建链接，包内的 `workspace:*` 由 framework checkout 的 `node_modules` 解析）。pnpm 的 `file:` 无法解析 `workspace:*`，会以 `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` 中止。server-kit README 中的 `pnpm add` 是发布之后的写法 | 产品仓库 |
+| 独立仓库（产品） | `npm install @dsh-bridge/server-kit`（或 `pnpm add`），固定为验证过的版本 | 产品仓库 |
+| 独立仓库，且需要尚未发布的 framework 改动 | 先在 framework 的 checkout 中完成 `pnpm install`，再在业务系统的 `package.json` 中写入 `"@dsh-bridge/server-kit": "file:<framework>/packages/server-kit"` 等，并用 **npm** 安装（`npm install`。npm 只创建链接，包内的 `workspace:*` 由 framework checkout 的 `node_modules` 解析）。pnpm 的 `file:` 无法解析 `workspace:*`，会以 `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` 中止。仅在该改动发布之前使用 | 试用未发布的改动 |
 
 `pg` 是 server-kit 的 peer（如使用 PostgreSQL 的 store，需加入业务系统的依赖）。web-kit 以 `.ts` 原样分发，因此由业务 Web 的打包工具（Vite 等）读取。
 

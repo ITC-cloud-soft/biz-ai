@@ -1,63 +1,63 @@
-# 04 manifest を書いて検証する
+# 04 Writing and validating the manifest
 
-正本：`docs/GUIDELINE.md` b.1・d.2・d.5、`packages/protocol/README.md`、JSON Schema（`packages/protocol` 内）。
-始める見本：`examples/equipment-inspection/bridge.manifest.yaml`（推奨）か `packages/protocol/manifests/example.manifest.yaml`。
-（`packages/protocol/manifests/equipment-inspection.manifest.yaml` は検証用の写しでマニュアルのツールを含まない。始めるのは examples の方。）
+Source of truth: `docs/GUIDELINE.en.md` b.1, d.2, d.5, `packages/protocol/README.md`, JSON Schema (in `packages/protocol`).
+Sample to start from: `examples/equipment-inspection/bridge.manifest.yaml` (recommended) or `packages/protocol/manifests/example.manifest.yaml`.
+(`packages/protocol/manifests/equipment-inspection.manifest.yaml` is a copy for validation and does not include the manual tool. Start from the one in examples.)
 
-## 1. セクションと書くこと
+## 1. Sections and what to write
 
-| セクション | 書くこと | 注意 |
+| Section | What to write | Notes |
 |---|---|---|
-| `bridge` / `version` | `bridge: 1`、manifest の版（SemVer か日付） | etag は内容から作られる |
-| `system` | `id`（= DSH でのアプリ id）・`name`・`locale`・`timezone` | id はレジストリの `applications[].id` と同じ |
-| `roles` | 役割ごとの `label`・`scope`・`delegation: none | read | propose` | AI 委託の上限。conformance の fixtures で全役割を写す（M3） |
-| `entities` | データの種類と個人情報の分類（none < personal < financial < sensitive < health）、`link` | `approval`・`sns_identity` も宣言する |
-| `audienceRules` | 受信者の規則の名前と説明 | 解決するのは業務システムの `recipientsFor`。DSH は受信者を作らない |
-| `events` | 型ごとの `label`・`aggregate`・`payload`（**許可リスト**）・`severity`・`audience`・`notify`・`playbook` | payload は ID・日付・件数・状態だけ |
-| `templates` | 通知の文面：`intent`（info / action / urgent / approval / consult）、action / urgent には `action`、`description`、`params` の型 | 引数は数値・日付・時刻などだけ（自由記述の文字列型は無い） |
-| `tools` | AI の業務ツール：`name`（`<namespace>_*`）・`http`・`access: read | propose`・`roles`・`pii`・`input` | 書込みは必ず `access: propose`（`POST /bridge/v1/proposals`） |
-| `playbooks` | 自動タスク：`agent`・`trigger`・`instructions`（禁止事項を書く）・`tools`・`audience`・`delegation`・`delivery`・`guard`・`enabled: false` | `agent` は製品 profile のプリセットになる |
-| `reports` | 定時報告：`cron`・`audience`・`sections`・`sectionsByRole` | 委託で読むときに役割ごとのセクションだけ |
-| `help` / `web.routes` | マニュアル検索のツール、業務 Web の画面のパスの型 | リンクの検査に `web.routes` が要る（マニュアルを使わなくても書く） |
+| `bridge` / `version` | `bridge: 1`, the manifest version (SemVer or a date) | The etag is derived from the content |
+| `system` | `id` (= the app id in DSH), `name`, `locale`, `timezone` | The id equals `applications[].id` in the registry |
+| `roles` | Per role: `label`, `scope`, `delegation: none | read | propose` | The upper limit of AI delegation. Map every role in the conformance fixtures (M3) |
+| `entities` | Data kinds and their personal-data classification (none < personal < financial < sensitive < health), `link` | Also declare `approval` and `sns_identity` |
+| `audienceRules` | Names and descriptions of the recipient rules | Resolution is done by the business system's `recipientsFor`. DSH does not create recipients |
+| `events` | Per type: `label`, `aggregate`, `payload` (**allow-list**), `severity`, `audience`, `notify`, `playbook` | The payload holds only IDs, dates, counts and states |
+| `templates` | Notification wording: `intent` (info / action / urgent / approval / consult), `action` for action / urgent, `description`, `params` types | Parameters are numbers, dates, times and the like only (there is no free-text string type) |
+| `tools` | The AI's business tools: `name` (`<namespace>_*`), `http`, `access: read | propose`, `roles`, `pii`, `input` | Writes are always `access: propose` (`POST /bridge/v1/proposals`) |
+| `playbooks` | Automatic tasks: `agent`, `trigger`, `instructions` (state the prohibitions), `tools`, `audience`, `delegation`, `delivery`, `guard`, `enabled: false` | `agent` becomes a preset in the product profile |
+| `reports` | Scheduled reports: `cron`, `audience`, `sections`, `sectionsByRole` | When read via delegation, only the sections for the role |
+| `help` / `web.routes` | The manual search tool; the path types of the business web app's screens | Link checking needs `web.routes` (write it even if you do not use the manual) |
 
-## 2. 必ず宣言する 3 つの event（MUST）
+## 2. The 3 events that must be declared (MUST)
 
-server-kit と業務コードがこの payload のキーで書くので、無いと連携の解除と承認の作成が失敗し、conformance の L9・A1〜A4・E2 が落ちる。
+server-kit and business code write with these payload keys, so without them unlinking and approval creation fail, and conformance L9, A1–A4 and E2 fail.
 
 ```yaml
 entities:
-  approval:     { label: 承認, pii: none }
-  sns_identity: { label: SNS 連携, pii: personal }
+  approval:     { label: Approval, pii: none }
+  sns_identity: { label: Chat link, pii: personal }
 events:
   approval.requested:
-    { label: …の承認依頼, aggregate: approval, severity: info, internal: approvals_im, audience: { rule: <承認者の規則> },
+    { label: Approval request for …, aggregate: approval, severity: info, internal: approvals_im, audience: { rule: <approver rule> },
       payload: [approvalId, subjectType, subjectId, requiredRole, expiresAt] }
   approval.decided:
-    { label: …の承認の決定, aggregate: approval, severity: info, internal: approvals_im,
+    { label: Approval decision for …, aggregate: approval, severity: info, internal: approvals_im,
       payload: [approvalId, subjectType, subjectId, decision, status, channel, decidedByUserId] }
   sns_identity.unlinked:
-    { label: SNS 連携の解除, aggregate: sns_identity, severity: info, internal: identity, payload: [identityId, userId, platform] }
+    { label: Chat link removed, aggregate: sns_identity, severity: info, internal: identity, payload: [identityId, userId, platform] }
 ```
 
-一覧の正本は `@dsh-bridge/protocol` の `INTERNAL_EVENTS`。`approval.decided` は `internal` を付けずに通知の event にしてもよい（payload は同じ）。
+The source of truth for the list is `INTERNAL_EVENTS` in `@dsh-bridge/protocol`. `approval.decided` may also be a notification event without `internal` (same payload).
 
-## 3. 検証（CI に入れる）
+## 3. Validation (put it in CI)
 
 ```sh
 node <framework>/packages/protocol/bin/bridge-validate.mjs manifest bridge.manifest.yaml --strict
 ```
 
-- `--strict` が無いと警告があっても exit 0 になるので、合格の判定には必ず付ける。
-- スキーマに加え、相互参照（ツールの roles が存在する、playbook のツールが存在する、通知する event に audience と宣言済みのテンプレートがある、
-  `<class>=each` の playbook が event で起動する…）と、個人情報らしい payload のキー・テンプレートの引数名（`residentName`・`comment`・`memo` など。`…Id` は可）を検査する。
-- 業務のテストで `validateManifest(m).warnings` が空であることを確かめてもよい（見本 `test/domain.test.mjs`）。
+- Without `--strict`, it exits 0 even with warnings, so always add it when judging a pass.
+- Besides the schema, it checks cross-references (tool roles exist, playbook tools exist, notifying events have an audience and a declared template,
+  `<class>=each` playbooks are triggered by an event…) and payload keys and template parameter names that look like personal data (`residentName`, `comment`, `memo`, etc.; `…Id` is fine).
+- Business tests may also confirm that `validateManifest(m).warnings` is empty (sample `test/domain.test.mjs`).
 
-## 4. 書くときの判断
+## 4. Judgment calls when writing
 
-- **ツールの roles**：その役割の職員が業務 Web で見られる範囲を超えない。AI の権限は「AI 許可リスト（tools の roles）∩ 職員の役割」。
-- **event の粒度**：通知・自動タスク・報告で使う変化だけ。payload に氏名・連絡先・自由記述・健康情報・金額の内訳を入れない。
-- **文面**：すべてのテンプレートに `intent`、action / urgent には `action`（お願いしたいこと）。事実の文は件数・日付だけ。枠（ラベル・あいさつ・署名・リンク）はプラグインが付ける。
-- **playbook の instructions**：何も確定しない、氏名・個人情報をメモ・報告に書かない、業務データはツールだけで読む、何も無ければ静かに終える、を書く
-  （`<framework>/profile/template/auto-tasks/README.md` の「Instruction rules」）。`enabled: false` で出し、運用者が有効にする。
-- **夜間**：夜に届けてよい種別（安否など）だけ `notify.quiet: exempt`。頻繁な種別はまとめ送信（`digestMinutes`）。
-- **版**：v1 の中では足すだけ。出さなくなった event の型は消さずに `deprecated: true`。
+- **Tool roles**: do not exceed what employees in that role can see in the business web app. The AI's permission is "AI allow-list (tool roles) ∩ employee's role".
+- **Event granularity**: only changes used by notifications, automatic tasks and reports. Do not put names, contact details, free text, health information or amount breakdowns in the payload.
+- **Wording**: every template has an `intent`; action / urgent have an `action` (what you are asking for). Factual sentences contain only counts and dates. The frame (label, greeting, signature, link) is added by the plugin.
+- **Playbook instructions**: state that it decides nothing, does not write names or personal data into memos or reports, reads business data only through tools, and ends quietly if there is nothing
+  (the "Instruction rules" in `<framework>/profile/template/auto-tasks/README.md`). Ship with `enabled: false`; the operator enables it.
+- **Night time**: only kinds that may be delivered at night (such as safety checks) get `notify.quiet: exempt`. Frequent kinds use digest sending (`digestMinutes`).
+- **Versions**: within v1, only add. Do not delete event types that are no longer emitted; mark them `deprecated: true`.

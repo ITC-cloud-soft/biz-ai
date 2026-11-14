@@ -1,80 +1,80 @@
-# <業務システム名> への Biz Assistant Framework 導入計画
+# Biz Assistant Framework integration plan for <business system name>
 
-- 作成日：YYYY-MM-DD ／ 担当：
-- 基にした framework：https://github.com/ITC-cloud-soft/biz-ai の `<コミット>`（YYYY-MM-DD）
-- 道：新規 ／ 既存＋server-kit ／ 既存＋別名 ／ 既存＋自前実装（言語：　） ／ 外付けモード（試行）
-- 最初に扱う業務：
+- Created: YYYY-MM-DD / Owner:
+- Framework based on: `<commit>` of https://github.com/ITC-cloud-soft/biz-ai (YYYY-MM-DD)
+- Path: New / Existing + server-kit / Existing + aliases / Existing + own implementation (language: ) / External mode (trial)
+- First business function to handle:
 
-## 1. 診断（13 項目）
+## 1. Assessment (13 items)
 
-| # | 足すもの | 判定（ある／別名／足す） | 根拠（ファイル・関数・表） | 足す量の目安 | 状態 |
+| # | What to add | Verdict (exists / alias / add) | Evidence (file, function, table) | Estimated amount to add | Status |
 |---|---|---|---|---|---|
-| 1 | 読む API と提案を受ける口 | | | | |
-| 2 | manifest | 足す | — | | |
-| 3 | 本人の SNS 連携（自身のログイン） | | | | |
-| 4 | 受信者の規則 | | | | |
-| 5 | 同じトランザクションの event | | | | |
-| 6 | 職員と役割 | | | | |
-| 7 | 承認の規則（1 か所） | | | | |
-| 8 | セッションの確認 | | | | |
-| 9 | マニュアル（推奨） | | | | |
-| 10 | 名簿の個人情報の検査（推奨） | | | | |
-| 11 | AI 社員のプロフィール（推奨） | | | | |
-| 12 | 定時報告 | | | | |
-| 13 | 外部連携（任意） | | | | |
+| 1 | Read APIs and an endpoint that receives proposals | | | | |
+| 2 | manifest | add | — | | |
+| 3 | Each employee's own chat link (on the system's own login) | | | | |
+| 4 | Recipient rules | | | | |
+| 5 | Events in the same transaction | | | | |
+| 6 | Employees and roles | | | | |
+| 7 | Approval rules (in one place) | | | | |
+| 8 | Session check | | | | |
+| 9 | Manual (recommended) | | | | |
+| 10 | Personal data check of the roster (recommended) | | | | |
+| 11 | AI employee profile (recommended) | | | | |
+| 12 | Scheduled reports | | | | |
+| 13 | External connectors (optional) | | | | |
 
-外付けモードを選ぶ場合の 4 能力：IdP（　）／本人として呼べる API（　）／commit 後の変化の知らせ（　）／承認と書込みの API（　）→ 型：A / B / C
+The 4 capabilities if external mode is chosen: IdP ( ) / APIs callable as the user ( ) / notification of changes after commit ( ) / approval and write APIs ( ) → type: A / B / C
 
-## 2. 人に決めてもらうこと（決定と日付を残す）
+## 2. What the user decides (record the decision and the date)
 
-| 事項 | 選択肢 | 推奨 | 決定 |
+| Item | Options | Recommendation | Decision |
 |---|---|---|---|
-| AI に読ませる範囲（tools と roles、役割ごとの delegation） | | | |
-| 通知する event と受信者の規則・夜間の扱い | | | |
-| 提案の種類と採択できる役割 | | | |
-| 自動タスクの委託の分類と職員（または each） | | | |
-| 開ける送信の設定（opt-in）と理由 | なし（推奨） | | |
-| 使うチャット・ボット・AI モデル | | | |
-| 任意の機能（マニュアル・プロフィール・添付・外部連携）とスキャン PDF の扱い | | | |
+| What the AI may read (tools and roles, delegation per role) | | | |
+| Events to notify, recipient rules, handling at night | | | |
+| Proposal kinds and the roles that may accept them | | | |
+| Delegation class and employee for automatic tasks (or each) | | | |
+| Outbound settings to open (opt-in) and why | None (recommended) | | |
+| Chat, bot and AI model to use | | | |
+| Optional features (manual, profile, attachments, external connectors) and handling of scanned PDFs | | | |
 
-## 3. manifest の設計
+## 3. Manifest design
 
-- system.id / namespace：
-- 役割：
-- event（型・payload の許可リスト・受信者の規則）：
-- テンプレート（intent・action・引数の型）：
-- ツール（read / propose・roles）：
-- playbook（trigger・tools・delegation・禁止事項）：
-- 報告（セクション・時刻・役割ごと）：
+- system.id / namespace:
+- Roles:
+- Events (type, payload allowlist, recipient rules):
+- Templates (intent, action, argument types):
+- Tools (read / propose, roles):
+- Playbooks (trigger, tools, delegation, prohibited actions):
+- Reports (sections, times, per role):
 
-## 4. 作業の進み具合
+## 4. Progress
 
-| ステップ | 内容 | 状態 | メモ |
+| Step | Content | Status | Notes |
 |---|---|---|---|
-| 1 | manifest（--strict exit 0） | | |
-| 2 | hooks／別名／自前実装 | | |
-| 3 | トランザクションの event | | |
-| 4 | conformance 52 / 52（skip 0） | | |
-| 5 | DSH profile（閉じた値・linkGuard・プリセット） | | |
-| 6 | 業務 Web と BFF | | |
-| 7 | 自動タスク | | |
-| 8 | 任意の機能 | | |
+| 1 | manifest (--strict exit 0) | | |
+| 2 | hooks / aliases / own implementation | | |
+| 3 | Events in the transaction | | |
+| 4 | conformance 52 / 52 (skip 0) | | |
+| 5 | DSH profile (closed values, linkGuard, presets) | | |
+| 6 | Business web app and BFF | | |
+| 7 | Automatic tasks | | |
+| 8 | Optional features | | |
 
-## 5. 完了の条件の結果
+## 5. Definition of done results
 
-| # | 何を | コマンド | 結果 |
+| # | What | Command | Result |
 |---|---|---|---|
 | 1 | manifest | | |
 | 2 | conformance | | |
-| 3 | 業務のテスト | | |
-| 4 | マニュアル | | |
-| 5 | 製品 profile | | |
-| 6 | 送信の設定（check.mjs） | | |
-| 7 | 固定の配信先の拒否 | | |
-| 8 | 業務 Web（tsc） | | |
+| 3 | Business tests | | |
+| 4 | Manual | | |
+| 5 | Product profile | | |
+| 6 | Outbound settings (check.mjs) | | |
+| 7 | Rejection of fixed destinations | | |
+| 8 | Business web app (tsc) | | |
 
-未確認のこと（実際のチャット・モデルでの確認など）：
+Not verified (such as confirmation in a real chat or with a real model):
 
-## 6. 既存システムに足したもの（説明用）
+## 6. What was added to the existing system (for explanation)
 
-（「何も変えずにつながる」とは書かない。足した API・表・画面・設定を列挙する）
+(Do not write "it connects without changing anything". List the APIs, tables, screens and settings that were added.)

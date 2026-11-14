@@ -1,121 +1,121 @@
 ---
 name: biz-assistant-integration
 description: >-
-  Biz Assistant Framework（Bizアシスタント、パッケージ @dsh-bridge/*、リポジトリ https://github.com/ITC-cloud-soft/biz-ai）を
-  業務システムに導入する手順書。新しく開発する業務システムを framework の上で作る場合と、既存の業務システムに「ブリッジ」
-  （Bridge v1 の窓口・manifest・本人の SNS 連携・受信者の規則・transactional outbox・承認・報告）を足して AI 社員とつなぐ場合の
-  両方を、診断 → 計画 → 実装 → 検証（manifest の strict 検証・conformance 52 / 52・profile の検査）まで導く。
-  次のような依頼で使う：「Bizアシスタントを導入したい」「biz assistant framework を既存システムにつなぐ」「業務システムを AI 社員と
-  働く形にしたい」「Bridge v1 を実装」「manifest を書く」「server-kit の hooks」「conformance を通す」「DSH の profile に登録」
-  「把 biz assistant framework 导入新系统/既有系统」「给业务系统加 AI 社员」「integrate Biz Assistant Framework into an app」。
+  Step-by-step guide for bringing the Biz Assistant Framework (Biz Assistant, packages @dsh-bridge/*, repository https://github.com/ITC-cloud-soft/biz-ai)
+  into a business system. Covers both building a new business system on top of the framework and adding a "bridge" to an existing business system
+  (the Bridge v1 endpoints, the manifest, each employee's own chat link, recipient rules, a transactional outbox, approvals and reports) so that it works with AI employees,
+  and guides the work through assessment → plan → implementation → verification (strict manifest validation, conformance 52 / 52, profile checks).
+  Use it for requests such as "integrate Biz Assistant Framework", "integrate Biz Assistant Framework into an app", "connect Biz Assistant Framework to our existing system",
+  "add AI employees to our business system", "make our business system work with AI employees", "implement Bridge v1", "write a manifest", "server-kit hooks",
+  "pass the conformance suite", "register in the DSH profile".
 ---
 
-# Biz Assistant Framework を業務システムに導入する
+# Bringing the Biz Assistant Framework into a business system
 
-このスキルは、業務システム（職員・役割・ログインを持つ IT システム）に Biz Assistant Framework を入れ、
-**AI 社員**（職員一人ひとりの AI アシスタント。チャットで知らせ・頼み・下書きし、人が決める）と働く形にするための手順です。
+This skill is the procedure for putting the Biz Assistant Framework into a business system (an IT system with employees, roles and a login)
+so that it works with **AI employees** (an AI assistant for each employee that notifies, asks, and drafts in chat, while people decide).
 
-- **正本は framework のリポジトリの文書**です。このスキルは道順と判断の要点をまとめたもので、細部・最新の値は必ずリポジトリで確かめます。
-  - `docs/GUIDELINE.md`（開発ガイドライン。手順 b、拡張点 c、規則 d、テスト e、版 f、FAQ g）
-  - `docs/ARCHITECTURE.md`（構成・流れ・受信者の保証・安全の約束）
-  - `packages/protocol/README.md`（Bridge v1・manifest・conformance 52 項目）、`packages/server-kit/README.md`、`packages/web-kit/README.md`、`plugins/*/README.md`
-  - 見本：`examples/equipment-inspection`（server-kit の上に新しく作った業務システム。conformance 52 / 52）
-- 細かい手順はこのフォルダの `references/` に分けてあります。いま必要なものだけ読みます（下の「参照の使い分け」）。
+- **The source of truth is the documentation in the framework repository.** This skill summarizes the route and the key decisions; always check details and current values in the repository.
+  - `docs/GUIDELINE.en.md` (also in Japanese, the original: `docs/GUIDELINE.md`, and Chinese: `docs/GUIDELINE.zh-CN.md`) (development guideline: steps in b, extension points in c, rules in d, testing in e, versioning in f, FAQ in g)
+  - `docs/ARCHITECTURE.md` (structure, flows, recipient guarantees, safety commitments)
+  - `packages/protocol/README.md` (Bridge v1, manifest, the 52 conformance items), `packages/server-kit/README.md`, `packages/web-kit/README.md`, `plugins/*/README.md`
+  - Example: `examples/equipment-inspection` (a business system newly built on server-kit; conformance 52 / 52)
+- Detailed procedures are split into `references/` in this folder. Read only what you need right now (see "Which reference to read" below).
 
-## 0. 最初にすること
+## 0. First steps
 
-1. **framework を手元に用意する**（読めない場合はユーザーに権限を確認する）：
+1. **Get the framework locally** (if you cannot read it, check access with the user):
 
    ```sh
    git clone https://github.com/ITC-cloud-soft/biz-ai.git framework
-   cd framework && git log -1 --format='%h %cs'     # どの版に基づいて作業したかを記録する
-   pnpm install && pnpm test && pnpm validate      # Node 22.19 以上・pnpm 10。framework 自身が通ることを先に確かめる
+   cd framework && git log -1 --format='%h %cs'     # record which version the work is based on
+   pnpm install && pnpm test && pnpm validate      # Node 22.19 or later, pnpm 10. First confirm the framework itself passes
    ```
 
-   以降、framework の checkout を `<framework>` と書きます。`@dsh-bridge/*` は npm に公開されていない（private 0.1.0）ので、
-   依存は checkout からつなぎます（`references/02-new-system.md` の「置き場所と依存」）。
-2. **`docs/GUIDELINE.md` の冒頭「既存の業務システムをつなぐ：チェックリスト」と b 節の図を読む**。このスキルの手順はそれに対応しています。
-3. **対象の業務システムを読む**：言語・フレームワーク、ログインとセッション、職員と役割の表、業務 API（読取・書込み）、承認の規則、
-   状態を変える処理（どこでトランザクションを張っているか）、定期処理、業務 Web とそのサーバ側（BFF）の有無。
+   From here on, the framework checkout is written as `<framework>`. `@dsh-bridge/*` is on npm (0.1.0); the checkout is still the
+   source of truth for documents and checks (see "Location and dependencies" in `references/02-new-system.md`).
+2. **Read "Connecting an existing business system: checklist" at the top of `docs/GUIDELINE.en.md` and the diagram in section b.** The steps of this skill correspond to them.
+3. **Read the target business system**: language and framework, login and sessions, the employee and role tables, business APIs (reads and writes), approval rules,
+   state-changing operations (where transactions are opened), scheduled jobs, and whether there is a business web app and a server side for it (BFF).
 
-## 1. 道を選ぶ
+## 1. Choose a path
 
-| 状況 | 道 | 主な参照 |
+| Situation | Path | Main reference |
 |---|---|---|
-| これから作る業務システム | **新規**：server-kit の上で作る（Bridge の部分は kit が持つ。書くのは業務・hooks・manifest・画面） | `references/02-new-system.md`（GUIDELINE b.0） |
-| 既存・Node.js で、自分のコードを変えてよい | **既存＋server-kit**：既存のサーバに `createBridgeApp` を載せ、hooks を既存の表・関数につなぐ | `references/03-existing-system.md` |
-| 既存・同じ働きの API をすでに持つ | **既存＋別名**：`/bridge/v1` を既存のルートに別名で載せる（無い項目は足す） | `references/03-existing-system.md`（GUIDELINE b.2'） |
-| 既存・Node.js 以外 | **既存＋自前実装**：`packages/protocol/openapi/bridge-v1.yaml` をその言語で実装し、conformance で検証する | `references/03-existing-system.md` |
-| 既存・コードを一切変えたくない | **外付けモード（試行）**：外にブリッジ専用サービスを置く。既存システムに IdP・本人として呼べる API・commit 後の変化の知らせ・承認と書込みの API があることが条件 | `references/03-existing-system.md`（GUIDELINE b.10、EXTERNAL_LAYER_FEASIBILITY.md） |
-| 足す量が大きすぎる（画面しか無い・API が無い） | 新規として作り直す、または業務を 1 つずつ新しいシステムへ移す | `references/01-assessment.md` |
+| A business system you are about to build | **New**: build on server-kit (the kit owns the Bridge part; you write the business logic, hooks, manifest and screens) | `references/02-new-system.md` (GUIDELINE b.0) |
+| Existing, Node.js, and you may change its code | **Existing + server-kit**: mount `createBridgeApp` on the existing server and wire hooks to the existing tables and functions | `references/03-existing-system.md` |
+| Existing, already has APIs that do the same job | **Existing + aliases**: mount `/bridge/v1` on the existing routes as aliases (add whatever is missing) | `references/03-existing-system.md` (GUIDELINE b.2') |
+| Existing, not Node.js | **Existing + own implementation**: implement `packages/protocol/openapi/bridge-v1.yaml` in that language and verify it with conformance | `references/03-existing-system.md` |
+| Existing, and no code changes at all are wanted | **External mode (trial)**: put a dedicated bridge service outside. Requires the existing system to have an IdP, APIs callable as the user, notification of changes after commit, and approval and write APIs | `references/03-existing-system.md` (GUIDELINE b.10, EXTERNAL_LAYER_FEASIBILITY.md) |
+| Too much to add (only screens, no APIs) | Rebuild as new, or move business functions to a new system one at a time | `references/01-assessment.md` |
 
-判断に迷うときは、先に `references/01-assessment.md` の診断を行い、結果をユーザーに見せて決めてもらいます。
+When unsure, run the assessment in `references/01-assessment.md` first, show the result to the user and let them decide.
 
-## 2. 進め方（どの道でも同じ順序）
+## 2. How to proceed (same order on every path)
 
-作業の初めに `templates/integration-plan.md` を写して計画書を作り、項目ごとに状態を更新します。
+At the start of the work, copy `templates/integration-plan.md` to create the plan, and update the status of each item.
 
-1. **診断と計画**（`references/01-assessment.md`）：チェックリスト 13 項目について「ある／足す／別名」を表にし、足す量を見積もる。
-   最初に扱う**業務を 1 つ**決める（例：請求の承認、点検の期限）。ユーザーの決定が要る点（下の「人に決めてもらうこと」）を洗い出す。
-2. **manifest を書いて検証**（`references/04-manifest.md`）：役割と委託の上限・event と payload の許可リスト・文面・ツール・playbook・報告。
-   承認と連携解除の 3 つの event は必須。`bridge-validate manifest --strict` が exit 0。
-3. **業務側を実装**（`references/05-business-side.md`）：hooks（`employees`・`authenticate`・`isSessionLive`・`recipientsFor`・`approvals`・
-   `proposalKinds`・`reports`・`piiScan`）、AI の読取 GET に `readToolPolicy`、書込みは人のセッションだけ。
-4. **event をトランザクションで書く**（同上）：業務の行と `kit.emitEvent` を同じ `kit.tx` で。
-5. **conformance 52 項目**（`references/10-verification.md`）：TEST 環境に対して。fixtures は役割の写しと hook をそろえる。
-6. **DSH の製品 profile に登録**（`references/06-dsh-profile.md`）：`profile/template` を写す、レジストリ、ボット、送信の設定は閉じた値のまま、
-   すべてのアプリに `linkGuard` の URL、AI 社員のプリセット。
-7. **業務 Web と BFF**（`references/07-web-and-bff.md`）：SNS 連携・通知設定・承認・AI 提案・AI 社員の設定の画面、gateway、BFF の秘密の規則。
-8. **自動タスク**（`references/06-dsh-profile.md` の後半）：委託の分類と職員を決めて playbook を有効化。
-9. **任意の機能**（`references/08-optional-features.md`）：マニュアルで使い方に答える・長期記憶の名簿検査・AI 社員のプロフィール・添付・外部連携・スキャン文書。
-10. **完了の条件をコマンドで確かめる**（`references/10-verification.md`）：manifest・conformance・業務のテスト・マニュアル・profile・送信の設定・型検査。
+1. **Assessment and plan** (`references/01-assessment.md`): tabulate the 13 checklist items as "exists / add / alias" and estimate how much must be added.
+   Decide **one business function** to handle first (for example, invoice approval or inspection due dates). List the points that need the user's decision (see "What the user decides" below).
+2. **Write and validate the manifest** (`references/04-manifest.md`): roles and delegation ceilings, events and payload allowlists, message wording, tools, playbooks, reports.
+   The 3 events for approval and unlinking are required. `bridge-validate manifest --strict` exits 0.
+3. **Implement the business side** (`references/05-business-side.md`): hooks (`employees`, `authenticate`, `isSessionLive`, `recipientsFor`, `approvals`,
+   `proposalKinds`, `reports`, `piiScan`), `readToolPolicy` on the AI's read GETs, and writes only from a human session.
+4. **Write events in the transaction** (same reference): the business row and `kit.emitEvent` in the same `kit.tx`.
+5. **The 52 conformance items** (`references/10-verification.md`): against a TEST environment. Align fixtures with the copy of the roles and the hooks.
+6. **Register in the DSH product profile** (`references/06-dsh-profile.md`): copy `profile/template`, the registry, the bot, outbound settings kept at their closed values,
+   the `linkGuard` URL in every app, and the AI employee presets.
+7. **Business web app and BFF** (`references/07-web-and-bff.md`): screens for chat link, notification settings, approvals, AI proposals and AI employee settings, the gateway, and the BFF's secret rules.
+8. **Automatic tasks** (second half of `references/06-dsh-profile.md`): decide the delegation class and the employee, then enable the playbooks.
+9. **Optional features** (`references/08-optional-features.md`): answering how-to questions from the manual, roster checks for long-term memory, the AI employee profile, attachments, external connectors, scanned documents.
+10. **Confirm the definition of done with commands** (`references/10-verification.md`): manifest, conformance, business tests, manual, profile, outbound settings, type checks.
 
-各ステップの前後で `references/09-rules.md`（MUST / SHOULD の要約）に反していないかを見直します。
+Before and after each step, review that nothing violates `references/09-rules.md` (summary of MUST / SHOULD).
 
-## 3. 守ること（要点。全文は GUIDELINE d 節）
+## 3. Rules to keep (key points; full text in GUIDELINE section d)
 
-- **framework の中を書き換えない**（`packages/*`・`plugins/*`・`vendor/*`・`profile/template`・`profile/scripts`）。足りないところは hooks・
-  ツール／文面のモジュール・プラグインと profile の設定・製品の profile の写しで補う。どうしても足りなければ framework への issue にする。
-- **AI は読む・提案するだけ**：AI のツールは GET と `POST /bridge/v1/proposals` だけ。業務の書込み API は委託を 403 にする。金額を AI に決めさせない。
-- **受信者は業務システムが決める**：`recipientsFor` で範囲を決め、1 人ずつ「その人が業務 Web で同じ対象を見られるか」を Web の認可と同じ関数で確かめる。
-  範囲が決まらなければ送らない。
-- **event と文面に個人情報を載せない**：payload は ID・日付・件数・状態だけ、文面の引数は数値・日付だけ、リンクは ID だけのパス。
-- **SNS の連携は本人だけ・システム自身のログインで**：別の本人確認を作らない。管理者でも他人の連携を作れない。
-- **秘密はリポジトリ・yml・ログ・チャットに書かない**：環境変数の名前だけを設定に書く。秘密の値はユーザーに入れてもらう。
-- **送信の設定は雛形の閉じた値のまま**：開けるのは明示の opt-in（その行を変え、理由をコメントに残す）だけ。
-- **テストは架空のデータ・ループバック・TEST 環境だけ**。本番・デモ環境のポート・DB に向けない。DSH は隔離した home で動かす（個人の `~/.dsh` は使わない）。
-- **「何も変えずにつながる」とは言わない**：既存システムに足すものを計画書に明記する。
+- **Do not modify the inside of the framework** (`packages/*`, `plugins/*`, `vendor/*`, `profile/template`, `profile/scripts`). Fill gaps with hooks,
+  tool/wording modules, plugin and profile settings, and the product's copy of the profile. If something is truly missing, file an issue against the framework.
+- **The AI only reads and proposes**: the AI's tools are only GETs and `POST /bridge/v1/proposals`. Business write APIs return 403 to delegation. Do not let the AI decide amounts.
+- **The business system decides the recipients**: decide the scope with `recipientsFor`, and check each person, one by one, with the same function as the web authorization: "can this person see the same object in the business web app?"
+  If the scope cannot be determined, do not send.
+- **Keep personal data out of events and messages**: payloads carry only IDs, dates, counts and states; message arguments are only numbers and dates; links are paths containing only IDs.
+- **Chat links are made only by the employee themselves, on the system's own login**: do not build a separate identity check. Not even an administrator can create someone else's link.
+- **Do not write secrets in the repository, yml, logs or chat**: write only the environment variable names in the configuration. Have the user enter the secret values.
+- **Keep outbound settings at the template's closed values**: the only thing that may open them is an explicit opt-in (change that line and leave the reason in a comment).
+- **Test only with fictional data, loopback and a TEST environment.** Do not point at production or demo ports or DBs. Run DSH in an isolated home (do not use your personal `~/.dsh`).
+- **Do not say "it connects without changing anything"**: state in the plan what is added to the existing system.
 
-## 4. 人に決めてもらうこと
+## 4. What the user decides
 
-次は推測で決めず、計画書に選択肢と推奨を書いてユーザーの決定を待ちます。
+Do not decide the following by guessing; write the options and a recommendation in the plan and wait for the user's decision.
 
-- 最初に扱う業務と、AI に読ませる範囲（manifest の `tools` と各ツールの `roles`、役割ごとの `delegation: none | read | propose`）
-- 通知する event と、その受信者の規則（誰に・どの範囲で）、夜間も届ける種別（`notify.quiet: exempt`）
-- AI に出させる提案の種類と、採択できる役割
-- 自動タスクの委託の分類と、委託する職員（広い役割を選ばない）、または `<class>=each`
-- 開ける送信の設定（opt-in）があるか、その理由
-- 使うチャット（組織のボット・個人ボット）、使う AI モデル
-- 任意の機能（マニュアル・プロフィール・添付・外部連携）の採否、スキャン PDF の扱い（OCR エンジン／モデル／読まない）
+- The first business function to handle and what the AI may read (the manifest's `tools` and each tool's `roles`, and `delegation: none | read | propose` per role)
+- Which events to notify and their recipient rules (to whom, in what scope), and which kinds are delivered at night too (`notify.quiet: exempt`)
+- The kinds of proposals the AI may make, and the roles that may accept them
+- The delegation class for automatic tasks and the employee delegated to (do not pick a broad role), or `<class>=each`
+- Whether any outbound setting is opened (opt-in), and why
+- Which chat to use (the organization's bot or personal bots) and which AI model to use
+- Whether to adopt the optional features (manual, profile, attachments, external connectors), and how to handle scanned PDFs (OCR engine / model / do not read)
 
-## 5. 参照の使い分け
+## 5. Which reference to read
 
-| いま知りたいこと | 読むもの |
+| What you need to know now | What to read |
 |---|---|
-| 既存システムで何を足すか・どの道か | `references/01-assessment.md` |
-| 新しく作るときのリポジトリ構成と依存 | `references/02-new-system.md` |
-| 既存への載せ方（server-kit・別名・他言語・外付け） | `references/03-existing-system.md` |
-| manifest の書き方と検証 | `references/04-manifest.md` |
-| hooks・event・受信者・承認・提案・報告の実装 | `references/05-business-side.md` |
-| DSH の profile・レジストリ・送信の設定・自動タスク | `references/06-dsh-profile.md` |
-| 業務 Web の画面と BFF の規則 | `references/07-web-and-bff.md` |
-| マニュアル・記憶・プロフィール・添付・外部連携・文書 | `references/08-optional-features.md` |
-| MUST / SHOULD の要約 | `references/09-rules.md` |
-| conformance・完了の条件・最終チェックリスト | `references/10-verification.md` |
-| 計画書のひな形 | `templates/integration-plan.md` |
+| What to add to an existing system, and which path | `references/01-assessment.md` |
+| Repository layout and dependencies when building new | `references/02-new-system.md` |
+| How to mount on an existing system (server-kit, aliases, other languages, external) | `references/03-existing-system.md` |
+| Writing and validating the manifest | `references/04-manifest.md` |
+| Implementing hooks, events, recipients, approvals, proposals and reports | `references/05-business-side.md` |
+| DSH profile, registry, outbound settings, automatic tasks | `references/06-dsh-profile.md` |
+| Business web app screens and BFF rules | `references/07-web-and-bff.md` |
+| Manual, memory, profile, attachments, external connectors, documents | `references/08-optional-features.md` |
+| Summary of MUST / SHOULD | `references/09-rules.md` |
+| Conformance, definition of done, final checklist | `references/10-verification.md` |
+| Plan template | `templates/integration-plan.md` |
 
-## 6. 終わり方
+## 6. Finishing
 
-- 完了の条件（`references/10-verification.md`）の結果を、コマンドと出力の要約つきで報告する。確かめていないもの（実際のチャット・モデルでの確認など）は「未確認」と書く。
-- 計画書に、足したもの・決めたこと・開けた設定（opt-in）とその理由・残っている作業を残す。
-- 基にした framework の版（コミット）を書く。framework の版が上がったら GUIDELINE の f 節（版の管理）と変更点を確かめる。
+- Report the results of the definition of done (`references/10-verification.md`) with the commands and a summary of their output. Write "not verified" for anything you did not check (such as confirmation in a real chat or with a real model).
+- Leave in the plan what was added, what was decided, any settings opened (opt-in) and why, and the remaining work.
+- Write down the framework version (commit) the work was based on. When the framework version goes up, check GUIDELINE section f (versioning) and the changes.

@@ -1,56 +1,57 @@
-# 02 新しい業務システムを framework の上で作る
+# 02 Building a new business system on the framework
 
-正本：`docs/GUIDELINE.md` b.0、見本 `examples/equipment-inspection`（README・src・test・manual）。
+Source of truth: `docs/GUIDELINE.en.md` b.0, the sample `examples/equipment-inspection` (README, src, test, manual).
 
-## 1. 置き場所と依存
+## 1. Location and dependencies
 
-`@dsh-bridge/*` は private（0.1.0）で npm に公開されていない。パッケージどうしの依存は `workspace:*`。
+`@dsh-bridge/*` is published on npm (https://www.npmjs.com/org/dsh-bridge). Inside the framework, dependencies between packages are `workspace:*`.
 
-| 置き場所 | 依存の書き方 | 向くとき |
+| Location | How to declare the dependency | Suited for |
 |---|---|---|
-| framework の workspace の中：`examples/<system-id>/` | `"@dsh-bridge/server-kit": "workspace:*"` など。framework の直下で `pnpm install` | 試作・検証 |
-| 別のリポジトリ（製品） | 先に `<framework>` で `pnpm install`。業務システムの `package.json` に `"@dsh-bridge/server-kit": "file:<framework>/packages/server-kit"` などを書き、**npm** で入れる（`npm install`） | 製品 |
+| Inside the framework workspace: `examples/<system-id>/` | `"@dsh-bridge/server-kit": "workspace:*"` etc. Run `pnpm install` at the framework root | Prototyping and verification |
+| A separate repository (product) | `npm install @dsh-bridge/server-kit` (and `@dsh-bridge/web-kit` for the web app). Pin the version the work was verified with | Products |
+| A separate repository, needing a framework change that is not released yet | First run `pnpm install` in `<framework>`. Write `"@dsh-bridge/server-kit": "file:<framework>/packages/server-kit"` etc. and install with **npm** (`npm install`) | Trying unreleased changes |
 
-- pnpm の `file:` は中の `workspace:*` を解決できず `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` で止まる。製品のリポジトリでは npm を使う。
-- `pg` は server-kit の peer（PostgreSQL の store を使うなら業務システムの依存に足す）。
-- web-kit は `.ts` のまま配られるので、業務 Web のバンドラ（Vite など）で読む。
+- pnpm's `file:` cannot resolve the `workspace:*` inside and stops with `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND`. Use npm for `file:` dependencies.
+- `pg` is a peer of server-kit (add it to the business system's dependencies if you use the PostgreSQL store).
+- web-kit is distributed as `.ts`, so load it with the business web app's bundler (Vite, etc.).
 
-## 2. ファイルの形（見本と同じ分け方）
+## 2. File layout (split the same way as the sample)
 
 ```
-bridge.manifest.yaml      システムの自己紹介（system.id = DSH のアプリ id）            → 04-manifest.md
-src/config.mjs            環境変数だけ（秘密の既定値は開発用だけ。本番では必須。他のシステムの DB 名は拒む）
-src/auth.mjs              自分のログインとセッション：authenticate(req)・isSessionLive
-src/domain.mjs            業務の規則。状態の変化は kit.tx + kit.emitEvent、承認の規則（mayDecide）は 1 か所
-src/hooks.mjs             employees・recipientsFor・approvals・proposalKinds・reports・piiScan（・eventDelegations） → 05-business-side.md
-src/routes.mjs            業務 API（/api/*）：AI の読取は kit.readToolPolicy、書込みは { allow: ['user'] }
-src/help.mjs              マニュアル → 索引 → createHelpService                              → 08-optional-features.md
-src/app.mjs, server.mjs   createBridgeApp + store.migrate() + 業務のマイグレーション、startScheduler
-src/migrations/*.sql      業務の表（bridge_* は kit が作る）
-manual/NN-*.md            1 画面 = 1 節
-test/fixtures.mjs         conformance の fixtures                                            → 10-verification.md
-test/conformance.test.mjs suite を汎用の HTTP adapter で（見本と同じ名前のファイルを写して直す）
-test/*.test.mjs           業務のテスト
-<product>/dsh-profile/    profile/template の写しと、手書きのツール・文面のモジュール        → 06-dsh-profile.md
-web/                      業務 Web（React + web-kit）                                        → 07-web-and-bff.md
-bff/                      業務 Web の BFF（@dsh-bridge/gateway）
+bridge.manifest.yaml      the system's self-description (system.id = the DSH app id)           → 04-manifest.md
+src/config.mjs            environment variables only (secret defaults are for development only; required in production; rejects other systems' DB names)
+src/auth.mjs              its own login and sessions: authenticate(req), isSessionLive
+src/domain.mjs            business rules. State changes via kit.tx + kit.emitEvent; the approval rule (mayDecide) in one place
+src/hooks.mjs             employees, recipientsFor, approvals, proposalKinds, reports, piiScan (, eventDelegations) → 05-business-side.md
+src/routes.mjs            business API (/api/*): AI reads use kit.readToolPolicy, writes use { allow: ['user'] }
+src/help.mjs              manual → index → createHelpService                                   → 08-optional-features.md
+src/app.mjs, server.mjs   createBridgeApp + store.migrate() + business migrations, startScheduler
+src/migrations/*.sql      business tables (bridge_* are created by the kit)
+manual/NN-*.md            1 screen = 1 section
+test/fixtures.mjs         conformance fixtures                                                 → 10-verification.md
+test/conformance.test.mjs the suite with the generic HTTP adapter (copy the sample's file of the same name and adapt it)
+test/*.test.mjs           business tests
+<product>/dsh-profile/    a copy of profile/template, plus hand-written tool and wording modules → 06-dsh-profile.md
+web/                      business web app (React + web-kit)                                   → 07-web-and-bff.md
+bff/                      the business web app's BFF (@dsh-bridge/gateway)
 ```
 
-- `web/` と `bff/` には framework の中に見本が無い（見本は素の JS の 1 画面だけ）。作るときの規則は `07-web-and-bff.md` にある。
-  BFF を置かずに業務システムが画面を配る形もできるが、その場合 BFF だけの操作（Web アシスタント・個人ボットの登録）は使えない（秘密をブラウザに出して代わりにしない）。
+- There is no sample for `web/` and `bff/` inside the framework (the sample has only a single plain-JS screen). The rules for building them are in `07-web-and-bff.md`.
+  The business system can also serve its screens without a BFF, but then the BFF-only operations (web assistant, personal bot registration) are unavailable (do not substitute for them by exposing secrets to the browser).
 
-## 3. 作る順序
+## 3. Build order
 
-1. 見本の `examples/equipment-inspection` を読み、動かす（`<framework>` の GUIDELINE a.2：PostgreSQL・`EQUIPMENT_DATABASE_URL`・`pnpm --filter @dsh-bridge/example-equipment-inspection start`）。
-2. 新しいリポジトリ（または `examples/<id>/`）を作り、上の形でファイルを置く。見本からは**構成と書き方**を写し、業務の中身は自分のものにする。
-3. `bridge.manifest.yaml` を書き、`bridge-validate manifest --strict` を通す（04）。
-4. 業務の表・業務の規則（domain）・hooks・routes を書く（05）。状態の変化はすべて `kit.tx` + `emitEvent`。
-5. 業務のテストと conformance（汎用 HTTP adapter）を書いて通す（10）。
-6. DSH の profile（06）、業務 Web と BFF（07）、自動タスク（06）、任意の機能（08）。
+1. Read and run the sample `examples/equipment-inspection` (`<framework>` GUIDELINE a.2: PostgreSQL, `EQUIPMENT_DATABASE_URL`, `pnpm --filter @dsh-bridge/example-equipment-inspection start`).
+2. Create a new repository (or `examples/<id>/`) and lay out the files as above. Copy the **structure and coding style** from the sample; make the business content your own.
+3. Write `bridge.manifest.yaml` and pass `bridge-validate manifest --strict` (04).
+4. Write the business tables, business rules (domain), hooks and routes (05). Every state change goes through `kit.tx` + `emitEvent`.
+5. Write and pass the business tests and conformance (generic HTTP adapter) (10).
+6. The DSH profile (06), the business web app and BFF (07), automatic tasks (06), optional features (08).
 
-## 4. 規則
+## 4. Rules
 
-- **MUST NOT** framework の中（`packages/*`・`plugins/*`・`vendor/*`・`profile/template`・`profile/scripts`）を自分のシステムのために書き換えない
-  （`examples/<id>` に置くときも同じ）。足りないところは hooks・`toolModules` / `templateModules`・プラグインと profile の設定・製品の profile の写しで補う。
-- 役割の名前は自由（conformance の fixtures で suite の汎用の役割 `admin`・`manager`・`staff`・`billing` に写す）。
-- 秘密は `src/config.mjs` で環境変数から読み、本番では既定値を拒む（見本の `src/config.mjs` を参照）。
+- **MUST NOT** modify the framework's internals (`packages/*`, `plugins/*`, `vendor/*`, `profile/template`, `profile/scripts`) for your own system
+  (the same applies when placing it in `examples/<id>`). Fill gaps with hooks, `toolModules` / `templateModules`, plugin and profile settings, and the product's copy of the profile.
+- Role names are free (map them to the suite's generic roles `admin`, `manager`, `staff`, `billing` in the conformance fixtures).
+- Read secrets from environment variables in `src/config.mjs` and reject the defaults in production (see the sample's `src/config.mjs`).

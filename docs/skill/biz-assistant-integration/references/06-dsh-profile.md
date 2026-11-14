@@ -1,90 +1,90 @@
-# 06 DSH の製品 profile に登録する・自動タスクを有効にする
+# 06 Register in the DSH product profile and enable automatic tasks
 
-正本：`docs/GUIDELINE.md` b.5・b.7・a.4・d.7・d.8、`<framework>/profile/template/cordis.patch.yml`（コメントに見本）、`profile/template/auto-tasks/README.md`、`plugins/*/README.md`。
+Sources of truth: `docs/GUIDELINE.en.md` b.5, b.7, a.4, d.7, d.8, `<framework>/profile/template/cordis.patch.yml` (samples in its comments), `profile/template/auto-tasks/README.md`, `plugins/*/README.md`.
 
-## 1. profile を写して埋める
+## 1. Copy the profile and fill it in
 
-1. `<framework>/profile/template/` を自分の製品（例 `<product>/dsh-profile/`）にコピーし、`cordis.patch.yml` の `<placeholder>` をすべて埋める
-   （YAML のコメントの中の `<…>` は数えない）。雛形の `auto-tasks/example-report-overdue.json`（見本のアプリのタスク）は消すか自分のタスクに置き換える。
-2. **アプリのボット**を作り `botId` を控える（Slack App・LINE 公式アカウント・Teams Bot・WeCom の自社開発アプリ・Lark アプリ。個人 WeChat は 1 アカウント 1 ボットなので複数アプリに `multiApp: true`）。
-   ボットの認証情報はユーザーに入れてもらう。
-3. **レジストリ**（`bridge-apps`）に書く：
+1. Copy `<framework>/profile/template/` into your own product (e.g. `<product>/dsh-profile/`) and fill in every `<placeholder>` in `cordis.patch.yml`
+   (`<…>` inside YAML comments is not counted). Delete the template's `auto-tasks/example-report-overdue.json` (a task of the sample app) or replace it with your own task.
+2. Create the **app bot** and note its `botId` (Slack App, LINE Official Account, Teams Bot, WeCom self-built app, Lark app. Personal WeChat allows one bot per account, so use `multiApp: true` for several apps).
+   Have the user enter the bot's credentials.
+3. Write the **registry** (`bridge-apps`):
 
 ```yaml
 - id: bridge-apps
   name: '@dsh-bridge/dsh-core'
   config:
-    strict: true                                  # アプリが 2 つ以上なら必須
+    strict: true                                  # required with two or more apps
     applications:
-      - id: order-desk                            # = manifest の system.id
-        name: 受注管理                              # 【受注管理】と署名「— 受注管理 AI 秘書」
-        namespace: order                          # ツールは order_*
+      - id: order-desk                            # = system.id in the manifest
+        name: Order Desk                          # shown as the card prefix and in the signature "— Order Desk AI secretary"
+        namespace: order                          # tools are order_*
         paths: v1
-        apiUrlEnv: ORDER_API_URL                  # 呼ぶたびに読む
-        serviceTokenEnv: ORDER_SERVICE_TOKEN      # トークンそのものは yml に書かない
+        apiUrlEnv: ORDER_API_URL                  # read on every call
+        serviceTokenEnv: ORDER_SERVICE_TOKEN      # never write the token itself in the yml
         manifestUrl: /bridge/v1/manifest          # etag / 304
-        generateTools: true                       # manifest の読取ツールを生成
+        generateTools: true                       # generate read tools from the manifest
         agents: [order-assistant]
-        delegation: { unattendedPolicy: deny }    # 自動タスクは既定で業務データ無し
+        delegation: { unattendedPolicy: deny }    # automatic tasks get no business data by default
         bots:
-          - { platform: slack, botId: <受注管理の Slack App の bot id> }
+          - { platform: slack, botId: <bot id of the Order Desk Slack App> }
 ```
 
-   - `manifestFile: pkg:…` は DSH の profile から解決できるパッケージのときだけ。別リポジトリなら絶対パスか、省いて `manifestUrl` だけ。
-4. 手書きのツール（提案ツールなど。`access: propose` のツールは生成されない）は `bridge-tools` の `toolModules`、通知の文面は `bridge-notify` の `templateModules`
-   （GUIDELINE c 節。業務データは `kit.requestJson` だけで読み、書込みは `kit.proposeTool` の提案だけ。業務 DB・秘密に触れない）。
+   - `manifestFile: pkg:…` only for a package that the DSH profile can resolve. For another repository, use an absolute path, or omit it and keep only `manifestUrl`.
+4. Hand-written tools (proposal tools and so on; tools with `access: propose` are not generated) go in `toolModules` of `bridge-tools`; message wording goes in `templateModules` of `bridge-notify`
+   (GUIDELINE section c. Read business data only with `kit.requestJson`, and write only as `kit.proposeTool` proposals. Do not touch the business DB or secrets).
 
-## 2. 送信の設定は閉じた値のまま（d.8）
+## 2. Keep the outbound settings at their closed values (d.8)
 
-雛形は次の値で出荷される。**消さず、書き方も変えない**（`check.mjs` は文字の形で確かめるので、1 行に 1 つの値・`name:` の行を残す。`config: { … }` の 1 行に書き換えると `closed_value` で落ちる）。
+The template ships with the following values. **Do not delete them, and do not change how they are written** (`check.mjs` checks the textual form, so keep one value per line and keep the `name:` lines. Rewriting them into the one-line form `config: { … }` fails with `closed_value`).
 
-| 部品 | 値 | 意味 |
+| Component | Value | Meaning |
 |---|---|---|
-| IM（dsh-im） | `forwardPluginSources: []` | 起動の答えを会話に写さない |
-| 定時実行（dsh-proactive） | `modelTools: reclaim`、`deliveryGuard: required` | モデルに任意の宛先を指定させない、守りが無ければ送らない |
-| 自動タスク（dsh-auto-tasks） | `restrictDelivery: true`、`mail: false` | 固定の配信先・メールを使わない |
-| bridge-identity / bridge-tools | `groupChat: deny` | グループ会話では業務を扱わない |
-| bridge-notify | `aiReportGuard: screen`、`proactiveDelivery: deny`、`audienceFallback: none`、`audienceText: template` | 定時報告の本文検査、業務アラームを送らない、受信者の代替なし、自動タスクの報告は固定の文面 |
+| IM (dsh-im) | `forwardPluginSources: []` | Do not copy launch replies into the conversation |
+| Scheduled runs (dsh-proactive) | `modelTools: reclaim`, `deliveryGuard: required` | The model cannot specify arbitrary destinations; nothing is sent without the guard |
+| Automatic tasks (dsh-auto-tasks) | `restrictDelivery: true`, `mail: false` | No fixed delivery targets, no mail |
+| bridge-identity / bridge-tools | `groupChat: deny` | Business is not handled in group conversations |
+| bridge-notify | `aiReportGuard: screen`, `proactiveDelivery: deny`, `audienceFallback: none`, `audienceText: template` | Scheduled report bodies are checked, business alarms are not sent, no fallback recipients, automatic task reports use fixed wording |
 
-- **開けるのは明示の opt-in だけ**：その行を製品の patch で変え、理由をコメントに残す。既にある項目に値だけ足す（同じ id の項目を 2 つ作らない）。
-- `install.mjs` は固定の配信先（`--auto-task-session / --auto-task-bot / --auto-task-target`）を拒否する（exit 2）。
+- **Opening a setting is explicit opt-in only**: change that line in the product patch and leave the reason in a comment. For an entry that already exists, only add values (do not create two entries with the same id).
+- `install.mjs` rejects fixed delivery targets (`--auto-task-session / --auto-task-bot / --auto-task-target`) (exit 2).
 
-## 3. そのほかの設定
+## 3. Other settings
 
-- **AI 社員のプリセット**：雛形の `business-assistant` を製品に合わせ、manifest の playbook の `agent` ごとに同じ形のプリセットを足す。persona の固定の規則の文は残す。
-  マニュアルを使うなら `prefix` に `helpRules('<ns>_help_search')`（`@dsh-bridge/dsh-core`）が返す文を node で出力して**そのまま貼る**。
-- **リンクの検査**：bridge-identity に `linkGuard: { webUrl: <既定のアプリの業務 Web の URL>, webUrls: { <application-id>: <URL> } }` を**すべてのアプリについて**書く。
-  検査が働くのは URL と manifest の `web.routes` の両方があるときだけ（`check.mjs` の規則 `link_guard`）。
-- **アプリが 2 つ以上**：既定でないアプリごとに `bridge-notify` / `bridge-approvals` の `applications.<id>.webUrl`（と `bots`）、`bridge-assistant` の `agents[].application`、
-  `linkGuard.webUrls.<id>`、自動タスクの委託（下の 4）を書く。書かないと空のまま動く。
-- 雛形の bundle には長期記憶（bridge-memory）・プロフィール（bridge-persona）・文書の読み取り（bridge-reader）が入っている。業務システムに対応する経路が無ければ、それぞれ手元の検査だけ・プロフィール無し・何もしない、で動く。
+- **AI employee presets**: adapt the template's `business-assistant` to your product, and add a preset of the same shape for each `agent` of the manifest's playbooks. Keep the fixed-rule text of the persona.
+  If you use the manual, print the text returned by `helpRules('<ns>_help_search')` (`@dsh-bridge/dsh-core`) with node and **paste it as is** into `prefix`.
+- **Link checking**: in bridge-identity, write `linkGuard: { webUrl: <business web app URL of the default app>, webUrls: { <application-id>: <URL> } }` **for every app**.
+  The check works only when there is both a URL and `web.routes` in the manifest (rule `link_guard` in `check.mjs`).
+- **Two or more apps**: for each non-default app, write `applications.<id>.webUrl` (and `bots`) of `bridge-notify` / `bridge-approvals`, `agents[].application` of `bridge-assistant`,
+  `linkGuard.webUrls.<id>`, and delegation for automatic tasks (4 below). If you do not, the app runs empty.
+- The template bundle includes long-term memory (bridge-memory), the profile (bridge-persona) and document reading (bridge-reader). If the business system has no matching route, they run with local checks only, with no profile, and doing nothing, respectively.
 
-## 4. 入れて動かす
+## 4. Install and run
 
 ```sh
-node <framework>/profile/scripts/install.mjs --source <product>/dsh-profile --home <隔離した home> --profile <名前>   # 個人の ~/.dsh は拒否される
-node <framework>/profile/scripts/check.mjs <product>/dsh-profile/cordis.patch.yml                                  # 送信の設定・link_guard・placeholder
+node <framework>/profile/scripts/install.mjs --source <product>/dsh-profile --home <isolated home> --profile <name>   # a personal ~/.dsh is rejected
+node <framework>/profile/scripts/check.mjs <product>/dsh-profile/cordis.patch.yml                                  # outbound settings, link_guard, placeholders
 ```
 
-- DSH は隔離した home で動かす（GUIDELINE a.4 のコマンド例）。DSH が出す `dsh web: …?token=…` は owner の資格情報なので、ブラウザに渡さず gateway だけが使う。
-  DSH は作業ディレクトリの `.env` も読むので、リポジトリの直下では起動しない。デモ環境・本番が使うポートは使わない。
-- 秘密（サービストークン・ボットの認証情報・モデルのキー）は環境変数か秘密の保管場所から。ユーザーに入れてもらう。
+- Run DSH in an isolated home (the command example in GUIDELINE a.4). The `dsh web: …?token=…` that DSH prints is the owner's credential, so do not give it to the browser; only the gateway uses it.
+  DSH also reads `.env` in the working directory, so do not start it at the repository root. Do not use the ports of the demo environment or production.
+- Secrets (service token, bot credentials, model keys) come from environment variables or a secret store. Have the user enter them.
 
-## 5. 自動タスクを有効にする（b.7）
+## 5. Enable automatic tasks (b.7)
 
-自動タスクのターンには発信者がいないので、既定では業務データを読めない（`unattendedPolicy: deny`）。
+An automatic-task turn has no sender, so by default it cannot read business data (`unattendedPolicy: deny`).
 
 ```sh
-# 仕事の種類ごとに委託先を分ける（推奨）
+# use a different delegate for each kind of work (recommended)
 node <framework>/profile/scripts/install.mjs --home <home> --auto-task-delegate billing=line:<userId>,ops=line:<userId>,inspector=each
-# manifest の playbook（DSH が一度起動し、plugin-events がデプロイした後）を id で有効にする
+# enable manifest playbooks by id (after DSH has started once and plugin-events has deployed them)
 node <framework>/profile/scripts/install.mjs --home <home> --skip-install --enable-auto-tasks pb_<application-id>_<playbook>
-node <framework>/profile/scripts/install.mjs --home <home> --auto-task-delegate off    # deny に戻す
+node <framework>/profile/scripts/install.mjs --home <home> --auto-task-delegate off    # back to deny
 ```
 
-- `<class>=<platform>:<userId>`：その分類の playbook はその職員の委託で動く。広い役割（管理者など）を選ばない（`unattendedWarnRoles` で警告を出せる）。
-- `<class>=each`：回ごとに起動 event の本人の委託。業務システムの `hooks.eventDelegations` が要る。id を名指ししたときだけ有効になる。
-- `--auto-task-delegate` が効くのは**既定のアプリ**（`default: true` かアプリが 1 つ）だけ。既定でないアプリは製品の patch の `bridge-tools.applications.<id>` に手で書き、
-  `check.mjs` は `--allow unattendedPolicy` で走らせ、その行の上に理由（どの分類を・どの狭い役割の職員に）をコメントで残す。
-- playbook の `agent` のプリセットを製品 profile に定義しておく。許されるのは読取と、その playbook の `tools` に挙がった提案だけ。
-- タスクの有効化に再起動は不要。委託（patch）とプラグインの変更は DSH の再起動が要る。
+- `<class>=<platform>:<userId>`: playbooks of that class run under that employee's delegation. Do not choose a broad role (such as administrator) (`unattendedWarnRoles` can emit a warning).
+- `<class>=each`: on each run, the delegation of the person in the triggering event. Requires the business system's `hooks.eventDelegations`. Enabled only when named by id.
+- `--auto-task-delegate` applies only to the **default app** (`default: true`, or the only app). For a non-default app, write it by hand in `bridge-tools.applications.<id>` of the product patch,
+  run `check.mjs` with `--allow unattendedPolicy`, and leave the reason (which class, entrusted to an employee with which narrow role) in a comment above that line.
+- Define the presets for the playbooks' `agent` in the product profile. Only reads and the proposals listed in that playbook's `tools` are allowed.
+- Enabling a task needs no restart. Changes to delegation (patch) and plugins need a DSH restart.
