@@ -1,5 +1,10 @@
 # Biz Assistant Framework
 
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Built on DeepSeek Harness](https://img.shields.io/badge/built%20on-DeepSeek%20Harness-4D6BFE.svg)](https://github.com/deepseek-ai/deepseek-harness)
+[![Bridge v1 conformance 52/52](https://img.shields.io/badge/Bridge%20v1%20conformance-52%2F52-2ea44f.svg)](packages/protocol)
+[![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-339933.svg)](package.json)
+
 **English** · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
 **Every IT system, a workplace of AI employees that think and act.**<br>
@@ -18,6 +23,47 @@ create, read and update. **AI employees** come alive and, in each employee's own
 
 **52** conformance checks (Bridge v1) · **9** AI-plane plugins · **12** chat platforms for personal bots ·
 **0** actions the AI can confirm, approve or pay
+
+## See it in 3 minutes
+
+No API key, no chat account: the example business system (equipment inspection, fictional data) and the framework plugins run on
+a **real DeepSeek Harness** with a scripted model and a mock LINE. Needs Node 22.19+, pnpm, Docker and the DSH CLI.
+
+```sh
+git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
+pnpm install
+npm install -g @deepseek-ai/dsh@0.2.1-rc.2
+pnpm demo        # a throwaway PostgreSQL in Docker; prints the conversation and PASS / FAIL per scenario
+```
+
+An excerpt of what it prints — the employee asks, the system notices, the AI employee asks the right person, a person decides:
+
+```text
+manager（設備責任者） ▶ 期限切れの点検は？
+  AI 社員 ▶ manager（設備責任者）
+    │ 期限切れの点検は 1 件です（FE-002）。
+
+業務システム ▶ (業務システム：点検の期限切れを検出（inspection.overdue）)
+  AI 社員 ▶ inspector1（点検員）  ［自分から］
+    │ 【対応のお願い】点検期限の超過
+    │ お疲れさまです。点検期限を 3 日過ぎた設備があります（期限 2026-11-11）。…
+    │ [ 業務 Web を開いて対応 ]
+
+inspector1（点検員） ▶ (アプリで修理依頼を登録（見積 12000 円）)
+  AI 社員 ▶ manager（設備責任者）  ［自分から］
+    │ 【承認のお願い】修理依頼の承認  設備コード FE-002 · 見積額 12000円
+    │ 文字で返信する場合：「承認 321904」／「差戻 321904 理由」
+    │ [ 承認 ] [ 差戻 ] [ 業務Webで詳細を見る ]
+
+manager（設備責任者） ▶ (カードの［承認］を押す)
+  AI 社員 ▶ manager（設備責任者）
+    │ 承認しました。ありがとうございます。結果はカードにも反映します。
+```
+
+**For DeepSeek Harness users:** the AI plane is a set of ordinary dsh plugins (`plugins/*`, `@dsh-bridge/plugin-*`) on
+`@dsh-bridge/dsh-core` — identity, tools generated from the manifest, events, notifications, approvals, the assistant, memory,
+persona and document reading. Most dsh plugins help you write code; these let a dsh agent work **inside a business system**,
+with the employee's own rights.
 
 ## From a tool that records to a colleague who works with you
 
@@ -182,6 +228,8 @@ pnpm install
 pnpm test                    # every workspace package (vendor/ excluded)
 pnpm test:protocol           # or: test:core, test:gateway, test:testing, test:plugins, test:profile, test:examples
 pnpm validate                # lint the OpenAPI and validate the bundled manifests
+
+pnpm demo                    # the end-to-end run below, with a throwaway PostgreSQL in Docker, printed as a conversation
 
 # end to end on a real DSH (dsh CLI installed globally, local PostgreSQL; mocks for the model and LINE)
 FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm run e2e

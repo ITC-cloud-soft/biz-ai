@@ -37,7 +37,8 @@ Tests: `node --test --test-isolation=none test/*.test.mjs` (root: `pnpm test:tes
 The whole framework on a **real DSH** (the globally installed DSH CLI), with the mocks above and nothing real:
 
 ```sh
-FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm run e2e        # [-- --keep | --reuse-home | --json-only]
+FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm run e2e        # [-- --keep | --reuse-home | --json-only | --story]
+pnpm demo                    # the same run with a throwaway PostgreSQL container (Docker) and --story: the conversation at the end
 ```
 
 - `examples/equipment-inspection` on its own port with a temporary database `fw_equipment_e2e_test` (only the server and

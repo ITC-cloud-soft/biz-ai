@@ -206,9 +206,9 @@ export function cardWording(raw) {
   return Object.keys(kept).length ? kept : null
 }
 
-/** 業務システムのカード件名 → 何の承認か（'修理依頼の承認依頼' → '修理依頼'。種類だけ。無ければ ''）。 */
+/** 業務システムのカード件名 → 何の承認か（'修理依頼の承認依頼' / '修理依頼の承認' → '修理依頼'。種類だけ。無ければ ''）。 */
 export function approvalSubject(title) {
-  return String(title ?? '').trim().replace(/[【】]/g, '').replace(/の?承認依頼$/, '').slice(0, 40)
+  return String(title ?? '').trim().replace(/[【】]/g, '').replace(/の?承認(依頼)?$/, '').slice(0, 40)
 }
 
 /**

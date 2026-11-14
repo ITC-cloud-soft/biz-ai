@@ -43,6 +43,7 @@ import { assertIsolatedHome, assertPortsUsable, redactor, startDsh } from '../sr
 import { dshHostClient } from '../src/dsh-host.mjs'
 import { flexSummary, lineWebhookSender, randomLineUserId, startMockLine } from '../src/mock-line.mjs'
 import { startMockLlm } from '../src/mock-llm.mjs'
+import { printStory } from './story.mjs'
 import { sanitizedEnv, sleep, startProcess, waitFor } from '../src/procs.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -52,6 +53,7 @@ const args = new Set(process.argv.slice(2))
 const KEEP = args.has('--keep')
 const REUSE_HOME = args.has('--reuse-home') // keep the installed profile dependencies between runs (install.mjs still refreshes the framework packages)
 const JSON_ONLY = args.has('--json-only')
+const STORY = args.has('--story') // print the conversation as a chat transcript at the end (pnpm demo)
 
 const PORT_KEYS = ['app', 'dsh', 'llm', 'line', 'gateway', 'other']
 function parsePorts(raw) {
@@ -93,6 +95,7 @@ const LINE_USERS = { manager: randomLineUserId(), inspector: randomLineUserId(),
 const log = (...m) => { if (!JSON_ONLY) console.log(...m) }
 const redactAll = redactor(Object.values(SECRETS))
 const results = []
+const said = [] // what the people did, for --story: { at, who, text | action, replyToken? }
 const t0 = Date.now()
 function record(scenario, step, ok, evidence = {}, note = '') {
   const status = ok === 'skip' ? 'skip' : ok ? 'pass' : 'fail'
@@ -483,6 +486,7 @@ async function main() {
   const say = async (who, text, pattern, { timeoutMs = 90_000 } = {}) => {
     const at = Date.now()
     const sent = await webhook.text(LINE_USERS[who], text)
+    said.push({ at, who, text, replyToken: sent.event?.replyToken })
     const reply = await line.waitForMessage((e) => toUser(sent.event, LINE_USERS[who])(e) && (!pattern || pattern.test(messageText(e))), { since: at, timeoutMs })
     return { status: sent.status, reply, text: reply ? messageText(reply) : null, at }
   }
@@ -499,6 +503,7 @@ async function main() {
     const html = await page.text()
     const linked = {}
     for (const [who, loginId] of [['manager', 'manager'], ['inspector', 'inspector1']]) {
+      said.push({ at: Date.now(), who, action: 'アプリで「連携コードを発行」' })
       const code = must(await call('POST', '/bridge/v1/me/link-codes', { cookie: actors[loginId].cookie }), [200, 201], `link code ${loginId}`).code
       const ok = await say(who, `連携 ${code}`, /連携/, { timeoutMs: 30_000 })
       const ids = must(await call('GET', '/bridge/v1/me/identities', { cookie: actors[loginId].cookie }), 200, 'identities').identities ?? []
@@ -533,8 +538,9 @@ async function main() {
 
   // ── f: isolation (another application, the role scope of a delegation, no writes with a delegation) ─────────────
   {
-    // bridge-events polls every application's event stream with that application's service token; that is not a tool call
-    const toolTraffic = (from) => other.requests.slice(from).filter((q) => q.delegation || !/^\/bridge\/v1\/(events|manifest)\b/.test(q.path))
+    // bridge-events polls every application's event stream, and bridge-reader its document reads, with that application's
+    // service token (no delegation); that is not a tool call
+    const toolTraffic = (from) => other.requests.slice(from).filter((q) => q.delegation || !/^\/bridge\/v1\/(events|manifest|document-reads)\b/.test(q.path))
     const otherBefore = other.requests.length
     const r = await say('manager', '日報も見せて', /使えません|想定外|ツール一覧/)
     record('f', 'another application\'s tool (example_app_list_reports) is refused in the equipment conversation; no delegation / tool call reaches that application',
@@ -584,6 +590,7 @@ async function main() {
   {
     const at = Date.now()
     const proposalsBefore = must(await call('GET', '/bridge/v1/proposals', { cookie: actors.manager.cookie }), 200, 'proposals').proposals ?? []
+    said.push({ at: Date.now(), who: 'system', action: '業務システム：点検の期限切れを検出（inspection.overdue）' })
     const scan = must(await call('POST', '/api/admin/overdue-scan', { cookie: actors.manager.cookie }), 200, 'overdue scan')
     const eventId = scan.created?.[0]?.eventId
     const notice = (who) => line.waitForMessage((e) => e.kind === 'push' && e.to === LINE_USERS[who] && /点検期限/.test(messageText(e)) && !AUTO_TASK_REPORT.test(messageText(e)), { since: at, timeoutMs: 90_000 })
@@ -635,6 +642,7 @@ async function main() {
     const fe = equipment.find((x) => x.code === 'FE-002') ?? equipment[0]
     const request = async (estimatedCost) => {
       const at = Date.now()
+      said.push({ at, who: 'inspector', action: `アプリで修理依頼を登録（見積 ${estimatedCost} 円）` })
       const created = must(await call('POST', '/api/repair-requests', { cookie: actors.inspector1.cookie, body: { equipmentId: fe.id, estimatedCost, detail: 'E2E: 点検で不具合' } }), 201, 'repair request')
       const card = await line.waitForMessage((e) => e.kind === 'push' && e.to === LINE_USERS.manager && e.messages.some((x) => x.type === 'flex') && /承認のお願い/.test(messageText(e)), { since: at, timeoutMs: 90_000 })
       const flex = card ? flexSummary(card.messages.find((x) => x.type === 'flex')) : null
@@ -657,6 +665,7 @@ async function main() {
     if (approve) {
       const at = Date.now()
       const pressed = await webhook.postback(LINE_USERS.manager, approve.data)
+      said.push({ at, who: 'manager', action: 'カードの［承認］を押す', replyToken: pressed.event?.replyToken })
       ack = await line.waitForMessage(toUser(pressed.event, LINE_USERS.manager), { since: at, timeoutMs: 30_000 })
       decided = await waitFor(async () => { const s = await statusOf(first.approvalId); return s?.status === 'approved' ? s : null }, { timeoutMs: 20_000, label: 'approved' }).catch(() => null)
       updated = await line.waitForMessage((e) => e.kind === 'push' && e.to === LINE_USERS.manager && /【ご報告】/.test(messageText(e)) && /承認済み/.test(messageText(e)), { since: at, timeoutMs: 30_000 })
@@ -721,6 +730,7 @@ if (mocks) {
   writeFileSync(join(WORK, 'llm-requests.json'), redactAll(JSON.stringify(mocks.llm.requests, null, 2)) + '\n', 'utf8')
   writeFileSync(join(WORK, 'line-api.json'), redactAll(JSON.stringify(mocks.line.log, null, 2)) + '\n', 'utf8')
 }
+if (STORY && mocks) printStory({ said, lineLog: mocks.line.log, users: LINE_USERS })
 writeFileSync(join(WORK, 'result.json'), redactAll(JSON.stringify(summary, null, 2)) + '\n', 'utf8')
 if (!JSON_ONLY) {
   console.log('\n== framework e2e ==')

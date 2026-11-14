@@ -1,5 +1,10 @@
 # Biz Assistant Framework
 
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Built on DeepSeek Harness](https://img.shields.io/badge/built%20on-DeepSeek%20Harness-4D6BFE.svg)](https://github.com/deepseek-ai/deepseek-harness)
+[![Bridge v1 conformance 52/52](https://img.shields.io/badge/Bridge%20v1%20conformance-52%2F52-2ea44f.svg)](packages/protocol)
+[![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-339933.svg)](package.json)
+
 [English](README.md) · **日本語** · [简体中文](README.zh-CN.md)
 
 **あらゆる IT システムを、考えて動く AI 社員の職場に。**<br>
@@ -18,6 +23,46 @@ Bizアシスタント（Biz Assistant、パッケージ `@dsh-bridge/*`）は、
 
 **52** 適合性テストの項目（Bridge v1） · **9** AI 面のプラグイン · **12** 個人ボットで使えるチャット ·
 **0** AI が確定・承認・支払う操作
+
+## 3 分で動かしてみる
+
+API キーもチャットのアカウントも要りません。例の業務システム（設備点検、架空のデータ）と framework のプラグインが、
+**本物の DeepSeek Harness** の上で、台本どおりに答えるモデルとモックの LINE を相手に動きます。必要なのは Node 22.19 以上・pnpm・Docker・DSH CLI です。
+
+```sh
+git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
+pnpm install
+npm install -g @deepseek-ai/dsh@0.2.1-rc.2
+pnpm demo        # Docker で使い捨ての PostgreSQL。会話の記録とシナリオごとの PASS / FAIL を表示
+```
+
+表示される会話の一部です。職員が尋ね、システムが気づき、AI 社員が決める人に頼み、人が決めます。
+
+```text
+manager（設備責任者） ▶ 期限切れの点検は？
+  AI 社員 ▶ manager（設備責任者）
+    │ 期限切れの点検は 1 件です（FE-002）。
+
+業務システム ▶ (業務システム：点検の期限切れを検出（inspection.overdue）)
+  AI 社員 ▶ inspector1（点検員）  ［自分から］
+    │ 【対応のお願い】点検期限の超過
+    │ お疲れさまです。点検期限を 3 日過ぎた設備があります（期限 2026-11-11）。…
+    │ [ 業務 Web を開いて対応 ]
+
+inspector1（点検員） ▶ (アプリで修理依頼を登録（見積 12000 円）)
+  AI 社員 ▶ manager（設備責任者）  ［自分から］
+    │ 【承認のお願い】修理依頼の承認  設備コード FE-002 · 見積額 12000円
+    │ 文字で返信する場合：「承認 321904」／「差戻 321904 理由」
+    │ [ 承認 ] [ 差戻 ] [ 業務Webで詳細を見る ]
+
+manager（設備責任者） ▶ (カードの［承認］を押す)
+  AI 社員 ▶ manager（設備責任者）
+    │ 承認しました。ありがとうございます。結果はカードにも反映します。
+```
+
+**DeepSeek Harness を使っている方へ：** AI 面は `@dsh-bridge/dsh-core` の上の普通の dsh プラグイン（`plugins/*`、`@dsh-bridge/plugin-*`）です。
+本人確認、manifest から作るツール、イベント、通知、承認、アシスタント、記憶、人物設定、書類の読み取り。
+多くの dsh プラグインはコードを書くためのものですが、これは dsh のエージェントが**業務システムの中で、職員本人の権限で**働くためのものです。
 
 ## 記録する道具から、一緒に働く同僚へ
 
@@ -182,6 +227,8 @@ pnpm install
 pnpm test                    # ワークスペースのすべてのパッケージ（vendor/ は除く）
 pnpm test:protocol           # または：test:core, test:gateway, test:testing, test:plugins, test:profile, test:examples
 pnpm validate                # OpenAPI の lint と、同梱の manifest の検証
+
+pnpm demo                    # 下のエンドツーエンドを Docker の使い捨て PostgreSQL で。結果を会話として表示
 
 # 実際の DSH でのエンドツーエンド（dsh CLI をグローバルにインストール、ローカルの PostgreSQL。モデルと LINE はモック）
 FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm run e2e

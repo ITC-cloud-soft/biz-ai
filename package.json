@@ -19,6 +19,7 @@
     "test:profile": "pnpm --filter @dsh-bridge/profile test",
     "test:examples": "pnpm -r --if-present --filter \"./examples/*\" test",
     "validate": "node packages/protocol/bin/bridge-validate.mjs all",
-    "e2e": "node packages/testing/e2e/run.mjs"
+    "e2e": "node packages/testing/e2e/run.mjs",
+    "demo": "node packages/testing/e2e/demo.mjs"
   }
 }

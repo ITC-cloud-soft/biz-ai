@@ -1,9 +1,26 @@
 {
   "name": "@dsh-bridge/dsh-core",
-  "private": true,
   "version": "0.1.0",
   "license": "Apache-2.0",
   "description": "DSH Business Bridge — DSH side core: application registry, manifest holder, per-application business API client, delegation cache, session keys, tools-sdk, app-switch, secretary framing, delivery classification (and the bridge-apps DSH plugin)",
+  "keywords": [
+    "biz-assistant",
+    "ai-employee",
+    "ai-agent",
+    "business-systems",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin"
+  ],
+  "homepage": "https://github.com/ITC-cloud-soft/biz-ai/tree/main/packages/dsh-core#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ITC-cloud-soft/biz-ai.git",
+    "directory": "packages/dsh-core"
+  },
+  "bugs": {
+    "url": "https://github.com/ITC-cloud-soft/biz-ai/issues"
+  },
   "type": "module",
   "main": "src/index.js",
   "exports": {
@@ -37,12 +54,22 @@
     "node": ">=22.19"
   },
   "peerDependencies": {
-    "@dsh-bridge/protocol": "*"
+    "@dsh-bridge/protocol": "^0.1.0"
   },
   "devDependencies": {
     "@dsh-bridge/protocol": "workspace:*"
   },
   "scripts": {
     "test": "node --test --test-isolation=none test/*.test.mjs"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

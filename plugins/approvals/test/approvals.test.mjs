@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { apply as applyApprovals, cardWording, decisionErrorMessage, inject, name, MSG, replyMatcher } from '../src/index.js'
+import { apply as applyApprovals, approvalSubject, cardWording, decisionErrorMessage, inject, name, MSG, replyMatcher } from '../src/index.js'
 import { apply as applyEvents } from '@dsh-bridge/plugin-events'
 import { BridgeApiError } from '@dsh-bridge/dsh-core'
 import { makeCtx, makeSource, mockDshIm, mockStorageDomain, startFakeApi, waitFor } from './helpers.mjs'
@@ -132,6 +132,11 @@ async function setup({ supportsDialog = true, storage = mockStorageDomain(), fak
 const requested = (id = 1) => ({ id, type: 'approval.requested', aggregateType: 'approval', aggregateId: APPROVAL, payload: { approvalId: APPROVAL, expiresAt: '2099-01-01T00:00:00.000Z' }, at: '2026-10-25T00:00:00.000Z' })
 const sentTo = (im, userId) => im.state.sent.find((s) => s.to.userId === userId)
 const slack = (userId, extra = {}) => makeSource({ platform: 'slack', teamId: 'T1', userId, ...extra })
+
+test('approvalSubject: the kind of approval only (no doubled 承認)', () => {
+  for (const title of ['修理依頼の承認依頼', '修理依頼の承認', '【修理依頼】', '修理依頼承認']) assert.equal(approvalSubject(title), '修理依頼', title)
+  assert.equal(approvalSubject('承認依頼'), '')
+})
 
 test('metadata', () => {
   assert.equal(name, 'bridge-approvals')

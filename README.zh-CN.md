@@ -1,5 +1,10 @@
 # Biz Assistant Framework
 
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Built on DeepSeek Harness](https://img.shields.io/badge/built%20on-DeepSeek%20Harness-4D6BFE.svg)](https://github.com/deepseek-ai/deepseek-harness)
+[![Bridge v1 conformance 52/52](https://img.shields.io/badge/Bridge%20v1%20conformance-52%2F52-2ea44f.svg)](packages/protocol)
+[![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-339933.svg)](package.json)
+
 [English](README.md) · [日本語](README.ja.md) · **简体中文**
 
 **让每一个 IT 系统，都成为会思考、会行动的 AI 员工的职场。**<br>
@@ -18,6 +23,46 @@ Biz Assistant（Bizアシスタント，包名 `@dsh-bridge/*`）为过去只是
 
 **52** 项一致性检查（Bridge v1）· **9** 个 AI 平面插件 · **12** 个支持个人机器人的聊天平台 ·
 **0** 项可由 AI 确认、审批或支付的操作
+
+## 3 分钟跑起来看看
+
+不需要 API key，也不需要聊天账号：示例业务系统（设备点检，数据全部虚构）和 framework 的插件运行在**真实的 DeepSeek Harness** 上，
+对面是按脚本回答的模型和模拟的 LINE。需要 Node 22.19+、pnpm、Docker 和 DSH CLI。
+
+```sh
+git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
+pnpm install
+npm install -g @deepseek-ai/dsh@0.2.1-rc.2
+pnpm demo        # 用 Docker 起一个临时 PostgreSQL；打印对话记录和每个场景的 PASS / FAIL
+```
+
+输出的对话节选（示例系统是日语）：员工提问，系统发现问题，AI 员工去找该做决定的人，由人来决定。
+
+```text
+manager（設備責任者） ▶ 期限切れの点検は？
+  AI 社員 ▶ manager（設備責任者）
+    │ 期限切れの点検は 1 件です（FE-002）。
+
+業務システム ▶ (業務システム：点検の期限切れを検出（inspection.overdue）)
+  AI 社員 ▶ inspector1（点検員）  ［自分から］
+    │ 【対応のお願い】点検期限の超過
+    │ お疲れさまです。点検期限を 3 日過ぎた設備があります（期限 2026-11-11）。…
+    │ [ 業務 Web を開いて対応 ]
+
+inspector1（点検員） ▶ (アプリで修理依頼を登録（見積 12000 円）)
+  AI 社員 ▶ manager（設備責任者）  ［自分から］
+    │ 【承認のお願い】修理依頼の承認  設備コード FE-002 · 見積額 12000円
+    │ 文字で返信する場合：「承認 321904」／「差戻 321904 理由」
+    │ [ 承認 ] [ 差戻 ] [ 業務Webで詳細を見る ]
+
+manager（設備責任者） ▶ (カードの［承認］を押す)
+  AI 社員 ▶ manager（設備責任者）
+    │ 承認しました。ありがとうございます。結果はカードにも反映します。
+```
+
+**给 DeepSeek Harness 用户：** AI 平面就是一组普通的 dsh 插件（`plugins/*`、`@dsh-bridge/plugin-*`），基于 `@dsh-bridge/dsh-core`：
+身份、由 manifest 生成的工具、事件、通知、审批、助手、记忆、人设和文档读取。
+大多数 dsh 插件帮你写代码；这组插件让 dsh agent **在业务系统里、以员工本人的权限**工作。
 
 ## 从记录工具到协同工作的同事
 
@@ -175,6 +220,8 @@ pnpm install
 pnpm test                    # 所有 workspace 包（不含 vendor/）
 pnpm test:protocol           # 或：test:core, test:gateway, test:testing, test:plugins, test:profile, test:examples
 pnpm validate                # 检查 OpenAPI 并校验内置的 manifest
+
+pnpm demo                    # 即下面的端到端测试，用 Docker 临时 PostgreSQL，以对话形式输出
 
 # 在真实 DSH 上端到端测试（全局安装 dsh CLI、本地 PostgreSQL；模型和 LINE 使用 mock）
 FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm run e2e
