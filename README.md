@@ -4,6 +4,7 @@
 [![Built on DeepSeek Harness](https://img.shields.io/badge/built%20on-DeepSeek%20Harness-4D6BFE.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![Bridge v1 conformance 52/52](https://img.shields.io/badge/Bridge%20v1%20conformance-52%2F52-2ea44f.svg)](packages/protocol)
 [![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-339933.svg)](package.json)
+[![npm @dsh-bridge](https://img.shields.io/npm/v/@dsh-bridge/dsh-core.svg?label=npm%20%40dsh-bridge)](https://www.npmjs.com/org/dsh-bridge)
 
 **English** · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
@@ -63,7 +64,8 @@ manager（設備責任者） ▶ (カードの［承認］を押す)
 **For DeepSeek Harness users:** the AI plane is a set of ordinary dsh plugins (`plugins/*`, `@dsh-bridge/plugin-*`) on
 `@dsh-bridge/dsh-core` — identity, tools generated from the manifest, events, notifications, approvals, the assistant, memory,
 persona and document reading. Most dsh plugins help you write code; these let a dsh agent work **inside a business system**,
-with the employee's own rights.
+with the employee's own rights. On npm as [`@dsh-bridge/*`](https://www.npmjs.com/org/dsh-bridge); a DSH home gets them,
+with the product settings, from the profile template (`node profile/scripts/install.mjs`, see Quick start).
 
 ## From a tool that records to a colleague who works with you
 

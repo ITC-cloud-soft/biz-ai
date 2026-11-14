@@ -4,6 +4,7 @@
 [![Built on DeepSeek Harness](https://img.shields.io/badge/built%20on-DeepSeek%20Harness-4D6BFE.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![Bridge v1 conformance 52/52](https://img.shields.io/badge/Bridge%20v1%20conformance-52%2F52-2ea44f.svg)](packages/protocol)
 [![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-339933.svg)](package.json)
+[![npm @dsh-bridge](https://img.shields.io/npm/v/@dsh-bridge/dsh-core.svg?label=npm%20%40dsh-bridge)](https://www.npmjs.com/org/dsh-bridge)
 
 [English](README.md) · **日本語** · [简体中文](README.zh-CN.md)
 
@@ -62,7 +63,8 @@ manager（設備責任者） ▶ (カードの［承認］を押す)
 
 **DeepSeek Harness を使っている方へ：** AI 面は `@dsh-bridge/dsh-core` の上の普通の dsh プラグイン（`plugins/*`、`@dsh-bridge/plugin-*`）です。
 本人確認、manifest から作るツール、イベント、通知、承認、アシスタント、記憶、人物設定、書類の読み取り。
-多くの dsh プラグインはコードを書くためのものですが、これは dsh のエージェントが**業務システムの中で、職員本人の権限で**働くためのものです。
+多くの dsh プラグインはコードを書くためのものですが、これは dsh のエージェントが**業務システムの中で、職員本人の権限で**働くためのものです。npm では [`@dsh-bridge/*`](https://www.npmjs.com/org/dsh-bridge)。DSH home へは、製品の設定ごと profile の雛形
+（`node profile/scripts/install.mjs`、クイックスタート参照）で入れます。
 
 ## 記録する道具から、一緒に働く同僚へ
 

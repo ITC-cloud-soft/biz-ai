@@ -4,6 +4,7 @@
 [![Built on DeepSeek Harness](https://img.shields.io/badge/built%20on-DeepSeek%20Harness-4D6BFE.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![Bridge v1 conformance 52/52](https://img.shields.io/badge/Bridge%20v1%20conformance-52%2F52-2ea44f.svg)](packages/protocol)
 [![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-339933.svg)](package.json)
+[![npm @dsh-bridge](https://img.shields.io/npm/v/@dsh-bridge/dsh-core.svg?label=npm%20%40dsh-bridge)](https://www.npmjs.com/org/dsh-bridge)
 
 [English](README.md) · [日本語](README.ja.md) · **简体中文**
 
@@ -62,7 +63,8 @@ manager（設備責任者） ▶ (カードの［承認］を押す)
 
 **给 DeepSeek Harness 用户：** AI 平面就是一组普通的 dsh 插件（`plugins/*`、`@dsh-bridge/plugin-*`），基于 `@dsh-bridge/dsh-core`：
 身份、由 manifest 生成的工具、事件、通知、审批、助手、记忆、人设和文档读取。
-大多数 dsh 插件帮你写代码；这组插件让 dsh agent **在业务系统里、以员工本人的权限**工作。
+大多数 dsh 插件帮你写代码；这组插件让 dsh agent **在业务系统里、以员工本人的权限**工作。npm 上为 [`@dsh-bridge/*`](https://www.npmjs.com/org/dsh-bridge)；装进 DSH home 时连同产品设置一起，用 profile 模板
+（`node profile/scripts/install.mjs`，见快速开始）。
 
 ## 从记录工具到协同工作的同事
 
