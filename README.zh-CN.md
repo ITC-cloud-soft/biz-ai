@@ -212,7 +212,7 @@ AI 员工还拥有**公司设定的名字和性格**（昵称、语气、公司�
 | `plugins/reader` | `@dsh-bridge/plugin-reader` | `bridge-reader`：业务系统无法读取的扫描文档（图片、无文本层的 PDF）——从 `GET /bridge/v1/document-reads` 获取页面图片，由图像读取模型每次请求转写一页（无对话上下文），文本回传到 `POST .../result`（`docs/DOCUMENT_READS.md`） |
 | `profile/` | `@dsh-bridge/profile` | DSH 产品 profile 模板、`install.mjs`、自动任务模板格式 |
 | `vendor/` | `@care/dsh-im`、`@care/dsh-auto-tasks`、`@care/dsh-proactive` | DSH IM / auto-tasks / proactive 插件的 fork（各自独立的 npm 配置，见各自的 `FORK.md`） |
-| `examples/` | | `equipment-inspection`（基于 server-kit 的示例业务系统）、`care-billing`（首个用户的 manifest） |
+| `examples/` | | `leave-requests`（最小的系统：一个文件、无需数据库）、`equipment-inspection`（基于 server-kit 的示例业务系统）、`care-billing`（首个用户的 manifest） |
 | `docs/` | | `GUIDELINE.md`、`ARCHITECTURE.md`、幻灯片 |
 
 ## 快速开始
@@ -294,7 +294,7 @@ server-kit 在查找时应用个人机器人的所有者规则，并且只通过
 | [`docs/AI_EMPLOYEE_PROFILE.md`](docs/AI_EMPLOYEE_PROFILE.md) | 开发者 | AI 员工的资料（P1）以及外部连接 / 规则（P2・P3），已实现 |
 | [`docs/ASSISTANT_ATTACHMENTS.md`](docs/ASSISTANT_ATTACHMENTS.md) | 开发者 | 助手面板中的文件附件和 Markdown 回答（提案，实现中） |
 | [`packages/protocol/README.md`](packages/protocol/README.md) | 系统集成商 | Bridge v1、manifest、一致性测试及其 52 项检查 |
-| [`examples/equipment-inspection`](examples/equipment-inspection/README.md) · [`examples/care-billing`](examples/care-billing/README.md) | 开发者 | 基于 server-kit 的示例系统（52 / 52）· 首个用户的 manifest、registry 条目和映射表 |
+| [`examples/leave-requests`](examples/leave-requests/README.md) · [`examples/equipment-inspection`](examples/equipment-inspection/README.md) · [`examples/care-billing`](examples/care-billing/README.md) | 开发者 | 最小的系统：一个文件、无需数据库（52 / 52，英文）· 基于 server-kit 和 PostgreSQL 的示例系统（52 / 52）· 首个用户的 manifest、registry 条目和映射表 |
 
 ## 许可证
 

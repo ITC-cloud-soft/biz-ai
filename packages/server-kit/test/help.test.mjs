@@ -63,10 +63,11 @@ test('public: the service principal only (an employee is refused); sections: 404
   assert.equal((await call('GET', '/bridge/v1/help/sections/NOT-AN-ID', { headers: admin.headers })).status, 404)
 })
 
-test('without the help option the routes do not exist', async () => {
+test('without the help option the routes answer 404 after the gate', async () => {
   const plain = await (await createToy()).start()
   try {
     assert.equal((await client(plain.base)('GET', '/bridge/v1/help/search?q=x', { headers: S })).status, 404)
+    assert.equal((await client(plain.base)('GET', '/bridge/v1/help/public?q=x')).status, 401) // the gate first, as with the option
   } finally {
     await plain.stop()
   }

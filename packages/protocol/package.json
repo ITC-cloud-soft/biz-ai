@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/protocol",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "Apache-2.0",
   "description": "DSH Business Bridge protocol v1: OpenAPI 3.1, manifest / event JSON Schemas, validators, the conformance suite and the bridge-validate CLI",
   "keywords": [

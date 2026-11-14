@@ -165,7 +165,7 @@ The skill (English, `SKILL.md` + 10 references + a plan template) is a route map
 details always come from the repository. Contents: [`docs/skill/README.md`](docs/skill/README.md).
 Prefer to do it by hand? Read [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) — start with
 ["Connecting an existing business system: checklist"](docs/GUIDELINE.en.md#connecting-an-existing-business-system-checklist) — and the
-[sample system](examples/equipment-inspection/README.md) (52 / 52).
+[sample system](examples/equipment-inspection/README.md) (52 / 52), or the smallest one, [leave-requests](examples/leave-requests/README.md) (one file, no database, 52 / 52).
 
 ## What's inside
 
@@ -207,7 +207,7 @@ business code).
 | `plugins/reader` | `@dsh-bridge/plugin-reader` | `bridge-reader`: scanned documents the business system could not read (images, PDFs without a text layer) — page images from `GET /bridge/v1/document-reads`, transcribed by the image-reading model one page per request (no conversation), the text back to `POST .../result` (`docs/DOCUMENT_READS.md`) |
 | `profile/` | `@dsh-bridge/profile` | DSH product profile template, `install.mjs`, automatic task template format |
 | `vendor/` | `@care/dsh-im`, `@care/dsh-auto-tasks`, `@care/dsh-proactive` | forks of the DSH IM / auto-tasks / proactive plugins (own npm setup, see each `FORK.md`) |
-| `examples/` | | `equipment-inspection` (a sample business system on server-kit), `care-billing` (the first user's manifest) |
+| `examples/` | | `leave-requests` (the smallest system: one file, no database), `equipment-inspection` (a sample business system on server-kit), `care-billing` (the first user's manifest) |
 | `docs/` | | `GUIDELINE.md`, `ARCHITECTURE.md`, slides |
 
 ## Quick start
@@ -292,7 +292,7 @@ English and Chinese: [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) · [`docs/GU
 | [`docs/AI_EMPLOYEE_PROFILE.md`](docs/AI_EMPLOYEE_PROFILE.md) | developers | the AI employee's profile (P1) and the external connectors / rules (P2・P3), implemented |
 | [`docs/ASSISTANT_ATTACHMENTS.md`](docs/ASSISTANT_ATTACHMENTS.md) | developers | file attachments and Markdown answers in the assistant panel (proposal, being implemented) |
 | [`packages/protocol/README.md`](packages/protocol/README.md) | system integrators | Bridge v1, the manifest, the conformance suite and its 52 checks |
-| [`examples/equipment-inspection`](examples/equipment-inspection/README.md) · [`examples/care-billing`](examples/care-billing/README.md) | developers | a sample system on server-kit (52 / 52) · the first user's manifest, registry entry and mapping table |
+| [`examples/leave-requests`](examples/leave-requests/README.md) · [`examples/equipment-inspection`](examples/equipment-inspection/README.md) · [`examples/care-billing`](examples/care-billing/README.md) | developers | the smallest system: one file, no database (52 / 52) · a sample system on server-kit with PostgreSQL (52 / 52) · the first user's manifest, registry entry and mapping table |
 
 ## License
 

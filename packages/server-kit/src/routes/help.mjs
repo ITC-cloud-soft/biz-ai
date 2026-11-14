@@ -1,4 +1,5 @@
-// How-to questions answered from the business system's manual (optional capability: registered only with the `help` option).
+// How-to questions answered from the business system's manual (optional capability: the `help` option). Without it the routes
+// still pass the gate first (401 / 403 as declared) and then answer 404 not_found, like every optional Bridge v1 route.
 //   GET /bridge/v1/help/search?q=&limit=      an employee, its delegation (the SNS AI secretary / AI assistant), or the service principal
 //                                             (no employee → the public sections only)
 //   GET /bridge/v1/help/sections/:sectionId   one section (404 unknown; without an employee only a public one)
@@ -29,11 +30,12 @@ const limitOf = (query) => {
 
 export function registerHelp(router, kit) {
   const help = kit.help
-  if (!help) return
+  const needHelp = () => { if (!help) fail(404, 'not_found') }
   const ANYONE = { allow: ['user', 'delegated', 'service'] }
   const SERVICE_ONLY = { allow: ['service'] }
 
   async function answer(principal, query, { publicOnly = false } = {}) {
+    needHelp()
     const q = question(query)
     const role = publicOnly ? null : roleOf(principal)
     const result = await help.search(q, { role, limit: limitOf(query), publicOnly: publicOnly || !role })
@@ -48,6 +50,7 @@ export function registerHelp(router, kit) {
   router.add('GET', '/bridge/v1/help/search', ANYONE, ({ principal, query }) => answer(principal, query))
   router.add('GET', '/bridge/v1/help/public', SERVICE_ONLY, ({ principal, query }) => answer(principal, query, { publicOnly: true }))
   router.add('GET', '/bridge/v1/help/sections/:sectionId', ANYONE, async ({ principal, params }) => {
+    needHelp()
     const section = await help.section(params.sectionId, { role: roleOf(principal) })
     if (!section) fail(404, 'not_found')
     return { status: 200, body: { ok: true, section } }

@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/server-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "Apache-2.0",
   "description": "L2 of the DSH Business Bridge: Node parts for a business system that implements Bridge protocol v1 (node:http handler, gate, stores, hooks)",
   "keywords": [

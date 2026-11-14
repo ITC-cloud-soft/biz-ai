@@ -219,7 +219,7 @@ AI 秘書として、規則を変えることはできない）、**長期記憶
 | `plugins/reader` | `@dsh-bridge/plugin-reader` | `bridge-reader`：業務システムが読めなかったスキャン文書（画像、テキスト層のない PDF）— `GET /bridge/v1/document-reads` からページ画像を受け取り、画像を読むモデルで 1 リクエストに 1 ページずつ書き起こし（会話なし）、テキストを `POST .../result` に返す（`docs/DOCUMENT_READS.md`） |
 | `profile/` | `@dsh-bridge/profile` | DSH product profile の雛形、`install.mjs`、自動タスクの雛形の形式 |
 | `vendor/` | `@care/dsh-im`, `@care/dsh-auto-tasks`, `@care/dsh-proactive` | DSH の IM / auto-tasks / proactive プラグインの fork（独自の npm 構成、各 `FORK.md` を参照） |
-| `examples/` | | `equipment-inspection`（server-kit の上の見本の業務システム）、`care-billing`（最初の利用者の manifest） |
+| `examples/` | | `leave-requests`（いちばん小さなシステム：1 ファイル、データベースなし）、`equipment-inspection`（server-kit の上の見本の業務システム）、`care-billing`（最初の利用者の manifest） |
 | `docs/` | | `GUIDELINE.md`、`ARCHITECTURE.md`、スライド |
 
 ## クイックスタート
@@ -304,7 +304,7 @@ server-kit は照合時に個人ボットの所有者の規則を適用し、eve
 | [`docs/AI_EMPLOYEE_PROFILE.md`](docs/AI_EMPLOYEE_PROFILE.md) | 開発者 | AI 社員のプロフィール（P1）と外部連携 / 規則（P2・P3）、実装済み |
 | [`docs/ASSISTANT_ATTACHMENTS.md`](docs/ASSISTANT_ATTACHMENTS.md) | 開発者 | アシスタントパネルでのファイル添付と Markdown の回答（提案、実装中） |
 | [`packages/protocol/README.md`](packages/protocol/README.md) | システムインテグレーター | Bridge v1、manifest、conformance suite とその 52 項目 |
-| [`examples/equipment-inspection`](examples/equipment-inspection/README.md) · [`examples/care-billing`](examples/care-billing/README.md) | 開発者 | server-kit の上の見本のシステム（52 / 52） · 最初の利用者の manifest、registry の登録内容、対応表 |
+| [`examples/leave-requests`](examples/leave-requests/README.md) · [`examples/equipment-inspection`](examples/equipment-inspection/README.md) · [`examples/care-billing`](examples/care-billing/README.md) | 開発者 | いちばん小さなシステム：1 ファイル、データベースなし（52 / 52、英語） · server-kit と PostgreSQL の見本のシステム（52 / 52） · 最初の利用者の manifest、registry の登録内容、対応表 |
 
 ## ライセンス
 

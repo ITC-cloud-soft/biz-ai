@@ -278,11 +278,12 @@ describe('routes on the toy system', () => {
     assert.equal((await call('GET', '/bridge/v1/admin/connectors', { headers: admin.headers })).body.connectors.length, 0)
   })
 
-  test('without the capability: 404', async () => {
+  test('without the capability: 404 after the gate', async () => {
     const plain = await createToy({ store: createMemoryStore() })
     const s2 = await listen(plain.bridge.handler)
     try {
       assert.equal((await client(s2.base)('GET', '/bridge/v1/connectors/catalog', { headers: S })).status, 404)
+      assert.equal((await client(s2.base)('GET', '/bridge/v1/connectors/catalog')).status, 401) // the gate first
     } finally { await s2.stop() }
   })
 })

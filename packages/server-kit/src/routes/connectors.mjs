@@ -185,7 +185,8 @@ export function createConnectorService(kit, options = {}) {
 
 export function registerConnectors(router, kit) {
   const svc = kit.connectors
-  if (!svc) return
+  // without the capability every route still passes the gate first (401 / 403 as declared) and then answers 404 not_found
+  const add = svc ? router.add.bind(router) : (method, path, policy, _handler, opts) => router.add(method, path, policy, () => fail(404, 'not_found'), opts)
   const { store } = kit
   const ADMIN = { allow: ['user'], roles: kit.roles.admins }
   const idOk = (id) => CONNECTOR_ID_RE.test(id)
@@ -196,7 +197,7 @@ export function registerConnectors(router, kit) {
   }
   const connectorsList = async () => (await store.listConnectors()).map((r) => r.connector)
 
-  router.add('GET', '/bridge/v1/connectors/catalog', POLICY.SERVICE, async ({ req, res }) => {
+  add('GET', '/bridge/v1/connectors/catalog', POLICY.SERVICE, async ({ req, res }) => {
     const operations = await svc.catalog()
     const json = JSON.stringify(operations)
     const etag = `"connectors-${createHash('sha256').update(json).digest('hex').slice(0, 32)}"`
@@ -208,7 +209,7 @@ export function registerConnectors(router, kit) {
     return { status: 200, headers: { etag }, body: { ok: true, operations } }
   })
 
-  router.add('POST', '/bridge/v1/connectors/:connectorId/operations/:operationId/run', { allow: ['delegated'] }, async ({ principal, params, body }) => {
+  add('POST', '/bridge/v1/connectors/:connectorId/operations/:operationId/run', { allow: ['delegated'] }, async ({ principal, params, body }) => {
     const b = body ?? {}
     strictKeys(b, ['input'])
     if (b.input !== undefined && !isObject(b.input)) fail(400, 'invalid_value', undefined, { field: 'input' })
@@ -232,7 +233,7 @@ export function registerConnectors(router, kit) {
   })
 
   // ---------------------------------------------------------------- administrators
-  router.add('GET', '/bridge/v1/admin/connectors', ADMIN, async () => ({
+  add('GET', '/bridge/v1/admin/connectors', ADMIN, async () => ({
     status: 200,
     body: {
       ok: true,
@@ -244,7 +245,7 @@ export function registerConnectors(router, kit) {
     },
   }))
 
-  router.add('PUT', '/bridge/v1/admin/connectors/:connectorId', ADMIN, async ({ principal, params, body }) => {
+  add('PUT', '/bridge/v1/admin/connectors/:connectorId', ADMIN, async ({ principal, params, body }) => {
     const b = body ?? {}
     strictKeys(b, ['connector', 'reason'])
     if (!isObject(b.connector)) fail(400, 'required', undefined, { field: 'connector' })
@@ -266,7 +267,7 @@ export function registerConnectors(router, kit) {
     return { status: 200, body: { ok: true, connector: connectorJson(row) } }
   })
 
-  router.add('DELETE', '/bridge/v1/admin/connectors/:connectorId', ADMIN, async ({ principal, params }) => {
+  add('DELETE', '/bridge/v1/admin/connectors/:connectorId', ADMIN, async ({ principal, params }) => {
     if (!idOk(params.connectorId)) fail(404, 'connector_not_found')
     const rules = (await store.listConnectorRules()).filter((x) => x.rule.action.connector === params.connectorId).map((x) => x.id)
     if (rules.length) fail(409, 'connector_in_use', undefined, { rules })
@@ -279,7 +280,7 @@ export function registerConnectors(router, kit) {
     return { status: 200, body: { ok: true } }
   })
 
-  router.add('PUT', '/bridge/v1/admin/connectors/:connectorId/secret', ADMIN, async ({ principal, params, body }) => {
+  add('PUT', '/bridge/v1/admin/connectors/:connectorId/secret', ADMIN, async ({ principal, params, body }) => {
     const b = body ?? {}
     strictKeys(b, ['secret'])
     if (!idOk(params.connectorId)) fail(404, 'connector_not_found')
@@ -296,7 +297,7 @@ export function registerConnectors(router, kit) {
     return { status: 200, body: { ok: true, hasSecret: true, secretHint: hint } }
   })
 
-  router.add('DELETE', '/bridge/v1/admin/connectors/:connectorId/secret', ADMIN, async ({ principal, params }) => {
+  add('DELETE', '/bridge/v1/admin/connectors/:connectorId/secret', ADMIN, async ({ principal, params }) => {
     if (!idOk(params.connectorId)) fail(404, 'connector_not_found')
     const ok = await store.tx(async (t) => {
       const done = await t.setConnectorSecret(params.connectorId, { sealed: null, updatedBy: principal.user.id })
@@ -308,7 +309,7 @@ export function registerConnectors(router, kit) {
     return { status: 200, body: { ok: true, hasSecret: false, secretHint: null } }
   })
 
-  router.add('POST', '/bridge/v1/admin/connectors/:connectorId/test', ADMIN, async ({ principal, params, body }) => {
+  add('POST', '/bridge/v1/admin/connectors/:connectorId/test', ADMIN, async ({ principal, params, body }) => {
     const b = body ?? {}
     strictKeys(b, ['operationId', 'input'])
     if (b.input !== undefined && !isObject(b.input)) fail(400, 'invalid_value', undefined, { field: 'input' })
@@ -326,11 +327,11 @@ export function registerConnectors(router, kit) {
     }
   })
 
-  router.add('GET', '/bridge/v1/admin/connector-rules', ADMIN, async () => ({
+  add('GET', '/bridge/v1/admin/connector-rules', ADMIN, async () => ({
     status: 200, body: { ok: true, rules: (await store.listConnectorRules()).map(ruleJson) },
   }))
 
-  router.add('PUT', '/bridge/v1/admin/connector-rules/:ruleId', ADMIN, async ({ principal, params, body }) => {
+  add('PUT', '/bridge/v1/admin/connector-rules/:ruleId', ADMIN, async ({ principal, params, body }) => {
     const b = body ?? {}
     strictKeys(b, ['rule', 'reason'])
     if (!isObject(b.rule)) fail(400, 'required', undefined, { field: 'rule' })
@@ -348,7 +349,7 @@ export function registerConnectors(router, kit) {
     return { status: 200, body: { ok: true, rule: ruleJson(row) } }
   })
 
-  router.add('DELETE', '/bridge/v1/admin/connector-rules/:ruleId', ADMIN, async ({ principal, params }) => {
+  add('DELETE', '/bridge/v1/admin/connector-rules/:ruleId', ADMIN, async ({ principal, params }) => {
     if (!RULE_ID_RE.test(params.ruleId)) fail(404, 'rule_not_found')
     const ok = await store.tx(async (t) => {
       const done = await t.deleteConnectorRule(params.ruleId)
@@ -359,7 +360,7 @@ export function registerConnectors(router, kit) {
     return { status: 200, body: { ok: true } }
   })
 
-  router.add('GET', '/bridge/v1/admin/connector-runs', ADMIN, async ({ query }) => {
+  add('GET', '/bridge/v1/admin/connector-runs', ADMIN, async ({ query }) => {
     const limitText = query.get('limit')
     const limit = limitText === null ? 50 : Number(limitText)
     if (!Number.isInteger(limit) || limit < 1 || limit > CONNECTOR_RUNS_SHOWN) fail(400, 'invalid_value', undefined, { field: 'limit' })
@@ -371,7 +372,7 @@ export function registerConnectors(router, kit) {
     return { status: 200, body: { ok: true, runs: runs.map(runJson) } }
   })
 
-  router.add('PUT', '/bridge/v1/admin/connector-settings', ADMIN, async ({ principal, body }) => {
+  add('PUT', '/bridge/v1/admin/connector-settings', ADMIN, async ({ principal, body }) => {
     const b = body ?? {}
     strictKeys(b, ['stopped', 'reason'])
     if (typeof b.stopped !== 'boolean') fail(400, 'required', undefined, { field: 'stopped' })

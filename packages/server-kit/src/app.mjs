@@ -47,8 +47,8 @@ function requireHook(cond, message) {
  *                       before an administrator saves settings, default DEFAULT_ATTACHMENT_ROLES within the manifest roles;
  *                       limits: lower the hard ones; pdfText: the PDF reader, default pdf.js when pdfjs-dist is installed;
  *                       ocr: scanned PDF pages — a local OCR engine (bytes, { mediaType, page }) -> text, or false = off; default: page images for the model)
- *   connectors          external connectors of the AI employee (routes/connectors.mjs, docs/AI_EMPLOYEE_PROFILE.md §3). Absent / false = no
- *                       routes (404). { secretKey (≥ 32 characters: seals the API keys), allowLocalhost? (http to localhost: development),
+ *   connectors          external connectors of the AI employee (routes/connectors.mjs, docs/AI_EMPLOYEE_PROFILE.md §3). Absent / false = the
+ *                       routes pass the gate, then 404. { secretKey (≥ 32 characters: seals the API keys), allowLocalhost? (http to localhost: development),
  *                       fetch?, onApprovalNeeded?({ proposal, connector, operation, rule, approverRole }, ctx) (deliver the approval card),
  *                       onProposeByAi?({ connector, operation, rule, trigger, inputKeys }, ctx) -> { started } (mode propose-by-ai: start
  *                       the business's automatic task), onRunResult?({ rule, status, level, connectorId, operationId, code }, ctx) }.
@@ -183,7 +183,7 @@ export async function createBridgeApp(options) {
   registerApprovals(router, kit)
   if (options.aiProfile !== false) registerAiProfile(router, kit)
   if (options.attachments !== false) registerAssistantAttachments(router, kit, options.attachments ?? {})
-  if (kit.connectors) registerConnectors(router, kit)
+  registerConnectors(router, kit) // without kit.connectors: 404 after the gate
 
   async function dispatch(req, res, next) {
     let principal = { kind: 'anon' }

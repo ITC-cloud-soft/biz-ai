@@ -32,6 +32,15 @@ importers:
         specifier: ^8.23.1
         version: 8.23.1
 
+  examples/leave-requests:
+    dependencies:
+      '@dsh-bridge/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@dsh-bridge/server-kit':
+        specifier: workspace:*
+        version: link:../../packages/server-kit
+
   packages/dsh-core:
     devDependencies:
       '@dsh-bridge/protocol':
