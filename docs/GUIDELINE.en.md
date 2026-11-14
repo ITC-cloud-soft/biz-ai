@@ -152,8 +152,10 @@ and does not use the ports of the demo environment and the like (changeable with
 when it finishes it cleans up the processes, DB and home it started (`--keep` leaves them). **15 / 15 steps, scenarios a–f all PASS**.
 The e2e product profile is made from the template, so it runs with the closed settings of d.8 (the product values). It goes as far as checking that automatic-task reports arrive only as fixed wording and that the AI's summary does not
 appear in IM (fixed delivery targets and the mail route are closed, so they do not appear in e2e).
-The DSH CLI (`@deepseek-ai/dsh`) is required (`resolveDshBin()` looks in the order `DSH_BIN` → `pnpm root -g` →
-`npm root -g`).
+The e2e and `pnpm demo` run a local copy of the pinned DSH CLI (`profile/template/package.json` `dshBridge.expectedDsh`, 0.2.2-rc.1)
+in `.dsh-cli/<version>/`, installed with npm on the first run (`packages/testing/src/dsh-cli.mjs`); the global DSH is neither used nor changed.
+`DSH_BIN=<…/@deepseek-ai/dsh/lib/bin.js>` runs another CLI. For your own BFF, `resolveDshBin()` (`@dsh-bridge/gateway`) looks in the order
+`DSH_BIN` → `pnpm root -g` → `npm root -g`.
 
 | Scenario | What it checks |
 |---|---|

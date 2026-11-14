@@ -705,3 +705,10 @@ care-ai-native `docs/design/SNS_HELP_QA.md` §4.3・D1。SNS でシステムの�
 | `plugin-src/client/bot-settings-context.js` | 名前の一覧に `feishuQr` |
 | `test/care/feishu-qr-hidden.test.mjs`（新規） | 4 件（カード・見出し・ボット無しで手動が開く（Lark・残った QR を出さない）・指定なしは上游のまま） |
 | `lib/client.js` | `npm run build` で再生成 |
+
+## DSH 0.2.2-rc.1（2026-11-15）
+
+- `package.json` の `dsh.compatibility.dsh` を `0.2.2-rc.1` に、`dshReleases` に `"0.2.2-rc.1": "compatible"` を追加（`0.2.0-rc.2` / `0.2.1-rc.2` は残す）。開発依存の `@deepseek-ai/cordis` を `4.1.0`（DSH 0.2.2-rc.1 の版）に。`npm run build` で `lib/`（package.json を内包）を再生成。実行時のコードは変更なし。
+- DSH 0.2.2 は bundle の `engines.dsh` / dsh の peerDependencies で互換性を検査するが、この fork はどちらも持たないので検査の対象外（`dsh.compatibility` は DSH 本体は読まない）。
+- 更新パネルの文言「dsh-im 5.0.0 仅支持 DSH 0.2.1-rc.2。」は上游の版ごとの互換表の 1 行（履歴）なので変えない。fork では自己更新は無効。
+- `npm test` 4752 件中 失敗 0・skip 17（Windows 11 / Node 24）、`node scripts/verify-package.mjs` 成功。framework の `pnpm demo`（実 DSH 0.2.2-rc.1）15 / 15。

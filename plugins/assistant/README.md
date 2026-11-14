@@ -35,7 +35,7 @@
   スキャンの PDF（OCR）：業務システムが文字の層の無いページを JPEG にして文書の `pageImages: [{ page, mediaType: 'image/jpeg', data }]`（全部で 10 枚まで）で渡す。
   そのページは「<文書名> p.<ページ>」という名前の画像の部品として送り、添付の節に「スキャンのページ N 枚は画像として付いています」と書く。画像を読めないモデルなら `images_not_supported`。
 - **画像の後片付け（D4）**（`src/image-cleanup.js`、設定 `imageCleanup` 既定 `on`・`imageCleanupMinutes` 既定 60・`dshHome` 既定は環境変数 `DSH_HOME`、無ければ `~/.dsh`）：
-  DSH 0.2.1-rc.2 の添付の保存先（attachment-local、`<DSH_HOME>/attachments/v1/objects`）は内容で重複を除き、消す API を持たないので、参照をプラグインが数える。
+  DSH 0.2.2-rc.1 の添付の保存先（attachment-local、`<DSH_HOME>/attachments/v1/objects`）は内容で重複を除き、消す API を持たないので、参照をプラグインが数える。
   画像を送った会話を台帳（`<DSH_HOME>/storages/bridge-assistant/image-sessions.json`）に残し、やり直した会話・12 時間使われない会話（DSH を再起動した後も台帳の最終利用で判断）を
   終わった会話にする。定期的に全部の会話のログ（`sessions/**/session.v4.jsonl(.zstd)`、zstd はフレームごとに読む）と DSH_HOME のほかのファイルから画像の ID
   （`sha256:…`）を集め、**終わった会話だけが参照する画像**と、その縮小版（`cache/attachments/request-images`、llm-deepseek のアップロードの台帳で分かるもの）を消す。

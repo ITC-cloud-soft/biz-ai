@@ -1,7 +1,7 @@
 {
   "name": "@dsh-bridge/dsh-profile-template",
   "private": true,
-  "description": "DSH Business Bridge product profile template (allow-list, pinned versions). DSH CLI 0.2.1-rc.2. {{FRAMEWORK_ROOT}} is replaced by install.mjs with the absolute path of the framework checkout.",
+  "description": "DSH Business Bridge product profile template (allow-list, pinned versions). DSH CLI 0.2.2-rc.1. {{FRAMEWORK_ROOT}} is replaced by install.mjs with the absolute path of the framework checkout.",
   "dependencies": {
     "@care/dsh-auto-tasks": "file:{{FRAMEWORK_ROOT}}/vendor/dsh-auto-tasks",
     "@care/dsh-im": "file:{{FRAMEWORK_ROOT}}/vendor/dsh-im",
@@ -40,7 +40,7 @@
     }
   },
   "dshBridge": {
-    "expectedDsh": "0.2.1-rc.2",
+    "expectedDsh": "0.2.2-rc.1",
     "delegation": {
       "id": "bridge-tools",
       "name": "@dsh-bridge/plugin-tools"

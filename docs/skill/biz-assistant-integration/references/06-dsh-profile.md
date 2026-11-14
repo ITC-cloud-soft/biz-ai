@@ -69,6 +69,9 @@ node <framework>/profile/scripts/check.mjs <product>/dsh-profile/cordis.patch.ym
 - Run DSH in an isolated home (the command example in GUIDELINE a.4). The `dsh web: …?token=…` that DSH prints is the owner's credential, so do not give it to the browser; only the gateway uses it.
   DSH also reads `.env` in the working directory, so do not start it at the repository root. Do not use the ports of the demo environment or production.
 - Secrets (service token, bot credentials, model keys) come from environment variables or a secret store. Have the user enter them.
+- DSH version: the framework is tested with the DSH CLI named in `profile/template/package.json` `dshBridge.expectedDsh` (0.2.2-rc.1); `install.mjs`
+  warns on another version and uses `DSH_BIN` when it is set. Install that version locally for the product (for example `npm install @deepseek-ai/dsh@<version>`
+  in a tools folder, then `DSH_BIN=<folder>/node_modules/@deepseek-ai/dsh/lib/bin.js`). Do not install, upgrade or downgrade the user's global DSH without asking.
 
 ## 5. Enable automatic tasks (b.7)
 

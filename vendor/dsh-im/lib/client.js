@@ -680,10 +680,11 @@ var package_default = {
       platform: "web"
     },
     compatibility: {
-      dsh: "0.2.1-rc.2",
+      dsh: "0.2.2-rc.1",
       dshReleases: {
         "0.2.0-rc.2": "compatible",
-        "0.2.1-rc.2": "compatible"
+        "0.2.1-rc.2": "compatible",
+        "0.2.2-rc.1": "compatible"
       },
       profiles: [
         "web"
@@ -712,7 +713,7 @@ var package_default = {
     undici: "7.30.1"
   },
   devDependencies: {
-    "@deepseek-ai/cordis": "4.0.1",
+    "@deepseek-ai/cordis": "4.1.0",
     "@larksuiteoapi/node-sdk": "1.73.0",
     "@whiskeysockets/baileys": "7.0.0-rc14",
     esbuild: "0.25.9",

@@ -28,12 +28,12 @@ Bizアシスタント（Biz Assistant、パッケージ `@dsh-bridge/*`）は、
 ## 3 分で動かしてみる
 
 API キーもチャットのアカウントも要りません。例の業務システム（設備点検、架空のデータ）と framework のプラグインが、
-**本物の DeepSeek Harness** の上で、台本どおりに答えるモデルとモックの LINE を相手に動きます。必要なのは Node 22.19 以上・pnpm・Docker・DSH CLI です。
+**本物の DeepSeek Harness** の上で、台本どおりに答えるモデルとモックの LINE を相手に動きます。必要なのは Node 22.19 以上・pnpm・Docker です。
+DSH CLI は初回に、固定した版（0.2.2-rc.1）をチェックアウト内の `.dsh-cli/` に入れます（2 分ほど）。グローバルに入れた DSH には触りません。
 
 ```sh
 git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
 pnpm install
-npm install -g @deepseek-ai/dsh@0.2.1-rc.2
 pnpm demo        # Docker で使い捨ての PostgreSQL。会話の記録とシナリオごとの PASS / FAIL を表示
 ```
 

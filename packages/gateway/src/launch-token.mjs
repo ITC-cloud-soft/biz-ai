@@ -1,6 +1,6 @@
 // DSH の起動トークン（launch token）の取得方法。
 //
-// DSH 0.2.1-rc.2 はプロセスごとにランダムなトークンを生成し、設定で固定できない
+// DSH 0.2.2-rc.1 はプロセスごとにランダムなトークンを生成し、設定で固定できない
 // （packages/client/connection/src/browser-auth.ts）。外部に出る唯一の経路は
 // `dsh web` が stdout に出す 1 行 `dsh web: <advertised-url>?token=...` で、
 // web-app は「supervisor はこの行を観測したら RPC してよい」と明記している

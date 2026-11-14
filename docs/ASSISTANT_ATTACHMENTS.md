@@ -67,7 +67,7 @@ bridge-assistant：message.send {agent, text, context, attachments: [{kind: 'ima
 - DSH の会話の履歴には画像と、文書から取り出した文字が残る（今の文字の質問と同じ扱い）。
 
 ### 3.4 消すこと
-DSH の添付は自動では消えない（DSH 0.2.1-rc.2 の仕様）。アシスタントの会話は 12 時間で使われなくなるので、
+DSH の添付は自動では消えない（DSH 0.2.2-rc.1 の仕様）。アシスタントの会話は 12 時間で使われなくなるので、
 **会話をやり直す（新しい会話）・使われなくなった会話**の画像を消す処理を bridge-assistant に足す（DSH の保存先の、その会話だけが参照する画像。§6 D4）。
 
 ## 4. Markdown の表示（あわせて直す）
@@ -129,7 +129,7 @@ HTML は表示しない（エスケープ）。業務 Web のヘルプ画面（H
 - 回数の上限（1 日 50 回）は入れていない（送信の上限 `sendsPerMinute` のまま）。
 
 ### 画像の後片付け（D4、2026-10-30）
-DSH 0.2.1-rc.2 の `ctx.attachments` には削除の API が無く、保存先（attachment-local、`<DSH_HOME>/attachments/v1/objects/<2>/<sha256>`）は同じ中身を 1 つにまとめる
+DSH 0.2.2-rc.1 の `ctx.attachments` には削除の API が無く、保存先（attachment-local、`<DSH_HOME>/attachments/v1/objects/<2>/<sha256>`）は同じ中身を 1 つにまとめる
 （resume・fork した会話・他の職員の会話が同じ画像を参照しうる）。DSH の参照の数え上げを待たず、**bridge-assistant が参照を自分で数える**（`plugins/assistant/src/image-cleanup.js`）：
 - 会話のログ（`<DSH_HOME>/sessions/**/session.v4.jsonl.zstd`：独立に読める zstd のフレームの連なり）は画像を `{"type":"image","attachment":{"attachmentId":"sha256:…"}}` で参照する。
   フレームの構造を DSH の JSONL の永続化と同じ方法で走査し、フレームごとに展開して ID を集める。DSH_HOME のほかのファイル（自動タスク・storages など。画像そのもの・縮小版・

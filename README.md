@@ -27,12 +27,12 @@ create, read and update. **AI employees** come alive and, in each employee's own
 ## See it in 3 minutes
 
 No API key, no chat account: the example business system (equipment inspection, fictional data) and the framework plugins run on
-a **real DeepSeek Harness** with a scripted model and a mock LINE. Needs Node 22.19+, pnpm, Docker and the DSH CLI.
+a **real DeepSeek Harness** with a scripted model and a mock LINE. Needs Node 22.19+, pnpm and Docker. The first run installs
+the pinned DSH CLI (0.2.2-rc.1) into `.dsh-cli/` inside the checkout (about 2 minutes); a DSH you installed globally is not touched.
 
 ```sh
 git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
 pnpm install
-npm install -g @deepseek-ai/dsh@0.2.1-rc.2
 pnpm demo        # a throwaway PostgreSQL in Docker; prints the conversation and PASS / FAIL per scenario
 ```
 

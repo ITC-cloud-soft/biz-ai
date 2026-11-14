@@ -1,6 +1,6 @@
 // 添付の画像の後片付け（docs/ASSISTANT_ATTACHMENTS.md §3.4・D4）。
 //
-// DSH 0.2.1-rc.2 の添付の保存先（@deepseek-ai/dsh-attachment-local、`<DSH_HOME>/attachments/v1/objects/<2>/<sha256>`）は
+// DSH 0.2.2-rc.1 の添付の保存先（@deepseek-ai/dsh-attachment-local、`<DSH_HOME>/attachments/v1/objects/<2>/<sha256>`）は
 // 同じ中身を 1 つにまとめ、消す口を持たない。会話のログ（`<DSH_HOME>/sessions/**/session.v4.jsonl(.zstd)`）は画像を
 // `{"type":"image","attachment":{"attachmentId":"sha256:…"}}` として参照する。ここでは参照を自分で数える：
 //  - 対象は「このプラグインが画像を送った会話」（台帳 `<DSH_HOME>/storages/bridge-assistant/image-sessions.json`）のうち、

@@ -13,3 +13,4 @@ dist/
 
 # the marketing deck's contact line (company contact, not committed)
 docs/slides/marketing/src/contact.local.json
+.dsh-cli/

@@ -28,12 +28,12 @@ Biz Assistant（Bizアシスタント，包名 `@dsh-bridge/*`）为过去只是
 ## 3 分钟跑起来看看
 
 不需要 API key，也不需要聊天账号：示例业务系统（设备点检，数据全部虚构）和 framework 的插件运行在**真实的 DeepSeek Harness** 上，
-对面是按脚本回答的模型和模拟的 LINE。需要 Node 22.19+、pnpm、Docker 和 DSH CLI。
+对面是按脚本回答的模型和模拟的 LINE。需要 Node 22.19+、pnpm 和 Docker。
+第一次运行时会把固定版本的 DSH CLI（0.2.2-rc.1）装进仓库里的 `.dsh-cli/`（约 2 分钟），不会动你全局安装的 DSH。
 
 ```sh
 git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
 pnpm install
-npm install -g @deepseek-ai/dsh@0.2.1-rc.2
 pnpm demo        # 用 Docker 起一个临时 PostgreSQL；打印对话记录和每个场景的 PASS / FAIL
 ```
 

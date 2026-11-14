@@ -152,8 +152,10 @@ FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm r
 終わると起動したプロセス・DB・home を片付ける（`--keep` で残す）。**15 / 15 ステップ、シナリオ a〜f すべて PASS**。
 e2e の製品 profile は雛形から作るので、d.8 の閉じた設定（製品の値）のまま動く。自動タスクの報告が固定の文面だけで届き、AI の summary が IM に
 出ないことまで確かめる（固定の配信先・メールの経路は閉じているので e2e には出てこない）。
-DSH の CLI（`@deepseek-ai/dsh`）が必要（`resolveDshBin()` が `DSH_BIN` → `pnpm root -g` →
-`npm root -g` の順に探す）。
+e2e と `pnpm demo` は、版を固定した DSH CLI（`profile/template/package.json` の `dshBridge.expectedDsh`、0.2.2-rc.1）のローカルの写しを
+`.dsh-cli/<version>/` に置いて使う（初回に npm で入れる。`packages/testing/src/dsh-cli.mjs`）。グローバルの DSH は使わず、変えもしない。
+`DSH_BIN=<…/@deepseek-ai/dsh/lib/bin.js>` で別の CLI を使う。製品の BFF では `resolveDshBin()`（`@dsh-bridge/gateway`）が
+`DSH_BIN` → `pnpm root -g` → `npm root -g` の順に探す。
 
 | シナリオ | 確かめること |
 |---|---|

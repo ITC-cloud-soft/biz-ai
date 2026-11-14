@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/gateway",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "Apache-2.0",
   "description": "Authenticating gateway that a business web BFF embeds to show the DSH settings UI under /dsh/* (launch token exchange, hidden DSH cookies, WebSocket relay, public webhook paths, server-side RPC allow-list, DSH supervision)",
   "keywords": [

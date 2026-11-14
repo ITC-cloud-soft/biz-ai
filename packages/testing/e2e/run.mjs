@@ -13,6 +13,8 @@
 //    tool via toolModules, the playbook preset facility-inspection, e2e timings) → profile/scripts/install.mjs --source
 //    --framework-root --auto-task-delegate line:<manager> into an isolated home (.dsh-home-e2e; never ~/.dsh), then the
 //    real DSH CLI with a --patch overlay (mock LLM provider) and @dsh-bridge/gateway in front (LINE webhook path, server RPC).
+//    The DSH CLI is a local copy of the pinned version (.dsh-cli/<version>, installed with npm on first use; the global DSH
+//    is never used or changed) unless DSH_BIN points at another bin.js (packages/testing/src/dsh-cli.mjs).
 // 4. Scenarios (PASS / FAIL per scenario and a JSON result in .work/result.json):
 //    a  unlinked LINE user gets the guide (no LLM); link code from the app (link page + API) → 「連携 123456」 links
 //    b  a question → the AI calls a manifest-generated read tool (facility_list_overdue) under the employee's delegation
@@ -37,8 +39,9 @@ import { spawnSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createDshGateway, fromValue, resolveDshBin } from '../../gateway/src/index.mjs'
+import { createDshGateway, fromValue } from '../../gateway/src/index.mjs'
 import { dropDatabase, ensureDatabase, loadPg } from '../../server-kit/src/store/pg.mjs'
+import { pickDshBin } from '../src/dsh-cli.mjs'
 import { assertIsolatedHome, assertPortsUsable, redactor, startDsh } from '../src/dsh-home.mjs'
 import { dshHostClient } from '../src/dsh-host.mjs'
 import { flexSummary, lineWebhookSender, randomLineUserId, startMockLine } from '../src/mock-line.mjs'
@@ -53,6 +56,7 @@ const args = new Set(process.argv.slice(2))
 const KEEP = args.has('--keep')
 const REUSE_HOME = args.has('--reuse-home') // keep the installed profile dependencies between runs (install.mjs still refreshes the framework packages)
 const JSON_ONLY = args.has('--json-only')
+let DSH // the DSH CLI bin.js (preflight)
 const STORY = args.has('--story') // print the conversation as a chat transcript at the end (pnpm demo)
 
 const PORT_KEYS = ['app', 'dsh', 'llm', 'line', 'gateway', 'other']
@@ -154,7 +158,9 @@ async function preflight() {
   assertIsolatedHome(HOME)
   mkdirSync(WORK, { recursive: true })
   for (const f of ['dsh.log', 'app.log', 'install.log']) rmSync(join(WORK, f), { force: true })
-  if (!resolveDshBin()) throw new Error('dsh CLI not found (install @deepseek-ai/dsh globally or set DSH_BIN)')
+  // a local copy of the pinned DSH CLI (.dsh-cli/<version>, installed on first use) or $DSH_BIN; never the global one.
+  // pickDshBin sets process.env.DSH_BIN, so install.mjs runs `dsh plugin install` with the same CLI.
+  DSH = pickDshBin({ framework: FRAMEWORK, log }).bin
 }
 
 async function startApp() {
@@ -321,7 +327,7 @@ async function installAndStartDsh(src) {
     bridgeToolsEntries: toolsEntries, toolModules: /toolModules:/.test(patch), delegation: /unattendedPolicy: delegate/.test(patch), placeholderWarning: /template placeholders left/.test(out),
   })
   const { proc, token } = await startDsh({
-    bin: resolveDshBin(), home: HOME, profile: PROFILE, port: PORTS.dsh, patch: writeOverlay(), publicUrl: `${GATEWAY}/dsh/`,
+    bin: DSH, home: HOME, profile: PROFILE, port: PORTS.dsh, patch: writeOverlay(), publicUrl: `${GATEWAY}/dsh/`,
     logFile: join(WORK, 'dsh.log'), secrets: Object.values(SECRETS),
     env: {
       INSPECTION_API_URL: APP, INSPECTION_SERVICE_TOKEN: SECRETS.service,

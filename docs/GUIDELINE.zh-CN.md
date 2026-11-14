@@ -136,8 +136,10 @@ FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm r
 结束后清理所启动的进程、DB 和 home（用 `--keep` 保留）。**15 / 15 步骤，场景 a～f 全部 PASS**。
 e2e 的产品 profile 由模板生成，因此按 d.8 的关闭设置（产品的值）运行。还会确认自动任务的报告只以固定文案送达、AI 的 summary 不会出现在
 IM 中（固定的投递对象和邮件路径处于关闭状态，因此不会出现在 e2e 中）。
-需要 DSH 的 CLI（`@deepseek-ai/dsh`）（`resolveDshBin()` 按 `DSH_BIN` → `pnpm root -g` →
-`npm root -g` 的顺序查找）。
+e2e 和 `pnpm demo` 使用固定版本的 DSH CLI（`profile/template/package.json` 的 `dshBridge.expectedDsh`，0.2.2-rc.1）在
+`.dsh-cli/<version>/` 里的本地副本（第一次运行时用 npm 安装，`packages/testing/src/dsh-cli.mjs`），不使用也不改动全局安装的 DSH。
+用 `DSH_BIN=<…/@deepseek-ai/dsh/lib/bin.js>` 可以换成别的 CLI。在你自己产品的 BFF 中，`resolveDshBin()`（`@dsh-bridge/gateway`）按
+`DSH_BIN` → `pnpm root -g` → `npm root -g` 的顺序查找。
 
 | 场景 | 确认的内容 |
 |---|---|

@@ -9,3 +9,4 @@ export {
   RUNTIME_STATE_ENTRIES, personalDshHomes, assertIsolatedHome, prepareIsolatedHome, dshEnv, launchTokenOf, redactor, startDsh, assertPortsUsable,
 } from './dsh-home.mjs'
 export { loadTemplates, installAutoTaskTemplates } from './auto-task-templates.mjs'
+export { expectedDshVersion, dshVersionAt, localDshBin, ensureLocalDsh, pickDshBin } from './dsh-cli.mjs'

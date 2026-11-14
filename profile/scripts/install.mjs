@@ -68,7 +68,7 @@ if (!existsSync(join(profileSrc, 'package.json')) || !existsSync(join(profileSrc
   process.exit(2)
 }
 const sourceManifest = JSON.parse(readFileSync(join(profileSrc, 'package.json'), 'utf8'))
-const EXPECTED_DSH = sourceManifest.dshBridge?.expectedDsh ?? '0.2.1-rc.2'
+const EXPECTED_DSH = sourceManifest.dshBridge?.expectedDsh ?? '0.2.2-rc.1'
 const delegationTarget = { ...DEFAULT_DELEGATION_TARGET, ...(sourceManifest.dshBridge?.delegation ?? {}) }
 /** package.json の {{FRAMEWORK_ROOT}} → framework の絶対パス（/ 区切り。pnpm の file: は Windows でも / を受け付ける）。 */
 const withFrameworkRoot = (text) => text.split(FRAMEWORK_TOKEN).join(frameworkRoot.replace(/\\/g, '/'))
@@ -268,7 +268,12 @@ if (!existsSync(proactiveConfig)) {
 }
 
 const env = { ...process.env, DSH_HOME: home, DSH_AGENTS_HOME: join(home, 'agents') }
-const run = (args, options = {}) => spawnSync(['dsh', ...args].join(' '), { env, shell: true, ...options })
+// DSH_BIN（@deepseek-ai/dsh/lib/bin.js。pnpm demo / pnpm e2e は版を固定したローカルの CLI を渡す）があればそれを node で直接起動し、
+// 無ければ PATH の dsh（Windows の .cmd を含むため shell 経由）。
+const DSH_BIN = process.env.DSH_BIN && existsSync(process.env.DSH_BIN) ? process.env.DSH_BIN : null
+const run = (args, options = {}) => DSH_BIN
+  ? spawnSync(process.execPath, [DSH_BIN, ...args], { env, ...options })
+  : spawnSync(['dsh', ...args].join(' '), { env, shell: true, ...options })
 
 const version = run(['--version'], { encoding: 'utf8' })
 const actual = (version.stdout || '').trim()

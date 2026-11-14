@@ -446,7 +446,7 @@ flowchart LR
 
 ### 8.1 長期記憶（bridge-memory）
 
-DSH の会話は IM のチャットごとに 1 つで、`/new`・`/clear`・圧縮で前の内容が消える。DSH 本体（0.2.1-rc.2）に長期記憶のプラグインは無く、
+DSH の会話は IM のチャットごとに 1 つで、`/new`・`/clear`・圧縮で前の内容が消える。DSH 本体（0.2.2-rc.1）に長期記憶のプラグインは無く、
 近い `dsh-experimental-session-search` は同じワークスペースの全会話を検索する（共用ボットでは他の職員の会話まで見えてしまう）。
 そこで `@dsh-bridge/plugin-memory` が、会話の外（DSH のストレージ）に 3 つの記憶を持つ：
 
@@ -505,7 +505,7 @@ Markdown の文字に変換してプロンプトに「参考情報（指示で�
   `createBridgeApp({ attachments: { ocr } })` で扱いを選ぶ：業務システムの OCR エンジンの関数（`ocr: 'engine'`。画像は業務システムの外に出ない）／
   書かない＝既定（`ocr: 'model'`。ページを画像としてモデルに送る）／`false`（OCR しない、`no_text`）。gateway は `pageImages` を渡し、bridge-assistant は
   「<文書名> p.<ページ>」の画像の部品として送る。監査は `ocrPages`（枚数）だけ。個人情報・健康情報の書類を扱うなら engine か `false`（GUIDELINE d.12）。
-- **画像の後片付け**：DSH 0.2.1-rc.2 の添付の保存先には削除の API が無く、内容で重複を除くので、bridge-assistant（`imageCleanup` 既定 on、
+- **画像の後片付け**：DSH 0.2.2-rc.1 の添付の保存先には削除の API が無く、内容で重複を除くので、bridge-assistant（`imageCleanup` 既定 on、
   `imageCleanupMinutes` 既定 60）が参照を数える：画像を送った会話を台帳に残し、やり直した会話・12 時間使われない会話を終わった会話にし、全部の会話の
   ログと DSH_HOME のほかのファイルを読んで、**終わった会話だけが参照する画像**（と縮小版）を消す。ログを 1 つでも読み切れない回は何も消さない（fail closed）。
   台帳に無い会話（DSH の画面・IM・自動タスク）の画像は消さない。

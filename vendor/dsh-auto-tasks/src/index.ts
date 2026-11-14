@@ -250,6 +250,47 @@ function inQuietHours(quiet: any, date: any = new Date()) {
 
 /* ------------------------------------------------------------- trigger glue */
 
+/**
+ * @care #17：核心 `schedule` 服务的版本差异只在这里吸收。调用方一律按 DSH 0.2.1 的形状调用：
+ *   create(sessionId, { title, prompt, after_seconds | at | every_seconds | daily | weekly | cron }) / delete({ id, sessionId }) / catalog()
+ * DSH 0.2.2 的 ScheduleService（有 `edit`）改成了 create({ title, prompt, timing: { kind, ... }, target }, actorSessionId) /
+ * edit({ id, action: 'delete' }) / catalog() 的条目带 `target` 而不是 `sessionId`、status 为 active | paused | ended。
+ * 投递目标是任务自己的会话（target kind 'session'）。actorSessionId 也传这个会话：0.2.2 会向「相关会话」的在线 Agent
+ * 注入一条 [SCHEDULE CHANGE] 通知（source.kind = 'schedule'），发起方的会话除外；不传的话每次排程都会在任务会话里多一条消息。
+ */
+const TIMING_KEYS = [['after_seconds', 'after'], ['at', 'at'], ['every_seconds', 'every'], ['daily', 'daily'], ['weekly', 'weekly'], ['cron', 'cron']] as const
+
+export function scheduleTiming(request: Record<string, unknown>): Record<string, unknown> {
+  const found = TIMING_KEYS.filter(([key]) => request[key] !== undefined)
+  if (found.length !== 1) throw codedError('invalid_schedule', `exactly one schedule timing is required (got ${found.map(([k]) => k).join(', ') || 'none'})`)
+  const [key, kind] = found[0]
+  return { kind, [key]: request[key] }
+}
+
+export function scheduleApi(schedule: any): HostContext['schedule'] {
+  if (typeof schedule?.edit !== 'function') return schedule // DSH 0.2.1：原样
+  return {
+    async create(sessionId: string, request: Record<string, unknown>) {
+      const { title, prompt } = request as { title: string; prompt: string }
+      return schedule.create({ title, prompt, timing: scheduleTiming(request), target: { kind: 'session', sessionId } }, sessionId)
+    },
+    async delete({ id, sessionId }: { id: string; sessionId: string }) {
+      return schedule.edit({ id, action: 'delete' }, sessionId)
+    },
+    async catalog() {
+      const entries = await schedule.catalog()
+      return (Array.isArray(entries) ? entries : []).map((entry: any) => ({
+        ...entry,
+        sessionId: entry?.sessionId ?? entry?.target?.sessionId,
+        // 0.2.2 的 paused / ended → 0.2.1 的 inactive（对账与列表只看是否 active）
+        status: entry?.status === 'active' ? 'active' : 'inactive',
+      }))
+    },
+  }
+}
+
+const scheduleOf = (ctx: HostContext) => scheduleApi(ctx.schedule)
+
 /** 把任务的 trigger 描述编译成 core `schedule.create()` 的请求体。 */
 function scheduleRequest(task: Task, { approved = false }: any = {}) {
   const request: any = { title: task.name, prompt: buildPrompt(task, { approved }) }
@@ -389,7 +430,7 @@ async function attachSchedule(ctx: HostContext, task: Task) {
     return null
   }
   if (task.wakeBackend === 'proactive') return attachProactive(ctx, task)
-  const rec = await ctx.schedule.create(task.sessionId, scheduleRequest(task))
+  const rec = await scheduleOf(ctx).create(task.sessionId, scheduleRequest(task))
   task.scheduleId = rec.id
   task.proactiveAlarmId = null
   task.updatedAt = new Date().toISOString()
@@ -402,7 +443,7 @@ async function detachSchedule(ctx: HostContext, task: Task) {
   let hadCore = false
   if (task.scheduleId) {
     try {
-      await ctx.schedule.delete({ id: task.scheduleId, sessionId: task.sessionId })
+      await scheduleOf(ctx).delete({ id: task.scheduleId, sessionId: task.sessionId })
       hadCore = true
     } catch {
       hadCore = false
@@ -419,7 +460,7 @@ async function reconcile(ctx: any, logger: any) {
   if (tasks.length === 0) return { changed: 0 }
   let catalog: any[] = []
   try {
-    catalog = await ctx.schedule.catalog()
+    catalog = await scheduleOf(ctx).catalog()
   } catch (error: any) {
     logger?.warn?.(`auto-tasks: reconcile skipped (${error?.message ?? error})`)
     return { changed: 0 }
@@ -798,7 +839,7 @@ async function startRun(ctx: HostContext, task: Task, input: StartRunInput): Pro
     saveRuns(runsFile(), [...loadRuns(runsFile()), record])
     let scheduleId: string | null = null
     try {
-      const rec = await ctx.schedule.create(task.sessionId, {
+      const rec = await scheduleOf(ctx).create(task.sessionId, {
         title: `[${input.source === 'event' ? `事件 ${input.eventType}` : '触发'}] ${task.name}`,
         prompt: buildPrompt(task, { run: { runId, reason: input.reason, eventType: input.eventType, payloadText } }),
         after_seconds: 1,
@@ -956,7 +997,10 @@ export function trackSessionEvent(sessionId: unknown, event: any): void {
     if (data.source?.kind !== 'runtime-context') activeRuns.delete(sessionId)
     return
   }
-  const run = runOfWakeText(sessionId, messageText(data))
+  const text = messageText(data)
+  // DSH 0.2.2：排程变更通知（[SCHEDULE CHANGE]，source.kind 同为 'schedule'）不是投递，不改变回合归属
+  if (text.startsWith('[SCHEDULE CHANGE]')) return
+  const run = runOfWakeText(sessionId, text)
   if (!run) { activeRuns.delete(sessionId); return }
   activeRuns.set(sessionId, { run, turn: data.turn ?? openTurns.get(sessionId) ?? null, at: Date.now() })
 }
@@ -1559,7 +1603,7 @@ async function scheduleMailWake(ctx: any, { force = false }: any = {}) {
     ctx.logger?.info?.('auto-tasks: mail wake skipped (daily run budget reached)')
     return false
   }
-  await ctx.schedule.create(task.sessionId, {
+  await scheduleOf(ctx).create(task.sessionId, {
     title: '[邮件] 新邮件处理',
     prompt: buildPrompt(task),
     after_seconds: 5,
@@ -1692,7 +1736,7 @@ function installApi(ctx: any, deps: any) {
         const all = loadTasks()
         const tasks = sessionId ? all.filter((t: any) => t.sessionId === sessionId) : all
         let catalog: any[] = []
-        try { catalog = await ctx.schedule.catalog() } catch { catalog = [] }
+        try { catalog = await scheduleOf(ctx).catalog() } catch { catalog = [] }
         const byId = new Map(catalog.map((e: any) => [e.id, e]))
         let proactiveAlarms = new Map()
         try {
@@ -1808,7 +1852,7 @@ function installApi(ctx: any, deps: any) {
             if (next.wakeBackend === 'proactive') {
               await attachProactive(ctx, next)
             } else {
-              next.scheduleId = (await ctx.schedule.create(next.sessionId, scheduleRequest(next))).id
+              next.scheduleId = (await scheduleOf(ctx).create(next.sessionId, scheduleRequest(next))).id
               next.proactiveAlarmId = null
             }
           } catch (error: any) {
@@ -1819,7 +1863,7 @@ function installApi(ctx: any, deps: any) {
           try { await proactiveBackend(ctx).cancelAlarm(current.sessionId, current.proactiveAlarmId) } catch { /* old may be gone */ }
         }
         if (current.scheduleId) {
-          try { await ctx.schedule.delete({ id: current.scheduleId, sessionId: next.sessionId }) } catch { /* old may be gone */ }
+          try { await scheduleOf(ctx).delete({ id: current.scheduleId, sessionId: next.sessionId }) } catch { /* old may be gone */ }
         }
         if (!next.enabled) {
           next.scheduleId = null
@@ -1872,7 +1916,7 @@ function installApi(ctx: any, deps: any) {
         const task = loadTasks().find((t: any) => t.id === body.id)
         if (!task) return sendJson(res, 404, { error: 'task not found' })
         if (overBudget(task)) return sendJson(res, 429, { error: '已达每日运行预算（maxRunsPerDay）' })
-        const rec = await ctx.schedule.create(task.sessionId, {
+        const rec = await scheduleOf(ctx).create(task.sessionId, {
           title: `[立即执行] ${task.name}`,
           prompt: buildPrompt(task, { approved: true }),
           after_seconds: 1,
@@ -1913,7 +1957,7 @@ function installApi(ctx: any, deps: any) {
         if (overBudget(task)) return sendJson(res, 429, { error: '已达每日运行预算（maxRunsPerDay）' })
         // 触发回合的审批：带回原 runId / 事件数据重跑（投递仍按同一运行去重）。
         const run = report.runId ? findRun(report.runId, task.id) : undefined
-        const rec = await ctx.schedule.create(task.sessionId, {
+        const rec = await scheduleOf(ctx).create(task.sessionId, {
           title: `[批准执行] ${task.name}`,
           prompt: buildPrompt(task, {
             approved: true,

@@ -166,34 +166,6 @@ export class WakeDriver {
             this.deps.log("warn", "wake compaction failed for alarm " + alarm.id + ": " + (error instanceof Error ? error.message : String(error)));
         }
     }
-    /**
-     * Model selection for a resumed/created agent: an alarm-level override with
-     * BOTH provider and model wins outright (a "new" target naming its model);
-     * otherwise the session's own committed request header wins (the same model
-     * the live session last used), and the fallback chain is the host's
-     * agentDefaultModel MERGED with any partial override. Installed on the
-     * agent's scope so the first buildRequest resolves provider/model even when
-     * AgentOptions are empty — the web host's exact pattern (selectionFor).
-     */
-    createWakeSelection(agent, override) {
-        if (override !== undefined && override.provider !== undefined && override.model !== undefined) {
-            const fixed = { provider: override.provider, model: override.model };
-            let picked;
-            return {
-                get current() { return picked ?? fixed; },
-                set current(next) { picked = next; },
-                assembled: void 0
-            };
-        }
-        return createWakeSelectionRef(agent.session.requestHeader(), () => {
-            const base = this.deps.modelSelection();
-            return {
-                ...(base ?? {}),
-                ...(override?.provider !== undefined ? { provider: override.provider } : {}),
-                ...(override?.model !== undefined ? { model: override.model } : {})
-            };
-        }, this.deps.log);
-    }
     agentOptions(override) {
         const base = this.deps.modelSelection();
         const provider = override?.provider ?? base?.provider;
@@ -207,8 +179,19 @@ export class WakeDriver {
             options.model = model;
         return options;
     }
-    installSelection(agentCtx, agent, override) {
-        installModelSelection(agentCtx, this.createWakeSelection(agent, override));
+    /**
+     * Model selection for a resumed/created agent (DSH 0.2.2, care fork #16):
+     * the Agent owns its choice (`agent.model`: a recorded selection, then the
+     * session's last committed request, then the live AgentOptions), so the
+     * session's own request wins on its own and {@link agentOptions} — the
+     * host's agentDefaultModel merged with any partial alarm override — is the
+     * fallback. A full override only reaches a brand-new session ("new"
+     * target), which has neither, so its AgentOptions win outright.
+     * installModelSelection adds the host's model-switch notice: the web host's
+     * exact setup (composeAgent in the session controller).
+     */
+    installSelection(agentCtx) {
+        installModelSelection(agentCtx);
     }
     /**
      * Creation meta recording the default preset, so a fresh child's header
@@ -246,8 +229,8 @@ export class WakeDriver {
      * reads `.events` directly, so it always receives the compat-adapted view —
      * never the raw live Session.
      */
-    async composeAgent(agentCtx, agent, override) {
-        this.installSelection(agentCtx, agent, override);
+    async composeAgent(agentCtx, agent) {
+        this.installSelection(agentCtx);
         const presets = this.deps.agentPresets;
         if (presets === undefined)
             return;
@@ -470,7 +453,7 @@ export class WakeDriver {
                     sessionId: actualSessionId,
                     agentOptions: this.agentOptions(override),
                     meta,
-                    setup: (agentCtx, agent) => this.composeAgent(agentCtx, agent, override)
+                    setup: (agentCtx, agent) => this.composeAgent(agentCtx, agent)
                 });
                 // Bookkeep BEFORE attach/drive: even a failed attach or drive leaves
                 // a real session behind, and it must never become a later wake's
@@ -721,59 +704,4 @@ export class WakeDriver {
             }
         }
     }
-}
-/**
- * Provider/model for a wake turn from the session's last committed request
- * header, when one exists. Pure so the fallback chain is unit-testable.
- *
- * `reasoningEffort` is passed through verbatim: an explicit effort in the
- * header is preserved for the wake turn, while an absent effort is left unset
- * so adapter/default effort resolution applies (mirrors the web host).
- */
-export function selectionFromHeader(header) {
-    if (header === undefined)
-        return undefined;
-    if (header.config.provider === undefined || header.config.model === undefined)
-        return undefined;
-    return {
-        provider: header.config.provider,
-        model: header.config.model,
-        ...(header.config.reasoningEffort === undefined ? {} : { reasoningEffort: header.config.reasoningEffort })
-    };
-}
-/**
- * Mutable model selection for a resumed agent's wake turn: the session's own
- * committed request header wins, then {@link fallback} (agentDefaultModel).
- * A missing or incomplete fallback is surfaced as a warn instead of silently
- * emptying the selection; `current` is undefined only when nothing at all
- * resolves, so the request waterfall has nowhere to draw provider/model from.
- */
-export function createWakeSelectionRef(header, fallback, log) {
-    let picked;
-    return {
-        get current() {
-            if (picked !== undefined)
-                return picked;
-            const fromHeader = selectionFromHeader(header);
-            if (fromHeader !== undefined)
-                return fromHeader;
-            const maybe = fallback();
-            if (maybe === undefined || (maybe.provider === undefined && maybe.model === undefined)) {
-                const what = header === undefined
-                    ? "no committed request header"
-                    : "committed request header is incomplete (missing provider/model)";
-                log("warn", `wake resume: ${what} and agentDefaultModel selection unavailable; provider/model left to the request waterfall`);
-                return undefined;
-            }
-            if (maybe.provider === undefined || maybe.model === undefined) {
-                log("warn", "wake resume: agentDefaultModel selection incomplete: " + JSON.stringify(maybe));
-                return undefined;
-            }
-            return { provider: maybe.provider, model: maybe.model };
-        },
-        set current(next) {
-            picked = next;
-        },
-        assembled: void 0
-    };
 }

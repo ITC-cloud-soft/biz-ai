@@ -50,8 +50,8 @@
  * agent is a process-local runtime; the persisted session itself stays intact).
  */
 import type { Context } from "@deepseek-ai/cordis";
-import type { Agent, AgentOptions, ModelSelection, ModelSelectionRef } from "@deepseek-ai/dsh-agent";
-import type { EpochHeader, SessionEvent, SessionHeader } from "@deepseek-ai/dsh-session";
+import type { Agent, AgentOptions } from "@deepseek-ai/dsh-agent";
+import type { SessionEvent, SessionHeader } from "@deepseek-ai/dsh-session";
 import { type Alarm, type AlarmMode, type RunDecision } from "./domain.js";
 import type { ProactiveStore } from "./store.js";
 import type { ProactiveConfig } from "./config.js";
@@ -242,17 +242,18 @@ export declare class WakeDriver {
      * already shadowed just skips with a warn.
      */
     private compactWake;
-    /**
-     * Model selection for a resumed/created agent: an alarm-level override with
-     * BOTH provider and model wins outright (a "new" target naming its model);
-     * otherwise the session's own committed request header wins (the same model
-     * the live session last used), and the fallback chain is the host's
-     * agentDefaultModel MERGED with any partial override. Installed on the
-     * agent's scope so the first buildRequest resolves provider/model even when
-     * AgentOptions are empty — the web host's exact pattern (selectionFor).
-     */
-    private createWakeSelection;
     private agentOptions;
+    /**
+     * Model selection for a resumed/created agent (DSH 0.2.2, care fork #16):
+     * the Agent owns its choice (`agent.model`: a recorded selection, then the
+     * session's last committed request, then the live AgentOptions), so the
+     * session's own request wins on its own and {@link agentOptions} — the
+     * host's agentDefaultModel merged with any partial alarm override — is the
+     * fallback. A full override only reaches a brand-new session ("new"
+     * target), which has neither, so its AgentOptions win outright.
+     * installModelSelection adds the host's model-switch notice: the web host's
+     * exact setup (composeAgent in the session controller).
+     */
     private installSelection;
     /**
      * Creation meta recording the default preset, so a fresh child's header
@@ -304,23 +305,3 @@ export declare class WakeDriver {
     private drive;
     fire(alarm: Alarm): Promise<WakeFireResult>;
 }
-/**
- * Provider/model for a wake turn from the session's last committed request
- * header, when one exists. Pure so the fallback chain is unit-testable.
- *
- * `reasoningEffort` is passed through verbatim: an explicit effort in the
- * header is preserved for the wake turn, while an absent effort is left unset
- * so adapter/default effort resolution applies (mirrors the web host).
- */
-export declare function selectionFromHeader(header: EpochHeader | undefined): ModelSelection | undefined;
-/**
- * Mutable model selection for a resumed agent's wake turn: the session's own
- * committed request header wins, then {@link fallback} (agentDefaultModel).
- * A missing or incomplete fallback is surfaced as a warn instead of silently
- * emptying the selection; `current` is undefined only when nothing at all
- * resolves, so the request waterfall has nowhere to draw provider/model from.
- */
-export declare function createWakeSelectionRef(header: EpochHeader | undefined, fallback: () => {
-    provider?: string;
-    model?: string;
-} | undefined, log: WakeDriverDeps["log"]): ModelSelectionRef;

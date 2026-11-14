@@ -7,7 +7,7 @@ import { Context } from "@deepseek-ai/cordis";
 import type { Agent } from "@deepseek-ai/dsh-agent";
 import { Session, deriveEventMessage, type EpochHeader } from "@deepseek-ai/dsh-session";
 import { ToolCallId, ReasoningEffortId, createAssistantMessage, createToolResultMessage, createUserMessage } from "@deepseek-ai/dsh-llm";
-import { WakeDriver, createWakeSelectionRef, selectionFromHeader, completedTurnCut, sessionLogOf, lastEventEpoch, type AgentHandleLike, type AgentPresetsPort, type AgentsFacade, type CreateFacadeOptions, type WakeFireResult } from "../src/wake.js";
+import { WakeDriver, completedTurnCut, sessionLogOf, lastEventEpoch, type AgentHandleLike, type AgentPresetsPort, type AgentsFacade, type CreateFacadeOptions, type WakeFireResult } from "../src/wake.js";
 import type { WorkspaceWakePort } from "../src/workspace.js";
 import { ProactiveStore } from "../src/store.js";
 import { resolveConfig } from "../src/config.js";
@@ -441,17 +441,10 @@ test("new target stays workspace-less when the owner session has no readable cwd
   }
 });
 
-test("selectionFromHeader mirrors the session's committed request config", () => {
-  assert.equal(selectionFromHeader(undefined), undefined);
-  const header: EpochHeader = {
-    config: { provider: "cpa", model: "gemini-3-flash" },
-  };
-  assert.deepEqual(selectionFromHeader(header), { provider: "cpa", model: "gemini-3-flash" });
-  const withEffort: EpochHeader = { config: { provider: "p", model: "m", reasoningEffort: ReasoningEffortId("low") } };
-  assert.deepEqual(selectionFromHeader(withEffort), { provider: "p", model: "m", reasoningEffort: "low" });
-});
-
-test("cold resume installs a model-selection setup that drives the request waterfall", async () => {
+test("cold resume passes the host default as AgentOptions and installs the host's model selection", async () => {
+  // DSH 0.2.2: the Agent owns its model choice (agent.model: a recorded selection, then the session's last request,
+  // then the live AgentOptions). The wake passes agentDefaultModel as AgentOptions and installs the same model-selection
+  // setup as the web host; the session's own committed request header then wins inside the Agent.
   const dir = mkdtempSync(join(tmpdir(), "dsh-proactive-wake-"));
   const cfg = resolveConfig(dir);
   const store = new ProactiveStore(dir);
@@ -477,25 +470,14 @@ test("cold resume installs a model-selection setup that drives the request water
   try {
     const fire = await driver.fire(alarm("c1"));
     assert.equal(fire.outcome, "ok");
+    assert.deepEqual(capturedOptions.agentOptions, { provider: "cpa", model: "medium" });
     assert.equal(typeof capturedOptions.setup, "function", "cold resume must carry a setup hook");
 
-    // execute the real setup against a real cordis Context with the fake agent
+    // the real setup against a real cordis Context: installModelSelection registers its scoped listener
     const agentCtx = new Context();
     Object.defineProperty(agentCtx, "agent", { value: wakeAgent, configurable: true });
     const applied = (capturedOptions.setup as (ctx: Context, agent: Agent) => unknown)(agentCtx, wakeAgent);
     if (applied && typeof (applied as { then?: unknown }).then === "function") await applied;
-
-    // drive the two model-selection waterfalls (strict cordis event typings
-    // don't know these runtime event names; cast just for the test harness)
-    const waterfall = (agentCtx as unknown as { waterfall: (subject: unknown, name: string, ...args: unknown[]) => Promise<unknown> }).waterfall;
-    // system-prompt/assemble snapshots the session-header selection
-    const assembled = (await waterfall(agentCtx, "system-prompt/assemble", {}, {}, () => Promise.resolve({ variables: {} }))) as { variables: Record<string, unknown> };
-    assert.deepEqual(assembled.variables, { provider: "cpa", model: "gemini-3-flash" });
-    // agent/request overrides the seed route with the assembled selection
-    const request = (await waterfall(agentCtx, "agent/request", { turn: 1, step: 1 }, () => Promise.resolve({ provider: "seed", model: "seed", maxTokens: 100 }))) as { provider: string; model: string; maxTokens: number };
-    assert.equal(request.provider, "cpa");
-    assert.equal(request.model, "gemini-3-flash");
-    assert.equal(request.maxTokens, 100, "unrelated request fields must pass through untouched");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -630,33 +612,6 @@ function makeWakeAgent(header: EpochHeader) {
   };
   return agent as unknown as Agent;
 }
-
-test("createWakeSelectionRef falls back header -> agentDefaultModel -> warn", () => {
-  const warns: string[] = [];
-  const log = (_level: "info" | "warn" | "error", m: string) => warns.push(m);
-
-  const header = (): EpochHeader => ({ config: { provider: "cpa", model: "gemini-3-flash" } });
-  // header wins
-  const fromHeader = createWakeSelectionRef(header(), () => ({ provider: "cpa", model: "medium" }), log);
-  assert.deepEqual(fromHeader.current, { provider: "cpa", model: "gemini-3-flash" });
-  // picked (in-memory override) wins over header
-  fromHeader.current = { provider: "cpa", model: "medium" };
-  assert.deepEqual(fromHeader.current, { provider: "cpa", model: "medium" });
-
-  // no header -> default selection
-  const viaDefault = createWakeSelectionRef(undefined, () => ({ provider: "cpa", model: "medium" }), log);
-  assert.deepEqual(viaDefault.current, { provider: "cpa", model: "medium" });
-
-  // no header, empty default -> undefined + warn
-  const viaEmpty = createWakeSelectionRef(undefined, () => undefined, log);
-  assert.equal(viaEmpty.current, undefined);
-  assert.ok(warns.some((w) => w.includes("agentDefaultModel selection unavailable")));
-
-  // no header, partial default -> undefined + warn
-  const viaPartial = createWakeSelectionRef(undefined, () => ({ provider: "cpa" }), log);
-  assert.equal(viaPartial.current, undefined);
-  assert.ok(warns.some((w) => w.includes("selection incomplete")));
-});
 
 test("silent wake collapses on the model surface after the turn settles", async () => {
   const dir = mkdtempSync(join(tmpdir(), "dsh-proactive-wake-"));

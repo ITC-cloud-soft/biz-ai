@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/plugin-assistant",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "Apache-2.0",
   "description": "DSH Business Bridge plugin bridge-assistant: business-web side panel AI assistant RPC (ticket to delegation, per application x employee x agent sessions, loopback-only)",
   "keywords": [

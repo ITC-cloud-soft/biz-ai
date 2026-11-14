@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/plugin-memory",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "Apache-2.0",
   "description": "Biz Assistant Framework plugin bridge-memory: long-term memory for AI employees (personal memory per employee, shared organization memory, conversation recall), personal-data checked before saving",
   "keywords": [

@@ -513,7 +513,7 @@ test("wake: new mode with a missing workspace fails closed without creating", as
   }
 });
 
-test("wake: new mode provider/model override threads into agentOptions and the fixed selection", async () => {
+test("wake: new mode provider/model override threads into agentOptions (a fresh session: they win outright)", async () => {
   const h = await wakeHarness({
     presets: { defaultId: "standard", mount: async () => undefined }
   });
@@ -522,25 +522,15 @@ test("wake: new mode provider/model override threads into agentOptions and the f
     assert.equal(fire.outcome, "ok");
     const created = h.created();
     assert.ok(created !== undefined);
-    // Full override: AgentOptions carry it AND the installed selection is
-    // fixed (never falls through to the base modelSelection).
+    // Full override: the AgentOptions carry it, never the base modelSelection. DSH 0.2.2's Agent resolves a
+    // recorded selection, then the last request, then these options; a fresh session has neither of the first two.
     assert.deepEqual(created.agentOptions, { provider: "cpa", model: "gemini-3-flash" });
     assert.equal(typeof created.setup, "function");
 
-    // Execute the real setup against a scoped context, then drive the
-    // request waterfall: the override must win over the seed route.
+    // The real setup against a scoped context (the host's model selection + the preset mount).
     const agentCtx = new Context();
     Object.defineProperty(agentCtx, "agent", { value: h.fakeAgent, configurable: true });
     await (created.setup as (ctx: Context, agent: Agent) => unknown)(agentCtx, h.fakeAgent);
-    const waterfall = (agentCtx as unknown as { waterfall: (subject: unknown, name: string, ...args: unknown[]) => Promise<unknown> }).waterfall;
-    // system-prompt/assemble snapshots the fixed selection, then
-    // agent/request stamps it over the seed route (the platform contract).
-    const assembled = (await waterfall(agentCtx, "system-prompt/assemble", {}, {}, () => Promise.resolve({ variables: {} }))) as { variables: Record<string, unknown> };
-    assert.deepEqual(assembled.variables, { provider: "cpa", model: "gemini-3-flash" });
-    const request = (await waterfall(agentCtx, "agent/request", { turn: 1, step: 1 }, () => Promise.resolve({ provider: "seed", model: "seed", maxTokens: 64 }))) as { provider: string; model: string; maxTokens: number };
-    assert.equal(request.provider, "cpa");
-    assert.equal(request.model, "gemini-3-flash");
-    assert.equal(request.maxTokens, 64);
   } finally {
     rmSync(h.dir, { recursive: true, force: true });
   }
