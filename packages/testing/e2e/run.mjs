@@ -16,7 +16,8 @@
 //    The DSH CLI is a local copy of the pinned version (.dsh-cli/<version>, installed with npm on first use; the global DSH
 //    is never used or changed) unless DSH_BIN points at another bin.js (packages/testing/src/dsh-cli.mjs).
 // 4. Scenarios (PASS / FAIL per scenario and a JSON result in .work/result.json):
-//    a  unlinked LINE user gets the guide (no LLM); link code from the app (link page + API) → 「連携 123456」 links
+//    a  unlinked LINE user gets the guide (no LLM), also for a business question (no tool, no delegation, no business data);
+//       link code from the app (link page + API) → 「連携 123456」 links
 //    b  a question → the AI calls a manifest-generated read tool (facility_list_overdue) under the employee's delegation
 //    c  inspection.overdue → bridge-events → bridge-notify → the linked users' LINE with the AI 秘書 frame
 //       (【対応のお願い】, ▶ line, — 設備点検 AI 秘書)
@@ -25,6 +26,8 @@
 //    e  manifest playbook overdue_followup (deployed by bridge-events, enabled with install.mjs --enable-auto-tasks <id>,
 //       delegate from --auto-task-delegate) runs once per event and proposes via facility_propose_reschedule; its report reaches
 //       the event's audience as the fixed text only (the template profile is closed by default: audienceText template, …)
+//    g  link guard on the real DSH (bridge-identity → dsh-im setAnswerFilter): the AI's answer keeps the business web's screen
+//       (manifest web.routes) and loses the outside link before it reaches LINE
 //    f  isolation: another application's tool is refused in this conversation (no token sent there), a read tool outside
 //       the employee's role is refused, a delegation token cannot write
 // 5. Cleanup: only the processes started here, the database, the isolated home (--keep keeps them; --reuse-home keeps
@@ -110,6 +113,7 @@ function record(scenario, step, ok, evidence = {}, note = '') {
 // ── HTTP helpers ────────────────────────────────────────────────────────────
 
 const APP = `http://127.0.0.1:${PORTS.app}`
+const EVIL_LINK = 'https://evil.example/phish?from=e2e' // the scripted answer's outside link (scenario g)
 const GATEWAY = `http://127.0.0.1:${PORTS.gateway}`
 async function call(method, path, { cookie, body, headers = {} } = {}) {
   const h = { ...headers }
@@ -246,6 +250,8 @@ function makeProductProfile() {
   text = text.split('<アプリ名>').join(APP_NAME).split('<namespace>').join('facility')
   // 3. e2e timings: no digest windows, no quiet hours (independent of the clock), fast event polling
   replace(/^ {4}digestMinutes: 30 .*$/m, '    digestMinutes: 0\n    honorQuietHours: false', 'bridge-notify digestMinutes')
+  // 3b. the link guard: the business web of the default application (scenario g)
+  replace('    # linkGuard:\n', `    linkGuard:\n      webUrl: ${APP}\n`, 'bridge-identity linkGuard')
   // 4. the hand-written propose tool: into the template's own bridge-tools entry (which keeps groupChat: deny)
   replace("    groupChat: deny\n    # toolModules:\n    #   - { module: '@dsh-bridge/plugin-tools/examples/equipment-inspection', application: equipment-inspection }\n",
     `    groupChat: deny\n    toolModules:\n      - { module: '@dsh-bridge/plugin-tools/examples/equipment-inspection', application: ${APP_ID} }\n`, 'bridge-tools toolModules')
@@ -433,6 +439,7 @@ function llmScript(ctx) {
       return list ? `期限切れの点検は ${list.length} 件です（${list.map((x) => x.code).join(', ')}）。` : `点検の一覧を取得できませんでした（${content.slice(0, 200)}）`
     })
   }
+  if (/リンクの確認/.test(userText)) return { text: `点検一覧は ${APP}/ です。詳しくは ${EVIL_LINK} もどうぞ。` }
   if (/日報も見せて/.test(userText)) {
     return flow('example_app_list_reports', {}, (content) => (/belongs to application|not allowed|refus/i.test(content)
       ? `日報のツールはこの会話では使えません（${content.slice(0, 200)}）` : `E2E: 想定外に取得できました（${content.slice(0, 120)}）`))
@@ -505,6 +512,20 @@ async function main() {
     record('a', 'unlinked LINE user → the link guide only (no agent, no LLM call)', r.status === 200 && r.reply && /連携 123456|連携コード/.test(r.text) && llm.requests.length === llmBefore, {
       webhookStatus: r.status, reply: r.text, via: r.reply?.kind, llmRequests: llm.requests.length - llmBefore,
     })
+    // a business question from the same unlinked user: nothing but the guide (bridge-identity sends it at most once per
+    // guideIntervalSeconds, so here usually nothing at all) — no model, no tool, no delegation, no business data
+    const codes = (must(await call('GET', '/api/inspections/overdue', { cookie: actors.manager.cookie }), 200, 'overdue').items ?? []).map((x) => x.code).filter(Boolean)
+    const issuedBefore = Number((await query("select count(*)::int as n from bridge_audit_log where action = 'delegation.issued'"))[0].n)
+    const llmBefore2 = llm.requests.length
+    const q = await say('stranger', '期限切れの点検は？', null, { timeoutMs: 8_000 })
+    await sleep(2_000)
+    const issuedAfter = Number((await query("select count(*)::int as n from bridge_audit_log where action = 'delegation.issued'"))[0].n)
+    const strangerTexts = line.log.filter((e) => e.at >= q.at && e.to === LINE_USERS.stranger).map(messageText)
+    const leaked = codes.filter((code) => strangerTexts.some((t) => t.includes(code)))
+    record('a', 'unlinked LINE user asks a business question → at most the guide: no LLM call, no delegation issued, no business data on LINE',
+      q.status === 200 && strangerTexts.every((t) => /連携/.test(t)) && llm.requests.length === llmBefore2 && issuedAfter === issuedBefore && codes.length > 0 && leaked.length === 0, {
+        webhookStatus: q.status, messagesToTheSender: strangerTexts, llmRequests: llm.requests.length - llmBefore2, delegationsIssued: issuedAfter - issuedBefore, overdueCodes: codes.length, leakedCodes: leaked,
+      })
     const page = await fetch(`${APP}/`)
     const html = await page.text()
     const linked = {}
@@ -540,6 +561,14 @@ async function main() {
         businessToolsOffered: toolReq?.toolNames?.filter((n) => /facility_|example_app_/.test(n)) ?? null,
         delegationsIssued: after - before, leaksInToolResult: leaks, toolResultExcerpt: toolResult.slice(0, 200),
       })
+  }
+
+  // ── g: the link guard on the real DSH (bridge-identity's answer filter through dsh-im setAnswerFilter) ───────────────
+  {
+    const r = await say('manager', 'リンクの確認', /点検一覧/)
+    const text = r.text ?? ''
+    record('g', 'link guard: the AI answer keeps the business web screen (web.routes "/") and the outside link is removed before LINE',
+      r.reply && text.includes(`${APP}/`) && !text.includes('evil.example') && text.includes('（リンクを省きました）'), { reply: text })
   }
 
   // ── f: isolation (another application, the role scope of a delegation, no writes with a delegation) ─────────────
@@ -711,7 +740,7 @@ try {
   await cleanup()
 }
 
-const SCENARIOS = { a: 'unlinked guide → link code → linked', b: 'question → generated read tool under delegation', c: 'inspection.overdue → AI 秘書 notification', d: 'approval card → button / reply code → card updated', e: 'manifest playbook → one run per event → proposal', f: 'delegation isolation' }
+const SCENARIOS = { a: 'unlinked guide → link code → linked', b: 'question → generated read tool under delegation', c: 'inspection.overdue → AI 秘書 notification', d: 'approval card → button / reply code → card updated', e: 'manifest playbook → one run per event → proposal', f: 'delegation isolation', g: 'link guard on IM answers' }
 const byScenario = Object.fromEntries(Object.keys(SCENARIOS).map((k) => {
   const steps = results.filter((r) => r.scenario === k)
   return [k, steps.length && steps.every((r) => r.status === 'pass') ? 'pass' : 'fail']

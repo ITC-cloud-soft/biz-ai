@@ -133,6 +133,9 @@ export function createImHostPlugin(internals = {}) {
           updateCard: care.updateCard,
           onAction: care.onAction,
           claimReplies: care.claimReplies,
+          // care fork: answer filters (bridge-identity's link guard, the citation guard). Every care extension must be
+          // listed here: test/care/host-service-surface.test.mjs checks this object and the built lib/index.js.
+          setAnswerFilter: care.setAnswerFilter,
           setConversationRouter: care.setConversationRouter,
         }));
       }

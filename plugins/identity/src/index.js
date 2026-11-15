@@ -538,7 +538,7 @@ export function apply(ctx, config = {}) {
   if (typeof dshIm?.setAnswerFilter === 'function') {
     disposers.push(toDisposer(dshIm.setAnswerFilter(answerFilter)))
   } else {
-    logger.info('bridge-identity: ctx.dshIm.setAnswerFilter is missing (an older dsh-im fork); AI answers are sent without the link guard')
+    logger.warn('bridge-identity: ctx.dshIm.setAnswerFilter is missing (dsh-im older than the 2026-11-15 fix); AI answers are sent WITHOUT the link guard')
   }
   if (typeof dshIm?.claimReplies === 'function') {
     disposers.push(toDisposer(dshIm.claimReplies((text) => currentLinkRe().test(normalizeText(text)), handleLink)))

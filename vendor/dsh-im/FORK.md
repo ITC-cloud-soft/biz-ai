@@ -665,7 +665,7 @@ care-ai-native `docs/design/IM_PERSONAL_BOTS.md` §2・§5。業務 Web の「SN
 
 care-ai-native `docs/design/SNS_HELP_QA.md` §4.3・D1。SNS でシステムの使い方を聞かれたとき、AI の答えのリンクを業務システムの画面だけにし（bridge-identity のリンクの検査）、未連携の発信者には AI を使わずに公開の節で答える（bridge-identity の publicHelp）ための口。何も登録しなければ従来どおり。
 
-- `setAnswerFilter(filter)`（`ctx.dshIm` にも公開）：IM のターン（信頼できる発信元のあるターン）の最終の答えを、チャネルが送る前に `filter({ sessionId, source, text })` に通す（登録順。文字列以外を返す・例外・時間切れは元の文のまま、ログに残す）。`hasAnswerFilter()`・`filterAnswer()`。適用は `askInWorkspaceSession`（Web UI・コマンドのターン、時間切れの後の遅延配信は対象外）。
+- `setAnswerFilter(filter)`（`ctx.dshIm` にも公開。**2026-11-15 まで実際には公開されていなかった**。下の「ctx.dshIm に setAnswerFilter が無かった」）：IM のターン（信頼できる発信元のあるターン）の最終の答えを、チャネルが送る前に `filter({ sessionId, source, text })` に通す（登録順。文字列以外を返す・例外・時間切れは元の文のまま、ログに残す）。`hasAnswerFilter()`・`filterAnswer()`。適用は `askInWorkspaceSession`（Web UI・コマンドのターン、時間切れの後の遅延配信は対象外）。
 - 接入の判定器（`setAccessResolver`）は第 2 引数に `{ text }`（前後の空白を除いたメッセージ）を受け取る。従来の 1 引数の判定器はそのまま動く。
 
 | ファイル | 内容 |
@@ -712,3 +712,11 @@ care-ai-native `docs/design/SNS_HELP_QA.md` §4.3・D1。SNS でシステムの�
 - DSH 0.2.2 は bundle の `engines.dsh` / dsh の peerDependencies で互換性を検査するが、この fork はどちらも持たないので検査の対象外（`dsh.compatibility` は DSH 本体は読まない）。
 - 更新パネルの文言「dsh-im 5.0.0 仅支持 DSH 0.2.1-rc.2。」は上游の版ごとの互換表の 1 行（履歴）なので変えない。fork では自己更新は無効。
 - `npm test` 4752 件中 失敗 0・skip 17（Windows 11 / Node 24）、`node scripts/verify-package.mjs` 成功。framework の `pnpm demo`（実 DSH 0.2.2-rc.1）15 / 15。
+
+## ctx.dshIm に setAnswerFilter が無かった（修正 2026-11-15）
+
+- 症状：`installCareExtensions()` は `setAnswerFilter` を返していたが、Host の `ctx.provide('dshIm', …)`（`plugin-src/host/index.mjs`）が一覧に入れていなかった。実 DSH では `ctx.dshIm.setAnswerFilter` が `undefined` で、**回答フィルターが一つも入らなかった**（bridge-identity の linkGuard、biz-ai-agent の引用チェック）。bridge-identity は info ログを出して答えをそのまま送っていた。H1（2026-10-29）から 11-15 まで。単体テストはどれも `imExtensions` か偽の `dshIm` を直接使っていたので気づかなかった。biz-ai-agent の実 DSH e2e（`0e9d18b`）で発見。
+- 影響の範囲：AI の答えに含まれる URL の制限（業務 Web の `web.routes` の画面と `allowHosts` 以外を省く）が効いていなかった。**未連携の発信者の拒否（`setAccessResolver`）は公開されていて、影響なし**。
+- 修正：`setAnswerFilter: care.setAnswerFilter` を `dshIm` に追加、`npm run build`（`lib/index.js` の 1 か所だけ変わる。`lib/client.js` は不変）。bridge-identity は関数が無いとき warn を出す（以前は info）。
+- 再発防止：`test/care/host-service-surface.test.mjs`（新規 3 件）— `installCareExtensions()` が返す名前が**全部** `ctx.dshIm` にあること、`ctx.dshIm.setAnswerFilter` で入れたフィルターが IM のターンに効き dispose で外れること、**ビルド済みの `lib/index.js`**（DSH が実際に読むもの）の `dshIm` も全部の名前を持つこと（`npm run build` 忘れも落ちる）。framework の実 DSH e2e にシナリオ g（linkGuard が LINE への答えから外部リンクを省く）と、シナリオ a に「未連携の人が業務の質問をしても案内だけ（LLM・委任・業務データなし）」を追加。
+- 修正前：新しいテスト 3 件とも失敗、framework の `pnpm demo` はシナリオ g が FAIL（外部リンクがそのまま LINE へ）。修正後：`npm test` 4755 件中 失敗 0・skip 17（Windows 11 / Node 24）、`pnpm demo`（実 DSH 0.2.2-rc.1）17 / 17。
