@@ -135,6 +135,7 @@ web:
     - '/settings/public-masters/releases/:id'
     - '/cm/masters'
     - '/settings/billing'
+    - '/settings/care-flow'
     - '/settings/models'
     - '/settings/ai'
     - '/settings/im'
@@ -670,7 +671,7 @@ events:
     payload: [leaveRequestId, employeeUserId, date, decision]
     severity: info
     audience: { rule: applicant }
-    notify: { template: leave_request.decided, variants: [leave_request.decided.approved, leave_request.decided.returned], digestMinutes: 0 }
+    notify: { template: leave_request.decided, variants: [leave_request.decided.approved, leave_request.decided.returned, leave_request.decided.cancelled], digestMinutes: 0 }
   shift.published:
     label: シフトの公開
     aggregate: shift
@@ -1017,6 +1018,9 @@ templates:
     intent: action
     action: 職員アプリで理由を確認し、必要なら日にちを変えて申請し直してください。
     params: { date: { type: monthday, optional: true } }
+  leave_request.decided.cancelled:
+    intent: info
+    params: { date: { type: monthday, optional: true } }
   shift.published:
     intent: info
     params: { month: { type: month, optional: true } }
@@ -1317,6 +1321,8 @@ templates:
       missedCheckInsHours: { type: integer, optional: true }
       payroll: { type: integer, optional: true }
       payrollHours: { type: integer, optional: true }
+      attendanceClose: { type: integer, optional: true }
+      attendanceCloseHours: { type: integer, optional: true }
       approvalsReturned: { type: integer, optional: true }
       approvalsReturnedHours: { type: integer, optional: true }
       approvalsExpired: { type: integer, optional: true }
@@ -1352,6 +1358,7 @@ templates:
       provisionMonth: { type: month, optional: true }
       monitoringMonth: { type: month, optional: true }
       benefitMonth: { type: month, optional: true }
+      attendanceCloseMonth: { type: month, optional: true }
   escalation.raised.lead:
     intent: consult
     action: 業務 Web のチーム画面で担当の方を確かめて声をかけていただくか、お休みでしたら代行の設定をお願いします。
@@ -1383,6 +1390,8 @@ templates:
       missedCheckInsHours: { type: integer, optional: true }
       payroll: { type: integer, optional: true }
       payrollHours: { type: integer, optional: true }
+      attendanceClose: { type: integer, optional: true }
+      attendanceCloseHours: { type: integer, optional: true }
       approvalsReturned: { type: integer, optional: true }
       approvalsReturnedHours: { type: integer, optional: true }
       approvalsExpired: { type: integer, optional: true }
@@ -1418,6 +1427,7 @@ templates:
       provisionMonth: { type: month, optional: true }
       monitoringMonth: { type: month, optional: true }
       benefitMonth: { type: month, optional: true }
+      attendanceCloseMonth: { type: month, optional: true }
   escalation.raised.lead.fallback:
     intent: consult
     action: 担当のケアマネに声をかけていただくか、お休みでしたら業務 Web で担当替え・代行の設定をお願いします。
@@ -1449,6 +1459,8 @@ templates:
       missedCheckInsHours: { type: integer, optional: true }
       payroll: { type: integer, optional: true }
       payrollHours: { type: integer, optional: true }
+      attendanceClose: { type: integer, optional: true }
+      attendanceCloseHours: { type: integer, optional: true }
       approvalsReturned: { type: integer, optional: true }
       approvalsReturnedHours: { type: integer, optional: true }
       approvalsExpired: { type: integer, optional: true }
@@ -1484,6 +1496,7 @@ templates:
       provisionMonth: { type: month, optional: true }
       monitoringMonth: { type: month, optional: true }
       benefitMonth: { type: month, optional: true }
+      attendanceCloseMonth: { type: month, optional: true }
   escalation.raised.missed_check_in:
     intent: urgent
     action: 介護担当と連絡を取り、必要なら利用者宅への連絡と代わりの手配をお願いします（業務 Web の「訪問予定」）。
