@@ -314,3 +314,5 @@ server-kit は照合時に個人ボットの所有者の規則を適用し、eve
 [Apache License 2.0](LICENSE) — [`NOTICE`](NOTICE) も参照。`vendor/` の fork は上流のライセンス（MIT）のまま。
 
 公開リポジトリ：https://github.com/ITC-cloud-soft/biz-ai — 質問は GitHub Discussions へ、バグは GitHub Issues へ。
+
+自社の業務システムに AI をつなぐ支援もしています。30 分の無料「既存システム AI 化診断」：https://biz-ai.myaiportal.net/diagnosis.html?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=biz-ai

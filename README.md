@@ -302,3 +302,5 @@ English and Chinese: [`docs/GUIDELINE.en.md`](docs/GUIDELINE.en.md) · [`docs/GU
 [Apache License 2.0](LICENSE) — see also [`NOTICE`](NOTICE). The forks in `vendor/` keep their upstream licenses (MIT).
 
 Public repository: https://github.com/ITC-cloud-soft/biz-ai — questions in GitHub Discussions, bugs in GitHub Issues.
+
+Want help connecting your own business system? We offer a free 30-minute AI-readiness assessment: https://biz-ai.myaiportal.net/en/diagnosis.html?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=biz-ai

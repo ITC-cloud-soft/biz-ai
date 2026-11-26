@@ -304,3 +304,5 @@ server-kit 在查找时应用个人机器人的所有者规则，并且只通过
 [Apache License 2.0](LICENSE)——另见 [`NOTICE`](NOTICE)。`vendor/` 中的各 fork 保留其上游许可证（MIT）。
 
 公开仓库：https://github.com/ITC-cloud-soft/biz-ai ——问题请在 GitHub Discussions 中提出，缺陷请提交到 GitHub Issues。
+
+想把你们自己的业务系统接上 AI？我们提供 30 分钟的免费 AI 化诊断：https://biz-ai.myaiportal.net/zh/diagnosis.html?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=biz-ai
