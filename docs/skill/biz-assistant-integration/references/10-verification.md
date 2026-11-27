@@ -12,6 +12,9 @@ node --test <framework>/packages/protocol/conformance/http.test.mjs        # the
 ```
 
 - Run it against the **TEST environment** (never against production or the demo environment). Use test values generated fresh every time.
+- **Windows: run the business tests and the conformance test as separate commands.** One `node --test --test-isolation=none test/domain.test.mjs test/conformance.test.mjs`
+  call reports all 52 conformance checks as `cancelled` (0 / 52) while the business tests pass. Use
+  `node --test --test-isolation=none test/domain.test.mjs && node --test --test-isolation=none test/conformance.test.mjs` (for example as the `test` script).
 - In CI, follow the form of the sample's `examples/equipment-inspection/test/conformance.test.mjs` (startup, temporary DB and cleanup in one test).
 - Systems that want to start themselves and prepare the DB, or rewrite old paths, use an application adapter (`BRIDGE_ADAPTER=./my-app.adapter.mjs`, sample `conformance/adapters/example-adapter.mjs`).
 
@@ -47,7 +50,7 @@ node --test <framework>/packages/protocol/conformance/http.test.mjs        # the
 |---|---|---|---|
 | 1 | manifest | `node <framework>/packages/protocol/bin/bridge-validate.mjs manifest bridge.manifest.yaml --strict` | exit 0 |
 | 2 | conformance | Section 1 above | `52 passed, 0 known gaps, 0 skipped` |
-| 3 | The business system's own tests | `node --test test/*.test.mjs` (on Windows, `--test-isolation=none`) | All pass (minimum content: section 5 of `05-business-side.md`) |
+| 3 | The business system's own tests | `node --test test/*.test.mjs` (on Windows, `--test-isolation=none`, and a separate command from the conformance test: section 1) | All pass (minimum content: section 5 of `05-business-side.md`) |
 | 4 | Manual (if used) | In the business tests, `checkAnchors`, `checkSectionPaths`, `checkCoverage`, `checkRoleText` and `checkLinks` are empty; if the index is committed, `serializeIndex(buildHelpIndex(...))` matches | Empty, equal |
 | 5 | Product profile | `node <framework>/profile/scripts/install.mjs --source <product profile> --home <temporary directory> --profile <name> --skip-install` | No `template placeholders left` warning |
 | 6 | Outbound settings | `node <framework>/profile/scripts/check.mjs <product profile>/cordis.patch.yml` (`--allow <rule>` only for intended opt-ins; hand-written automatic-task delegation needs `--allow unattendedPolicy`) | exit 0 |

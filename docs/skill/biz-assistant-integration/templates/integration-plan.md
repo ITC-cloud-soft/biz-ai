@@ -31,7 +31,8 @@ The 4 capabilities if external mode is chosen: IdP ( ) / APIs callable as the us
 |---|---|---|---|
 | What the AI may read (tools and roles, delegation per role) | | | |
 | Events to notify, recipient rules, handling at night | | | |
-| Proposal kinds and the roles that may accept them | | | |
+| Proposal kinds, and who accepts each kind (`roles.proposalReviewers` is one list for all kinds, per-kind rules go in `apply`; the employee a proposal was made for cannot accept it; reviewers see every department's proposals) | | | |
+| Proposal scope of each proposing role (= its read scope, or conformance PR1 / PR2 fail) | | | |
 | Delegation class and employee for automatic tasks (or each) | | | |
 | Outbound settings to open (opt-in) and why | None (recommended) | | |
 | Chat, bot and AI model to use | | | |

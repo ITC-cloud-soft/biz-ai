@@ -61,3 +61,16 @@ node <framework>/packages/protocol/bin/bridge-validate.mjs manifest bridge.manif
   (the "Instruction rules" in `<framework>/profile/template/auto-tasks/README.md`). Ship with `enabled: false`; the operator enables it.
 - **Night time**: only kinds that may be delivered at night (such as safety checks) get `notify.quiet: exempt`. Frequent kinds use digest sending (`digestMinutes`).
 - **Versions**: within v1, only add. Do not delete event types that are no longer emitted; mark them `deprecated: true`.
+
+## 5. Notations that look alike but differ
+
+The validator reports some of these only after the fact, so write them right the first time.
+
+| Where | Notation | Example |
+|---|---|---|
+| `web.routes` (screens of the business web app) | Path parameters as **`:name`** (one segment); a trailing `/*` = the path and any sub path. `{` `}` are rejected by the schema | `'/requests/:id'` |
+| `tools[].http` (the AI's business tools) | Path parameters as **`{name}`**. DSH turns each `{name}` into an argument of the generated tool; a `:id` is not a parameter and would be sent literally | `GET /api/requests/{id}` |
+| `kit.readToolPolicy(endpoint, roles)` | The **exact `tools[].http` string** (`{name}`): it is the key of the AI allow-list | `kit.readToolPolicy('GET /api/requests/{id}', ['admin', 'manager'])` |
+| `router.add(method, path, …)` (server-kit router) | **`:name`**, like `web.routes` | `router.add('GET', '/api/requests/:id', …)` |
+| `playbooks.<id>.trigger.cron` | **One string** (5 fields, `system.timezone`) | `cron: '0 9 * * 1-5'` |
+| `reports.<kind>.cron` | **An array** of 1–12 strings. server-kit's report scheduler runs daily slots and accepts only `M H * * *` (anything else throws when the scheduler starts) | `cron: ['0 9 * * *', '0 17 * * *']` |

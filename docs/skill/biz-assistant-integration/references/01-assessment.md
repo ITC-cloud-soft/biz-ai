@@ -55,9 +55,22 @@ Copy the result into the table in the plan (`templates/integration-plan.md`).
 
 External mode is a **trial** (before a PoC on a real system). If you adopt it, tell the user so, and do not change the release conditions (52 / 52, no skips).
 
-## 4. Assessment output
+## 4. Ask early: who accepts each AI proposal kind
+
+For every proposal kind (`hooks.proposalKinds`), ask the user **who may accept or reject it**, and record the answer in the plan (section 2).
+Ask it during the assessment, not in the middle of the implementation: the kit limits the possible answers. Tell the user these facts with the question
+(source of truth: `packages/server-kit/src/routes/misc.mjs`, `src/app.mjs` `roles`, `packages/protocol/conformance/checks/proposals.mjs`).
+
+| Kit fact | What it means for the design |
+|---|---|
+| Only a **human session** whose role is in `roles.proposalReviewers` can accept or reject (`POST /bridge/v1/proposals/{id}/accept` / `reject`). A delegation (the AI acting for an employee) and the service get 403 (conformance PR2). | A proposal cannot be accepted by the employee it was made for (`forUserId`): not from chat, and not on the web unless that employee's role is a reviewer role. "The employee confirms the AI's suggestion themself" is not a proposal; make it an ordinary web action of that employee. Conversely, the kit does not stop a reviewer from accepting a proposal made for themself: refuse it in `apply` if that must not happen (`proposal.forUserId === String(actor.id)`). |
+| `roles.proposalReviewers` is **one list for all kinds** (default: the report readers). There is no per-kind reviewer setting. | Per-kind rules ("only a manager of the same department accepts `request_withdraw`", "only admin accepts `approval_reminder`") go in that kind's `apply(payload, actor, ctx, proposal)`: check `actor` and throw (`fail(403, '…')` from server-kit). The kit's transaction rolls back and the proposal stays `pending_review`. |
+| A reviewer's `GET /bridge/v1/proposals` lists **every** proposal of every kind and department (id, kind, payload, `forUserId`); other employees see only the proposals made for them. | Putting an ordinary role into the reviewers shows those employees other people's and other departments' proposal IDs, kinds and payloads. Keep payloads to IDs, dates and counts (no amounts, names or free text), and narrow the list in the web screen if needed (the API does not). |
+| A proposal's scope must match the proposing role's **read scope**. Conformance PR1 / PR2 call `proposalSample()` **before** the delegated employee exists (`newEmployee(role)` creates and links a fresh employee afterwards). | A `validate` that accepts only "the employee's own records" fails PR1 / PR2. Let the role propose on what its read tools can see (for example, a manager on the department's requests), and make the sample a record inside that scope that does not depend on the delegated employee. |
+
+## 5. Assessment output
 
 - The 13-item table (judgment, evidence, rough amount to add)
 - The chosen path and the reason
 - The one business to handle first
-- A list of things for humans to decide (section 4 of SKILL.md), with recommendations
+- A list of things for humans to decide (section 4 of SKILL.md), with recommendations, including who accepts each proposal kind (section 4 above)

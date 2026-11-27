@@ -50,6 +50,46 @@ return kit.tx(async (t) => {
 - Periodic business processing (scanning for overdue items, etc.) uses `startScheduler({ kit, tasks: [{ name, everyMinutes, run }] })`. Make it idempotent (once per deadline / date).
   If you use external connector rules, add `{ name: 'connector-rules', everyMinutes: 1, run: () => kit.connectors.tick() }`.
 
+### An existing system without a database (business data in memory)
+
+`createMemoryStore()` rolls back only the kit's own state (events, proposals, links) when a transaction throws, so a business change kept in your
+own variables would survive a failed `emitEvent`. Wrap the store you pass to `createBridgeApp`: snapshot the business data when a transaction starts
+and put it back when it throws.
+
+```js
+// src/data.mjs — the business state lives in data.state; change it ONLY inside kit.tx
+export function createData() {
+  const data = {
+    state: { requests: [], nextRequestId: 101 },
+    snapshot: () => structuredClone(data.state),
+    restore: (s) => { data.state = s },
+  }
+  return data
+}
+
+/** The kit's store, with the business state in the same transaction (rolled back together). */
+export function businessStore(store, data) {
+  return {
+    ...store,
+    tx: (fn) => store.tx(async (t) => {
+      const snap = data.snapshot()
+      try { return await fn(t) } catch (error) { data.restore(snap); throw error }
+    }),
+  }
+}
+
+// src/app.mjs
+const data = createData()
+const bridge = await createBridgeApp({ store: businessStore(createMemoryStore({ now }), data), /* … */ })
+```
+
+- Every `kit.tx` / `store.tx` goes through the wrapper, so a business change and its event commit or vanish together. The memory store runs
+  transactions one at a time, and a nested `tx` joins the outer one (the outer catch restores the outer snapshot).
+- Always read through `data.state` (do not keep references to its objects across transactions: `restore` replaces the object).
+- Business test: change the business data and emit an event with a key outside the allow-list in one `kit.tx` → `EventRejected`, and the change is gone.
+- This is for prototypes and trials (the memory store loses everything on restart, and every transaction copies the whole state). For production, move the
+  business data to a database and use `createPostgresStore` / `createMysqlStore` with the business change on `t.db`.
+
 ## 4. How recipients are decided (the d.8 MUST)
 
 ```js
