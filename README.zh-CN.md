@@ -28,6 +28,8 @@ Biz Assistant（Bizアシスタント，包名 `@dsh-bridge/*`）为过去只是
 **52** 项一致性检查（Bridge v1）· **9** 个 AI 平面插件 · **12** 个支持个人机器人的聊天平台 ·
 **0** 项可由 AI 确认、审批或支付的操作
 
+**模型可以自己选。** DeepSeek 只是默认值。对话模型在 DSH 的 Models 页面设置，可选 OpenAI、Azure OpenAI、Anthropic、DeepSeek、OpenAI 兼容网关或自建服务器（vLLM 等），由 DSH 自带的 `dsh-llm-pi-ai` 适配器连接。Bridge v1 本身不依赖任何模型。下面的 demo 使用脚本化的模型，不需要 API key。
+
 ## 3 分钟跑起来看看
 
 不需要 API key，也不需要聊天账号：示例业务系统（设备点检，数据全部虚构）和 framework 的插件运行在**真实的 DeepSeek Harness** 上，
@@ -39,6 +41,8 @@ git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
 pnpm install
 pnpm demo        # 用 Docker 起一个临时 PostgreSQL；打印对话记录和每个场景的 PASS / FAIL
 ```
+
+**不想在本机准备环境：** [在 GitHub Codespaces 里打开](https://codespaces.new/ITC-cloud-soft/biz-ai)，运行 `pnpm demo`（dev container 自带 Node 24、pnpm 和 PostgreSQL）。**没有 Docker：** 指定你已有的 PostgreSQL：`FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm demo`（会建一个临时数据库，结束后删除）。
 
 ![pnpm demo：员工与 AI 员工的对话，最后各场景 PASS](docs/images/pnpm-demo.gif)
 

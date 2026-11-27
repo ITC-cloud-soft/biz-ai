@@ -1,0 +1,46 @@
+name: Connect my system / 自分のシステムにつなぎたい
+description: You are bringing the framework into your own business system and got stuck. / 自分の業務システムに組み込んでいて詰まった
+labels: [integration]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe your system in general terms only — no internal host names, customer data or secrets.
+        システムのことは一般的な言葉で書いてください。社内のホスト名・顧客データ・秘密情報は書かないでください。
+  - type: input
+    id: system
+    attributes:
+      label: Your system / どんなシステムか
+      placeholder: "e.g. purchase requests, Java + Spring, PostgreSQL, about 200 users / 例：購買申請、Java + Spring、PostgreSQL、約 200 人"
+    validations:
+      required: true
+  - type: dropdown
+    id: step
+    attributes:
+      label: Where you are / どこまで進んだか
+      options:
+        - Assessment / 事前診断
+        - Manifest / マニフェスト
+        - Hooks and events / フックとイベント
+        - Conformance (52 checks) / 適合性テスト（52 項目）
+        - DSH profile / DSH プロファイル
+        - Chat (SNS) / チャット連携
+        - Other / その他
+    validations:
+      required: true
+  - type: textarea
+    id: stuck
+    attributes:
+      label: Where you are stuck / 詰まっているところ
+      description: What you tried and what happened. Conformance output helps a lot. / 試したことと結果。適合性テストの出力があると助かります
+    validations:
+      required: true
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Did you use the integration skill with an AI coding tool? / 導入 skill を AI コーディングツールで使いましたか
+      options:
+        - "Yes — Claude Code"
+        - "Yes — Codex"
+        - "Yes — another tool / その他のツール"
+        - "No, by hand / 手作業"

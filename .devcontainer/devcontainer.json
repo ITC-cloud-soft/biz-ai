@@ -1,0 +1,16 @@
+{
+  // GitHub Codespaces / VS Code Dev Containers: Node 24 + pnpm, with a PostgreSQL next to it,
+  // so `pnpm demo` runs without Docker inside the container (FW_TEST_DATABASE_URL is set below).
+  "name": "biz-ai",
+  "dockerComposeFile": "compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/biz-ai",
+  "remoteEnv": {
+    "FW_TEST_DATABASE_URL": "postgres://postgres:postgres@db:5432/postgres"
+  },
+  "postCreateCommand": "sudo corepack enable && corepack install && pnpm install",
+  "postAttachCommand": "echo 'Ready: run  pnpm demo  (about 2 minutes the first time)'",
+  "customizations": {
+    "codespaces": { "openFiles": ["README.md"] }
+  }
+}

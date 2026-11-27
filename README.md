@@ -27,6 +27,8 @@ create, read and update. **AI employees** come alive and, in each employee's own
 **52** conformance checks (Bridge v1) · **9** AI-plane plugins · **12** chat platforms for personal bots ·
 **0** actions the AI can confirm, approve or pay
 
+**Models: your choice.** DeepSeek is only the default. The conversation model is set on DSH's Models page: OpenAI, Azure OpenAI, Anthropic, DeepSeek, any OpenAI-compatible gateway or a self-hosted server (vLLM and the like), through the `dsh-llm-pi-ai` adapter that ships with DSH. Bridge v1 itself does not depend on any model. The demo below uses a scripted model and needs no key.
+
 ## See it in 3 minutes
 
 No API key, no chat account: the example business system (equipment inspection, fictional data) and the framework plugins run on
@@ -38,6 +40,8 @@ git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
 pnpm install
 pnpm demo        # a throwaway PostgreSQL in Docker; prints the conversation and PASS / FAIL per scenario
 ```
+
+**No local setup:** [open it in GitHub Codespaces](https://codespaces.new/ITC-cloud-soft/biz-ai) and run `pnpm demo` — the dev container brings Node 24, pnpm and PostgreSQL. **No Docker:** point the demo at a PostgreSQL you have, `FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm demo` (a temporary database is created and dropped).
 
 What it prints (the example system serves a Japanese facility, so its messages are Japanese):
 

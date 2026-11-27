@@ -1,0 +1,12 @@
+# Dev container for biz-ai: the workspace (Node 24; the demo needs 22.19+) and a throwaway PostgreSQL for the demo and the tests.
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/javascript-node:24-bookworm
+    volumes:
+      - ..:/workspaces/biz-ai:cached
+    command: sleep infinity
+    depends_on: [db]
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres

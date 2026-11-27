@@ -28,6 +28,8 @@ Bizアシスタント（Biz Assistant、パッケージ `@dsh-bridge/*`）は、
 **52** 適合性テストの項目（Bridge v1） · **9** AI 面のプラグイン · **12** 個人ボットで使えるチャット ·
 **0** AI が確定・承認・支払う操作
 
+**モデルは選べます。** DeepSeek は既定値にすぎません。会話のモデルは DSH の Models 画面で、OpenAI・Azure OpenAI・Anthropic・DeepSeek・OpenAI 互換のゲートウェイ・自社で動かすサーバー（vLLM など）から選べます（DSH に同梱の `dsh-llm-pi-ai` アダプター）。Bridge v1 そのものは、どのモデルにも依存しません。下のデモは台本どおりに答えるモデルを使うので、API キーは要りません。
+
 ## 3 分で動かしてみる
 
 API キーもチャットのアカウントも要りません。例の業務システム（設備点検、架空のデータ）と framework のプラグインが、
@@ -39,6 +41,8 @@ git clone https://github.com/ITC-cloud-soft/biz-ai.git && cd biz-ai
 pnpm install
 pnpm demo        # Docker で使い捨ての PostgreSQL。会話の記録とシナリオごとの PASS / FAIL を表示
 ```
+
+**手元の準備なしで：** [GitHub Codespaces で開いて](https://codespaces.new/ITC-cloud-soft/biz-ai) `pnpm demo` を実行します（dev container に Node 24・pnpm・PostgreSQL が入っています）。**Docker なしで：** 手元の PostgreSQL を指定します。`FW_TEST_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres pnpm demo`（一時的なデータベースを作り、終わったら消します）。
 
 ![pnpm demo：職員と AI 社員の会話、最後に全シナリオの PASS](docs/images/pnpm-demo.gif)
 
