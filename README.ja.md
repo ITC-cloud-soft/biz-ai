@@ -211,7 +211,7 @@ AI 秘書として、規則を変えることはできない）、**長期記憶
 | `packages/protocol` | `@dsh-bridge/protocol` | Bridge v1：OpenAPI、manifest / event の JSON Schema、検証器、conformance suite（適合性テスト）、`bridge-validate` CLI |
 | `packages/dsh-core` | `@dsh-bridge/dsh-core` | DSH 側のコア：アプリケーション registry（`bridge-apps` プラグイン）、業務 API クライアント、委託のキャッシュ、セッションキー、tools-sdk、app-switch、AI 秘書としての枠付け、配信の分類 |
 | `packages/gateway` | `@dsh-bridge/gateway` | BFF → DSH の認証 gateway（`/dsh/*`、launch token、公開 webhook パス、RPC の許可リスト、supervise） |
-| `packages/server-kit` | `@dsh-bridge/server-kit` | 業務システムで Bridge v1 を実装するための Node の部品 |
+| `packages/server-kit` | `@dsh-bridge/server-kit` | 業務システムで Bridge v1 を実装するための Node の部品。`bridge-effect-report`：AI がどれだけ使われ、提案がどれだけ採択されたかを `bridge_*` の表から出す（`docs/EFFECT_REPORT.md`） |
 | `packages/help` | `@dsh-bridge/help` | SNS での使い方の質問に業務システム自身のマニュアルから答える：マニュアルの解析、索引、画面と突き合わせる CI 検査、役割に応じたリンク付きの検索 |
 | `packages/web-kit` | `@dsh-bridge/web-kit` | 業務 Web の部品（SNS 連携、職員自身のボット、組織の IM ボット、通知の設定、プラットフォームの表示名、AI 社員のプロフィール画面 `AiProfilePage`） |
 | `packages/testing` | `@dsh-bridge/testing` | LLM / LINE / iLink / WeCom のモック、隔離した DSH home とプロセスの補助 |

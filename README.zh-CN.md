@@ -204,7 +204,7 @@ AI 员工还拥有**公司设定的名字和性格**（昵称、语气、公司�
 | `packages/protocol` | `@dsh-bridge/protocol` | Bridge v1：OpenAPI、manifest / 事件 JSON Schema、校验器、一致性测试（conformance suite）、`bridge-validate` CLI |
 | `packages/dsh-core` | `@dsh-bridge/dsh-core` | DSH 侧核心：应用 registry（`bridge-apps` 插件）、业务 API 客户端、委托缓存、会话密钥、tools-sdk、app-switch、AI 秘书话术框架、投递分类 |
 | `packages/gateway` | `@dsh-bridge/gateway` | BFF → DSH 的认证 gateway（`/dsh/*`、launch token、公开 webhook 路径、RPC 允许列表、supervise） |
-| `packages/server-kit` | `@dsh-bridge/server-kit` | 在业务系统中实现 Bridge v1 的 Node 组件 |
+| `packages/server-kit` | `@dsh-bridge/server-kit` | 在业务系统中实现 Bridge v1 的 Node 组件。`bridge-effect-report`：从 `bridge_*` 表统计 AI 的使用情况和提案的采纳率（`docs/EFFECT_REPORT.md`） |
 | `packages/help` | `@dsh-bridge/help` | 基于业务系统自身的操作手册在 SNS 上回答使用方法的提问：手册解析、索引、对照画面的 CI 检查、按角色检索并附链接 |
 | `packages/web-kit` | `@dsh-bridge/web-kit` | 业务 Web 组件（SNS 绑定、员工自己的机器人、组织 IM 机器人、通知偏好、平台标签、AI 员工的资料页 `AiProfilePage`） |
 | `packages/testing` | `@dsh-bridge/testing` | mock LLM / LINE / iLink / WeCom、隔离的 DSH home 及进程辅助工具 |

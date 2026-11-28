@@ -195,6 +195,20 @@ registerAliasRoutes(router, { table, from: legacyRouter, adapters: { listMyIdent
 Each alias entry may say `for: ['service' | 'delegated' | 'user']` (a different existing route per principal) and
 `query: { … }` (defaults added to the query). Unresolvable aliases are reported in `skipped`, never silently served.
 
+## AI effect report
+
+How much the AI is used and how often people accept what it proposes, from the `bridge_*` tables only (never business
+tables, names or proposal contents): people linked and using the AI, proposals per kind and per week (adoption rate,
+minutes until a person decided), notification delivery, approvals from chat, scheduled reports, connector runs.
+
+```
+DATABASE_URL=postgres://… bridge-effect-report --from 2026-11-01 --to 2026-12-01 --tz Asia/Tokyo   # Markdown; --json for JSON
+```
+
+The same queries are plain SQL in `sql/effect-report.postgres.sql` and `sql/effect-report.mysql.sql` (MySQL 8 / TiDB), to
+run by hand; `runEffectReport({ dialect, pool, from, to })` runs them from code. What each number means and how to use it
+for a PoC: `docs/EFFECT_REPORT.md`. The memory store keeps nothing after a restart, so it has no report.
+
 ## Tests
 
 ```
@@ -204,4 +218,5 @@ pnpm --filter @dsh-bridge/server-kit test
 `test/app.test.mjs` (end-to-end over HTTP on the memory store with a fictional "toy tasks" system), `store-memory` /
 `store-postgres` / `store-mysql` (the same store contract on all three; PostgreSQL and MySQL / TiDB each in a temporary `fw_serverkit_test` database that is dropped at
 the end; the servers come from `FW_TEST_DATABASE_URL=postgres://<user>:<password>@<host>:5432/<db>` and `FW_TEST_MYSQL_URL=mysql://<user>:<password>@<host>:<port>/<db>`, each skipped when unset or unreachable), `http`, `events-gate`,
-`crypto-manifest-time`, `alias-scheduler`, `help` (the help routes per principal and role), `owner-rule-event-delegation`, `ai-profile` (the profile routes on the memory store and on PostgreSQL in its own `fw_p1w1_test`; ports 20181–20183).
+`crypto-manifest-time`, `alias-scheduler`, `help` (the help routes per principal and role), `owner-rule-event-delegation`, `ai-profile` (the profile routes on the memory store and on PostgreSQL in its own `fw_p1w1_test`; ports 20181–20183),
+`effect-report` (the same rows give the same numbers on PostgreSQL and MySQL, each in its own `fw_effect_test`; also runs each SQL file as it is).

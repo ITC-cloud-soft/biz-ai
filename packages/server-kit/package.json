@@ -32,10 +32,16 @@
     "./alias": "./src/alias.mjs",
     "./extract": "./src/extract/index.mjs",
     "./connectors": "./src/connectors/index.mjs",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./effect-report": "./src/effect-report.mjs"
+  },
+  "bin": {
+    "bridge-effect-report": "./bin/bridge-effect-report.mjs"
   },
   "files": [
     "src",
+    "sql",
+    "bin",
     "README.md",
     "LICENSE",
     "NOTICE"

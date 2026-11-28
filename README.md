@@ -199,7 +199,7 @@ business code).
 | `packages/protocol` | `@dsh-bridge/protocol` | Bridge v1: OpenAPI, manifest / event JSON Schemas, validators, conformance suite, `bridge-validate` CLI |
 | `packages/dsh-core` | `@dsh-bridge/dsh-core` | DSH side core: application registry (`bridge-apps` plugin), business API client, delegation cache, session keys, tools-sdk, app-switch, AI secretary framing, delivery classification |
 | `packages/gateway` | `@dsh-bridge/gateway` | BFF → DSH authenticating gateway (`/dsh/*`, launch token, public webhook paths, RPC allow-list, supervise) |
-| `packages/server-kit` | `@dsh-bridge/server-kit` | Node parts for implementing Bridge v1 in a business system |
+| `packages/server-kit` | `@dsh-bridge/server-kit` | Node parts for implementing Bridge v1 in a business system; `bridge-effect-report`: how much the AI is used and how often people accept its proposals, from the `bridge_*` tables (`docs/EFFECT_REPORT.md`) |
 | `packages/help` | `@dsh-bridge/help` | answering how-to questions on SNS from the business system's own manual: manual parsing, the index, CI checks against the screens, role-aware search with links |
 | `packages/web-kit` | `@dsh-bridge/web-kit` | business web parts (SNS linking, the employee's own bots, organisation IM bots, notification preferences, platform labels, the AI employee's profile page `AiProfilePage`) |
 | `packages/testing` | `@dsh-bridge/testing` | mock LLM / LINE / iLink / WeCom, isolated DSH home and process helpers |
