@@ -1,0 +1,253 @@
+{
+  "lang": "en",
+  "generatedAt": "2026-11-28",
+  "product": "purchase-requests (examples/purchase-requests)",
+  "how": "real DSH + framework plugins, scripted model, mock LINE (examples/purchase-requests/demo/run.mjs)",
+  "systemName": "Purchase Requests",
+  "requestNo": "PR-1041",
+  "ok": true,
+  "checks": [
+    {
+      "step": "1 a request waited 3 days → purchase.unanswered + approval.requested → only the named approver gets the notice and the card [Approve] [Reject]",
+      "status": "pass"
+    },
+    {
+      "step": "2 the approver taps Approve → recorded in the business system (approved, by the approver, channel im) → card updated → the requester is told",
+      "status": "pass"
+    },
+    {
+      "step": "3a the requester asks → purchase_list_requests with the requester's own delegation → the answer has the request and its status",
+      "status": "pass"
+    },
+    {
+      "step": "3b another staff member asks about the same request → purchase_get_request is \"not found\" for them (404) → the AI says it cannot see it",
+      "status": "pass"
+    }
+  ],
+  "timeline": [
+    {
+      "t": 0,
+      "chat": "approver",
+      "from": "business",
+      "kind": "note",
+      "note": "waited",
+      "facts": {
+        "requestNo": "PR-1041",
+        "days": 3
+      }
+    },
+    {
+      "t": 1001,
+      "chat": "approver",
+      "from": "system",
+      "messages": [
+        {
+          "kind": "card",
+          "title": "[Action needed] Purchase request waiting",
+          "fields": [],
+          "text": "Purchase request PR-1041 has waited 3 day(s) for your decision.\n▶ Approve or reject it with the card in this chat (or in Purchase Requests).",
+          "buttons": [
+            {
+              "label": "業務 Web を開いて対応",
+              "kind": "link"
+            }
+          ],
+          "footer": "— Purchase Requests AI assistant"
+        }
+      ]
+    },
+    {
+      "t": 1078,
+      "chat": "approver",
+      "from": "system",
+      "messages": [
+        {
+          "kind": "card",
+          "title": "【承認のお願い】Purchase request",
+          "fields": [
+            {
+              "label": "Request",
+              "value": "PR-1041"
+            },
+            {
+              "label": "Item",
+              "value": "Laptop stand × 2"
+            },
+            {
+              "label": "Amount",
+              "value": "¥12,800"
+            },
+            {
+              "label": "Waiting",
+              "value": "3 days"
+            }
+          ],
+          "text": "お疲れさまです。PR-1041 has waited 3 days for your decision.\n▶ お願いしたいこと（期限 12/12 16:56）：Approve or reject it here. The decision is recorded in Purchase Requests.\n・Approve：approved, and the requester is told\n・Reject：sent back to the requester",
+          "buttons": [
+            {
+              "label": "Approve",
+              "kind": "action"
+            },
+            {
+              "label": "Reject",
+              "kind": "action"
+            },
+            {
+              "label": "業務Webで詳細を見る",
+              "kind": "link"
+            }
+          ],
+          "footer": "文字で返信する場合：「Approve ••••••」／「Reject •••••• 理由」\n— Purchase Requests AI 秘書"
+        }
+      ]
+    },
+    {
+      "t": 4083,
+      "chat": "approver",
+      "from": "person",
+      "kind": "tap",
+      "label": "Approve"
+    },
+    {
+      "t": 4091,
+      "chat": "approver",
+      "from": "system",
+      "messages": [
+        {
+          "kind": "text",
+          "text": "Approved. Recorded in Purchase Requests; the requester is being told."
+        }
+      ]
+    },
+    {
+      "t": 4091,
+      "chat": "approver",
+      "from": "business",
+      "kind": "note",
+      "note": "recorded",
+      "facts": {
+        "requestNo": "PR-1041",
+        "status": "approved",
+        "channel": "im"
+      }
+    },
+    {
+      "t": 4094,
+      "chat": "approver",
+      "from": "system",
+      "update": true,
+      "messages": [
+        {
+          "kind": "card",
+          "title": "【ご報告】Purchase requestの承認依頼（承認済み）",
+          "fields": [
+            {
+              "label": "Request",
+              "value": "PR-1041"
+            },
+            {
+              "label": "Item",
+              "value": "Laptop stand × 2"
+            },
+            {
+              "label": "Amount",
+              "value": "¥12,800"
+            },
+            {
+              "label": "Waiting",
+              "value": "3 days"
+            }
+          ],
+          "text": "Approved in Purchase Requests. Nothing more to do.",
+          "buttons": [
+            {
+              "label": "業務Webで詳細を見る",
+              "kind": "link"
+            }
+          ],
+          "footer": "状態：承認済み\n— Purchase Requests AI 秘書"
+        }
+      ]
+    },
+    {
+      "t": 4221,
+      "chat": "requester",
+      "from": "system",
+      "messages": [
+        {
+          "kind": "card",
+          "title": "[Update] Purchase request approved",
+          "fields": [],
+          "text": "Your purchase request PR-1041 was approved.\nNothing more to do.",
+          "buttons": [
+            {
+              "label": "業務 Web で確認",
+              "kind": "link"
+            }
+          ],
+          "footer": "— Purchase Requests AI assistant"
+        }
+      ]
+    },
+    {
+      "t": 4222,
+      "chat": "requester",
+      "from": "person",
+      "kind": "text",
+      "text": "Where is my request?"
+    },
+    {
+      "t": 5671,
+      "chat": "requester",
+      "from": "ai",
+      "messages": [
+        {
+          "kind": "text",
+          "text": "I checked Purchase Requests with your access: PR-1041 (Laptop stand × 2, ¥12,800) was approved today. Nothing more is needed from you."
+        }
+      ]
+    },
+    {
+      "t": 5671,
+      "chat": "requester",
+      "from": "business",
+      "kind": "note",
+      "note": "own-rights",
+      "facts": {
+        "reads": [
+          "GET /api/purchase-requests → 200"
+        ]
+      }
+    },
+    {
+      "t": 5671,
+      "chat": "other",
+      "from": "person",
+      "kind": "text",
+      "text": "Where is PR-1041?"
+    },
+    {
+      "t": 6664,
+      "chat": "other",
+      "from": "ai",
+      "messages": [
+        {
+          "kind": "text",
+          "text": "I can't see PR-1041 with your access — you can only see your own requests. The requester or their approver can check it."
+        }
+      ]
+    },
+    {
+      "t": 6665,
+      "chat": "other",
+      "from": "business",
+      "kind": "note",
+      "note": "refused",
+      "facts": {
+        "reads": [
+          "GET /api/purchase-requests/{requestNo} → 404"
+        ]
+      }
+    }
+  ]
+}

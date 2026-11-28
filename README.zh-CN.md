@@ -1,4 +1,4 @@
-# Biz Assistant Framework
+# Biz AI
 
 **官方网站：[biz-ai.myaiportal.net](https://biz-ai.myaiportal.net/)**
 
@@ -11,24 +11,28 @@
 
 [English](README.md) · [日本語](README.ja.md) · **简体中文**
 
-**让每一个 IT 系统，都成为会思考、会行动的 AI 员工的职场。**<br>
-Every IT system, a workplace of AI employees that think and act. · あらゆる IT システムを、考えて動く AI 社員の職場に。
+**业务系统会自己开口了。**
+它会发现问题，只告诉相关的人，去问批准人，一直跟进到底，就在每位员工自己的聊天工具里。
+拍板的永远是人。它以 DeepSeek Harness（DSH）插件的形式实现。
 
-[集成 skill](#用集成-skill-导入你的系统) ·
-[快速开始](#快速开始) ·
+![采购申请卡了 3 天 → 系统只提醒它的审批人，审批人在聊天里一键批准 → 申请人问"我的申请到哪了"，AI 按申请人本人的权限回答](docs/images/speaks-first-zh.gif)
+
+1. **它先开口。** 一份采购申请卡了 3 天，系统只通知它的审批人，消息里带【批准】【驳回】按钮。
+2. **人来拍板。** 在聊天里点一下就行。结果**记进业务系统**，申请人也会收到通知。
+3. **只在本人权限之内。** 申请人问「我的申请到哪了？」，AI 用提问者本人的权限回答。不相关的同事来问，不会告诉他。
+
+AI 只负责读和提案，确认、审批、付款都留给人，**这一点由代码保证，不靠提示词**。
+不用重写业务逻辑，只要给业务系统加一座小桥：Bridge v1，配 52 项一致性检查。
+录屏是 [`examples/purchase-requests`](examples/purchase-requests) 在 DSH 上真实运行的结果，用的是脚本模型、模拟聊天和虚构数据。
+
+[3 分钟跑起来看看](#3-分钟跑起来看看)（不需要 API key，也不需要聊天账号） ·
+[给 AI 编程工具用的集成 skill](#用集成-skill-导入你的系统) ·
 [开发指南](docs/GUIDELINE.zh-CN.md) ·
 [技术解说](docs/slides/manual/biz-assistant-framework-technical-guide.zh-CN.md) ·
 [Discussions](https://github.com/ITC-cloud-soft/biz-ai/discussions) ·
 [Issues](https://github.com/ITC-cloud-soft/biz-ai/issues)
 
-Biz Assistant（Bizアシスタント，包名 `@dsh-bridge/*`）为过去只是被动等待增、查、改的业务系统加上一座小小的**桥（bridge）**。
-**AI 员工**由此活起来，在每位员工自己的聊天工具（Slack、LINE、Teams、WeCom、Feishu……）中
-**通知、询问、起草、记忆**。无需重写业务逻辑。始终由人来决定。
-
-**52** 项一致性检查（Bridge v1）· **9** 个 AI 平面插件 · **12** 个支持个人机器人的聊天平台 ·
-**0** 项可由 AI 确认、审批或支付的操作
-
-**模型可以自己选。** DeepSeek 只是默认值。对话模型在 DSH 的 Models 页面设置，可选 OpenAI、Azure OpenAI、Anthropic、DeepSeek、OpenAI 兼容网关或自建服务器（vLLM 等），由 DSH 自带的 `dsh-llm-pi-ai` 适配器连接。Bridge v1 本身不依赖任何模型。下面的 demo 使用脚本化的模型，不需要 API key。
+**模型可以自己选。** DeepSeek 只是默认值。对话模型在 DSH 的 Models 页面设置，可以用 OpenAI、Azure OpenAI、Anthropic、DeepSeek、OpenAI 兼容网关或自建服务器（vLLM 等），通过 DSH 自带的 `dsh-llm-pi-ai` 适配器接入。Bridge v1 本身不依赖任何模型。演示用的是脚本模型，不需要 key。
 
 ## 3 分钟跑起来看看
 
@@ -219,7 +223,7 @@ AI 员工还拥有**公司设定的名字和性格**（昵称、语气、公司�
 | `plugins/reader` | `@dsh-bridge/plugin-reader` | `bridge-reader`：业务系统无法读取的扫描文档（图片、无文本层的 PDF）——从 `GET /bridge/v1/document-reads` 获取页面图片，由图像读取模型每次请求转写一页（无对话上下文），文本回传到 `POST .../result`（`docs/DOCUMENT_READS.md`） |
 | `profile/` | `@dsh-bridge/profile` | DSH 产品 profile 模板、`install.mjs`、自动任务模板格式 |
 | `vendor/` | `@care/dsh-im`、`@care/dsh-auto-tasks`、`@care/dsh-proactive` | DSH IM / auto-tasks / proactive 插件的 fork（各自独立的 npm 配置，见各自的 `FORK.md`） |
-| `examples/` | | `leave-requests`（最小的系统：一个文件、无需数据库）、`equipment-inspection`（基于 server-kit 的示例业务系统）、`care-billing`（首个用户的 manifest） |
+| `examples/` | | `leave-requests`（最小的系统：一个文件、无需数据库）、`purchase-requests`（会自己开口的系统：等了 3 天的申请送到审批人的聊天里；en / ja / zh）、`equipment-inspection`（基于 server-kit 的示例业务系统）、`care-billing`（首个用户的 manifest） |
 | `docs/` | | `GUIDELINE.md`、`ARCHITECTURE.md`、幻灯片 |
 
 ## 快速开始

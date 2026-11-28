@@ -1,4 +1,4 @@
-# Biz Assistant Framework
+# Biz AI
 
 **公式サイト：[biz-ai.myaiportal.net](https://biz-ai.myaiportal.net/)**
 
@@ -11,24 +11,28 @@
 
 [English](README.md) · **日本語** · [简体中文](README.zh-CN.md)
 
-**あらゆる IT システムを、考えて動く AI 社員の職場に。**<br>
-Every IT system, a workplace of AI employees that think and act. · 让每一个 IT 系统，都成为会思考、会行动的 AI 员工的职场。
+**業務システムが、自分から声をかけてくる。**
+気づいて、関係する人にだけ知らせ、承認者に聞き、追いかける。職員一人ひとりのチャットで。
+決めるのは、いつも人。DeepSeek Harness（DSH）のプラグインとして作っています。
 
-[導入 skill](#導入-skill-で業務システムに組み込む) ·
-[クイックスタート](#クイックスタート) ·
+![購買申請が 3 日止まっている → システムが承認者にだけ声をかけ、チャットで承認 → 申請者が「どうなった？」と聞くと、本人の権限の範囲で答える](docs/images/speaks-first-ja.gif)
+
+1. **自分から声をかける。** 購買申請が 3 日止まっている。システムがその承認者にだけ［承認］［却下］つきで知らせる。
+2. **決めるのは人。** チャットでワンタップ。結果は**業務システムに**記録され、申請者にも届く。
+3. **本人の権限の範囲で。** 「私の申請、どうなった？」— AI は聞いた人の権限で答える。関係のない同僚が聞いても答えない。
+
+AI は読んで、提案するだけ。確定・承認・支払いは人に残す。**プロンプトではなく、コードで守る**。
+業務ロジックは書き換えない。業務システムに小さなブリッジ（Bridge v1、適合性テスト 52 項目）を足す。
+録画は [`examples/purchase-requests`](examples/purchase-requests) を DSH 上で実際に動かしたもの（台本どおりに答えるモデル・モックのチャット・架空のデータ）。
+
+[3 分で動かしてみる](#3-分で動かしてみる)（API キーもチャットのアカウントも不要） ·
+[AI コーディングツール向けの導入 skill](#導入-skill-で業務システムに組み込む) ·
 [開発ガイドライン](docs/GUIDELINE.md) ·
 [技術解説](docs/slides/manual/biz-assistant-framework-technical-guide.md) ·
 [Discussions](https://github.com/ITC-cloud-soft/biz-ai/discussions) ·
 [Issues](https://github.com/ITC-cloud-soft/biz-ai/issues)
 
-Bizアシスタント（Biz Assistant、パッケージ `@dsh-bridge/*`）は、登録・照会・更新を「待つ」だけだった業務システムに、小さな **ブリッジ** を足す。
-すると **AI 社員** が生まれ、職員一人ひとりのチャット（Slack、LINE、Teams、WeCom、Feishu、…）で
-**知らせ、頼み、下書きし、覚える**。業務ロジックの書き換えは不要。決めるのは、いつも人。
-
-**52** 適合性テストの項目（Bridge v1） · **9** AI 面のプラグイン · **12** 個人ボットで使えるチャット ·
-**0** AI が確定・承認・支払う操作
-
-**モデルは選べます。** DeepSeek は既定値にすぎません。会話のモデルは DSH の Models 画面で、OpenAI・Azure OpenAI・Anthropic・DeepSeek・OpenAI 互換のゲートウェイ・自社で動かすサーバー（vLLM など）から選べます（DSH に同梱の `dsh-llm-pi-ai` アダプター）。Bridge v1 そのものは、どのモデルにも依存しません。下のデモは台本どおりに答えるモデルを使うので、API キーは要りません。
+**モデルは選べます。** DeepSeek は既定値にすぎません。会話のモデルは DSH の Models 画面で、OpenAI・Azure OpenAI・Anthropic・DeepSeek・OpenAI 互換のゲートウェイ・自社で動かすサーバー（vLLM など）から選べます（DSH に同梱の `dsh-llm-pi-ai` アダプター）。Bridge v1 そのものは、どのモデルにも依存しません。デモは台本どおりに答えるモデルを使うので、API キーは要りません。
 
 ## 3 分で動かしてみる
 
@@ -226,7 +230,7 @@ AI 秘書として、規則を変えることはできない）、**長期記憶
 | `plugins/reader` | `@dsh-bridge/plugin-reader` | `bridge-reader`：業務システムが読めなかったスキャン文書（画像、テキスト層のない PDF）— `GET /bridge/v1/document-reads` からページ画像を受け取り、画像を読むモデルで 1 リクエストに 1 ページずつ書き起こし（会話なし）、テキストを `POST .../result` に返す（`docs/DOCUMENT_READS.md`） |
 | `profile/` | `@dsh-bridge/profile` | DSH product profile の雛形、`install.mjs`、自動タスクの雛形の形式 |
 | `vendor/` | `@care/dsh-im`, `@care/dsh-auto-tasks`, `@care/dsh-proactive` | DSH の IM / auto-tasks / proactive プラグインの fork（独自の npm 構成、各 `FORK.md` を参照） |
-| `examples/` | | `leave-requests`（いちばん小さなシステム：1 ファイル、データベースなし）、`equipment-inspection`（server-kit の上の見本の業務システム）、`care-billing`（最初の利用者の manifest） |
+| `examples/` | | `leave-requests`（いちばん小さなシステム：1 ファイル、データベースなし）、`purchase-requests`（自分から声をかけるシステム：3 日待った申請が承認者のチャットに届く。en / ja / zh）、`equipment-inspection`（server-kit の上の見本の業務システム）、`care-billing`（最初の利用者の manifest） |
 | `docs/` | | `GUIDELINE.md`、`ARCHITECTURE.md`、スライド |
 
 ## クイックスタート

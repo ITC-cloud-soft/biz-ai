@@ -1,0 +1,143 @@
+# purchase-requests: a business system that speaks first (an example of the framework).
+# Staff request purchases; their approver decides. A request left waiting for 3 days is brought to the approver in chat
+# (the card with Approve / Reject); the decision is recorded here and the requester is told.
+# No personal data: IDs, roles, rule names, typed template parameters and instructions only.
+# The instance serves this manifest in its own language (src/messages.mjs): names, labels and template texts are replaced.
+bridge: 1
+version: 2026-11-28
+system:
+  id: purchase-requests
+  name: Purchase Requests
+  locale: en-US
+  timezone: UTC
+  description: Staff request purchases and their approver decides; a request that waits 3 days is brought to the approver in chat.
+
+roles:
+  admin:
+    label: Administrator
+    scope: all
+    delegation: propose
+    description: Manages employees and their approvers, approves requests, runs reports.
+  manager:
+    label: Approver
+    scope: all
+    delegation: propose
+    description: Approves purchase requests (never their own), reads the reports.
+  staff:
+    label: Staff
+    scope: own
+    delegation: propose
+    description: Requests purchases and sees their own requests only.
+
+entities:
+  purchase_request: { label: Purchase request, pii: none, link: "/purchase-requests/{id}" }
+  approval: { label: Approval, pii: none }
+  proposal: { label: AI proposal, pii: none }
+  sns_identity: { label: Chat link, pii: personal }
+
+audienceRules:
+  named_approvers:
+    description: The approver named for the requester (or, when none is named, every manager and administrator). Never the requester.
+    roles: [admin, manager]
+    implementedBy: src/app.mjs approversOf
+  requester:
+    description: The employee who made the request, only.
+    includes: [author]
+    implementedBy: src/app.mjs recipientsFor
+
+events:
+  purchase.unanswered:
+    label: Purchase request waiting
+    description: A purchase request has waited 3 days or more for a decision (once per request); the approval opens in the approver's chat.
+    aggregate: purchase_request
+    payload: [purchaseRequestId, requesterUserId, requestNumber, daysWaiting]
+    severity: warning
+    audience: { rule: named_approvers }
+    notify: { template: purchase.unanswered }
+  purchase.decided:
+    label: Purchase request decided
+    description: A purchase request was approved or sent back (web or chat); the requester is told.
+    aggregate: purchase_request
+    payload: [purchaseRequestId, requesterUserId, requestNumber, decision]
+    severity: info
+    audience: { rule: requester }
+    notify: { template: purchase.approved, variants: [purchase.rejected] }
+  approval.requested:
+    label: Approval request
+    aggregate: approval
+    payload: [approvalId, subjectType, subjectId, requiredRole, expiresAt]
+    severity: info
+    audience: { roles: [admin, manager] }
+    internal: approvals_im
+  approval.decided:
+    label: Approval decided
+    aggregate: approval
+    payload: [approvalId, subjectType, subjectId, decision, status, channel, decidedByUserId]
+    severity: info
+    internal: approvals_im
+  sns_identity.unlinked:
+    label: Chat link removed
+    aggregate: sns_identity
+    payload: [identityId, userId, platform]
+    severity: info
+    internal: identity
+
+templates:
+  purchase.unanswered:
+    intent: action
+    action: Approve or reject it with the card in this chat (or in Purchase Requests).
+    description: Purchase request PR-{requestNumber} has waited {daysWaiting} day(s) for your decision.
+    params: { requestNumber: { type: integer }, daysWaiting: { type: integer } }
+  purchase.approved:
+    intent: info
+    description: Your purchase request PR-{requestNumber} was approved.
+    params: { requestNumber: { type: integer } }
+  purchase.rejected:
+    intent: action
+    action: Check the comment in Purchase Requests and submit it again if needed.
+    description: Your purchase request PR-{requestNumber} was sent back.
+    params: { requestNumber: { type: integer } }
+
+tools:
+  - name: purchase_list_requests
+    description: Purchase requests (number, item, quantity, amount in yen, status, requested on, decided on). Staff see their own only.
+    http: GET /api/purchase-requests
+    access: read
+    roles: [admin, manager, staff]
+    pii: none
+    input: { type: object, additionalProperties: false, properties: { status: { enum: [pending, approved, rejected, cancelled, all] } } }
+  - name: purchase_get_request
+    description: One purchase request by its number (PR-1042). Staff can read their own requests only (another one is not found).
+    http: GET /api/purchase-requests/{requestNo}
+    access: read
+    roles: [admin, manager, staff]
+    pii: none
+    input: { type: object, required: [requestNo], additionalProperties: false, properties: { requestNo: { type: string, pattern: "^PR-[0-9]{4,6}$" } } }
+  - name: purchase_list_unanswered
+    description: Pending purchase requests waiting 3 days or more (number, days waiting, amount in yen).
+    http: GET /api/purchase-requests/unanswered
+    access: read
+    roles: [admin, manager]
+    pii: none
+  - name: purchase_propose_quantity
+    description: Proposes a new quantity for a pending purchase request (a person accepts or rejects the proposal; the AI changes nothing).
+    http: POST /bridge/v1/proposals
+    access: propose
+    roles: [admin, manager, staff]
+    pii: none
+    input: { type: object, required: [purchaseRequestId, quantity], additionalProperties: false, properties: { purchaseRequestId: { type: string }, quantity: { type: integer, minimum: 1, maximum: 999 } } }
+
+reports:
+  daily_purchases:
+    label: Daily purchase report
+    cron: ["0 8 * * 1-5"]
+    audience: { roles: [admin, manager] }
+    sections: [pending, waiting_3_days]
+    sectionsByRole:
+      admin: [pending, waiting_3_days]
+      manager: [pending, waiting_3_days]
+      staff: [pending]
+
+glossary:
+  unanswered: A purchase request still pending 3 days after it was made.
+  approver: The manager named for an employee (or any manager when none is named); never the requester.

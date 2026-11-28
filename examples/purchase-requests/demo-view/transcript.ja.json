@@ -1,0 +1,253 @@
+{
+  "lang": "ja",
+  "generatedAt": "2026-11-28",
+  "product": "purchase-requests (examples/purchase-requests)",
+  "how": "real DSH + framework plugins, scripted model, mock LINE (examples/purchase-requests/demo/run.mjs)",
+  "systemName": "購買申請",
+  "requestNo": "PR-1041",
+  "ok": true,
+  "checks": [
+    {
+      "step": "1 a request waited 3 days → purchase.unanswered + approval.requested → only the named approver gets the notice and the card [Approve] [Reject]",
+      "status": "pass"
+    },
+    {
+      "step": "2 the approver taps Approve → recorded in the business system (approved, by the approver, channel im) → card updated → the requester is told",
+      "status": "pass"
+    },
+    {
+      "step": "3a the requester asks → purchase_list_requests with the requester's own delegation → the answer has the request and its status",
+      "status": "pass"
+    },
+    {
+      "step": "3b another staff member asks about the same request → purchase_get_request is \"not found\" for them (404) → the AI says it cannot see it",
+      "status": "pass"
+    }
+  ],
+  "timeline": [
+    {
+      "t": 0,
+      "chat": "approver",
+      "from": "business",
+      "kind": "note",
+      "note": "waited",
+      "facts": {
+        "requestNo": "PR-1041",
+        "days": 3
+      }
+    },
+    {
+      "t": 40,
+      "chat": "approver",
+      "from": "system",
+      "messages": [
+        {
+          "kind": "card",
+          "title": "【対応のお願い】購買申請の判断待ち",
+          "fields": [],
+          "text": "お疲れさまです。購買申請 PR-1041 が 3 日間、あなたの判断を待っています。\n▶ お願いしたいこと：このチャットのカード（または購買申請の画面）で承認か差戻を選んでください。",
+          "buttons": [
+            {
+              "label": "業務 Web を開いて対応",
+              "kind": "link"
+            }
+          ],
+          "footer": "— 購買申請 AI 秘書"
+        }
+      ]
+    },
+    {
+      "t": 195,
+      "chat": "approver",
+      "from": "system",
+      "messages": [
+        {
+          "kind": "card",
+          "title": "【承認のお願い】購買申請",
+          "fields": [
+            {
+              "label": "申請番号",
+              "value": "PR-1041"
+            },
+            {
+              "label": "品目",
+              "value": "ノートPCスタンド × 2"
+            },
+            {
+              "label": "金額",
+              "value": "12,800円"
+            },
+            {
+              "label": "待ち日数",
+              "value": "3 日"
+            }
+          ],
+          "text": "お疲れさまです。PR-1041 が 3 日間、あなたの判断を待っています。\n▶ お願いしたいこと（期限 12/12 16:57）：ここで承認か差戻を選んでください。結果は購買申請に記録されます。\n・承認：承認し、申請者に知らせます\n・差戻：申請者に戻します",
+          "buttons": [
+            {
+              "label": "承認",
+              "kind": "action"
+            },
+            {
+              "label": "差戻",
+              "kind": "action"
+            },
+            {
+              "label": "業務Webで詳細を見る",
+              "kind": "link"
+            }
+          ],
+          "footer": "文字で返信する場合：「承認 ••••••」／「差戻 •••••• 理由」\n— 購買申請 AI 秘書"
+        }
+      ]
+    },
+    {
+      "t": 3195,
+      "chat": "approver",
+      "from": "person",
+      "kind": "tap",
+      "label": "承認"
+    },
+    {
+      "t": 3205,
+      "chat": "approver",
+      "from": "system",
+      "messages": [
+        {
+          "kind": "text",
+          "text": "承認しました。購買申請に記録し、申請者にお知らせします。"
+        }
+      ]
+    },
+    {
+      "t": 3205,
+      "chat": "approver",
+      "from": "business",
+      "kind": "note",
+      "note": "recorded",
+      "facts": {
+        "requestNo": "PR-1041",
+        "status": "approved",
+        "channel": "im"
+      }
+    },
+    {
+      "t": 3208,
+      "chat": "approver",
+      "from": "system",
+      "update": true,
+      "messages": [
+        {
+          "kind": "card",
+          "title": "【ご報告】購買申請の承認依頼（承認済み）",
+          "fields": [
+            {
+              "label": "申請番号",
+              "value": "PR-1041"
+            },
+            {
+              "label": "品目",
+              "value": "ノートPCスタンド × 2"
+            },
+            {
+              "label": "金額",
+              "value": "12,800円"
+            },
+            {
+              "label": "待ち日数",
+              "value": "3 日"
+            }
+          ],
+          "text": "購買申請で承認されました。ご対応は不要です。",
+          "buttons": [
+            {
+              "label": "業務Webで詳細を見る",
+              "kind": "link"
+            }
+          ],
+          "footer": "状態：承認済み\n— 購買申請 AI 秘書"
+        }
+      ]
+    },
+    {
+      "t": 3339,
+      "chat": "requester",
+      "from": "system",
+      "messages": [
+        {
+          "kind": "card",
+          "title": "【ご報告】購買申請の結果",
+          "fields": [],
+          "text": "お疲れさまです。あなたの購買申請 PR-1041 が承認されました。\nご対応は不要です。ご確認だけお願いします。",
+          "buttons": [
+            {
+              "label": "業務 Web で確認",
+              "kind": "link"
+            }
+          ],
+          "footer": "— 購買申請 AI 秘書"
+        }
+      ]
+    },
+    {
+      "t": 3339,
+      "chat": "requester",
+      "from": "person",
+      "kind": "text",
+      "text": "私の申請、どうなっていますか？"
+    },
+    {
+      "t": 4811,
+      "chat": "requester",
+      "from": "ai",
+      "messages": [
+        {
+          "kind": "text",
+          "text": "あなたの権限で購買申請を確認しました。PR-1041（ノートPCスタンド × 2、12,800円）は本日承認されました。ご対応は不要です。"
+        }
+      ]
+    },
+    {
+      "t": 4811,
+      "chat": "requester",
+      "from": "business",
+      "kind": "note",
+      "note": "own-rights",
+      "facts": {
+        "reads": [
+          "GET /api/purchase-requests → 200"
+        ]
+      }
+    },
+    {
+      "t": 4811,
+      "chat": "other",
+      "from": "person",
+      "kind": "text",
+      "text": "PR-1041 はどうなっていますか？"
+    },
+    {
+      "t": 6200,
+      "chat": "other",
+      "from": "ai",
+      "messages": [
+        {
+          "kind": "text",
+          "text": "PR-1041 はあなたの権限では見られません（見られるのはご自身の申請だけです）。申請者か承認者に確認してください。"
+        }
+      ]
+    },
+    {
+      "t": 6200,
+      "chat": "other",
+      "from": "business",
+      "kind": "note",
+      "note": "refused",
+      "facts": {
+        "reads": [
+          "GET /api/purchase-requests/{requestNo} → 404"
+        ]
+      }
+    }
+  ]
+}

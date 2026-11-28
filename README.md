@@ -1,4 +1,4 @@
-# Biz Assistant Framework
+# Biz AI
 
 **Official website: [biz-ai.myaiportal.net](https://biz-ai.myaiportal.net/)**
 
@@ -11,23 +11,28 @@
 
 **English** · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
-**Every IT system, a workplace of AI employees that think and act.**
+**Your business system speaks first.**
+It notices what needs attention, tells only the people concerned, asks the approver and follows up —
+in each employee's own chat. People still decide. Built as plugins for DeepSeek Harness (DSH).
 
-[Integration skill](#bring-it-into-your-system-with-the-integration-skill) ·
-[Quick start](#quick-start) ·
+![A purchase request waits 3 days: the system messages only its approver, who approves in chat; the requester asks where it is and gets an answer within their own rights](docs/images/speaks-first-en.gif)
+
+1. **It speaks first.** A purchase request has waited 3 days — the system tells its approver, and no one else, with [Approve] [Reject].
+2. **People decide.** One tap in chat; the decision is recorded **in the business system**, and the requester is told.
+3. **Within your own rights.** "Where is my request?" — the AI answers with the asker's own permissions. A colleague asking about it is refused.
+
+The AI reads and proposes; confirming, approving and paying stay with people — **enforced by code, not prompts**.
+No rewrite of business logic: your system adds a small bridge (Bridge v1, 52 conformance checks).
+The recording is a real run of [`examples/purchase-requests`](examples/purchase-requests) on DSH with a scripted model and a mock chat (fictional data).
+
+[See it in 3 minutes](#see-it-in-3-minutes) (no API key, no chat account) ·
+[Integration skill for AI coding agents](#bring-it-into-your-system-with-the-integration-skill) ·
 [Development guideline](docs/GUIDELINE.en.md) ·
 [Technical guide](docs/slides/manual/biz-assistant-framework-technical-guide.en.md) ·
 [Discussions](https://github.com/ITC-cloud-soft/biz-ai/discussions) ·
 [Issues](https://github.com/ITC-cloud-soft/biz-ai/issues)
 
-Biz Assistant (packages `@dsh-bridge/*`) adds a small **bridge** to business systems that used to just wait for
-create, read and update. **AI employees** come alive and, in each employee's own chat (Slack, LINE, Teams, WeCom, Feishu, …),
-**notify, ask, draft and remember**. No rewrite of business logic. People always decide.
-
-**52** conformance checks (Bridge v1) · **9** AI-plane plugins · **12** chat platforms for personal bots ·
-**0** actions the AI can confirm, approve or pay
-
-**Models: your choice.** DeepSeek is only the default. The conversation model is set on DSH's Models page: OpenAI, Azure OpenAI, Anthropic, DeepSeek, any OpenAI-compatible gateway or a self-hosted server (vLLM and the like), through the `dsh-llm-pi-ai` adapter that ships with DSH. Bridge v1 itself does not depend on any model. The demo below uses a scripted model and needs no key.
+**Models: your choice.** DeepSeek is only the default. The conversation model is set on DSH's Models page: OpenAI, Azure OpenAI, Anthropic, DeepSeek, any OpenAI-compatible gateway or a self-hosted server (vLLM and the like), through the `dsh-llm-pi-ai` adapter that ships with DSH. Bridge v1 itself does not depend on any model. The demos use a scripted model and need no key.
 
 ## See it in 3 minutes
 
@@ -214,7 +219,7 @@ business code).
 | `plugins/reader` | `@dsh-bridge/plugin-reader` | `bridge-reader`: scanned documents the business system could not read (images, PDFs without a text layer) — page images from `GET /bridge/v1/document-reads`, transcribed by the image-reading model one page per request (no conversation), the text back to `POST .../result` (`docs/DOCUMENT_READS.md`) |
 | `profile/` | `@dsh-bridge/profile` | DSH product profile template, `install.mjs`, automatic task template format |
 | `vendor/` | `@care/dsh-im`, `@care/dsh-auto-tasks`, `@care/dsh-proactive` | forks of the DSH IM / auto-tasks / proactive plugins (own npm setup, see each `FORK.md`) |
-| `examples/` | | `leave-requests` (the smallest system: one file, no database), `equipment-inspection` (a sample business system on server-kit), `care-billing` (the first user's manifest) |
+| `examples/` | | `leave-requests` (the smallest system: one file, no database), `purchase-requests` (a system that speaks first: the request that waited 3 days reaches its approver in chat; en / ja / zh), `equipment-inspection` (a sample business system on server-kit), `care-billing` (the first user's manifest) |
 | `docs/` | | `GUIDELINE.md`, `ARCHITECTURE.md`, slides |
 
 ## Quick start

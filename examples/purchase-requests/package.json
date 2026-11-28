@@ -1,0 +1,23 @@
+{
+  "name": "@dsh-bridge/example-purchase-requests",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "A business system that speaks first, on @dsh-bridge/server-kit (purchase requests, memory store, en / ja / zh); passes the Bridge v1 conformance suite",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "validate": "bridge-validate manifest bridge.manifest.yaml",
+    "test": "node --test --test-concurrency=1 test/app.test.mjs test/im-templates.test.mjs test/conformance.test.mjs",
+    "demo": "node demo/run.mjs",
+    "demo:view": "node demo/build-view.mjs",
+    "demo:record": "node demo/record.mjs"
+  },
+  "dependencies": {
+    "@dsh-bridge/protocol": "workspace:*",
+    "@dsh-bridge/server-kit": "workspace:*"
+  }
+}
