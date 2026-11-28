@@ -59,7 +59,7 @@ export function render({ template, type, count, params, items, url, now, signatu
   `safe` / `int` / `mmdd` / `hhmm` / `yearMonth` など（`@dsh-bridge/plugin-notify/format`：数値と日付形式以外は通さない）。
 
 ## 定時報告（AI 社員）のエンジン（`src/ai-report.js`）
-- 設定した役割（`aiReportRoles`、既定 admin / manager）の職員がボットとの個別チャットで「定時報告 オン / オフ / テスト」（キーワードは `aiReportCommand`）
+- 設定した役割（`aiReportRoles`、既定 admin / manager）の職員がボットとの個別チャットで「定時報告 オン / オフ / テスト」（キーワードは `aiReportCommand`。既定のままなら daily report on / off / test、定时报告 开启 / 关闭 / 测试 も可。返事・既定の指示・固定の報告はアプリケーションの manifest の `system.locale` の言語、`src/messages.js`）
   → その会話に dsh-proactive の business アラーム（cron、`respect_quiet_hours: false`、IM 配信先 `deliver_to`）。本人確認・役割はそのアプリケーションの API。
 - 時刻：アプリケーションの `paths.reportSettings` があれば業務システムの設定（`{times: [HH:MM], timeZone}`）、無ければ manifest の `reports.*.cron`（毎日のもの）。
 - **差し替えられる報告のテンプレート**（AI への指示）：`applications.<id>.aiReportPrompt` → `aiReportPrompt` → manifest の `reports.*.playbook` の instructions →

@@ -8,20 +8,20 @@
 const MAX_QUESTION = 200
 const WRITE_HINTS = Object.freeze(['url', 'urls', 'link', 'section', 'answer', 'save', 'feedback'])
 
-/** The persona rules for how-to questions (Japanese; add them to the AI employee's persona). */
-export const HELP_RULES_JA = Object.freeze([
-  'システムの使い方の質問（画面の場所・操作の手順・ことばの意味・だれが何をできるか）：',
-  '- 必ず {tool} を呼び、返ったマニュアルの節（title・menu・steps・qa・notes）だけを根拠に答える。自分の知識で手順を作らない。',
-  '- URL は {tool} が返した url・manualUrl だけを、そのまま書く。自分で URL を作らない・直さない・推測しない。',
-  '- found=false なら「マニュアルに説明が見つかりませんでした。管理者にお問い合わせください。」と答え、手順を作らない。',
-  '- canOpen=false の画面は URL を出さず、alt にある役割の人に依頼するよう伝える。',
-  '- 「未確認の点」が返った節は、その点を管理者に確認するよう添える。',
-  '- 業務のデータの質問は業務のツールで答える。使い方とデータの両方が要る質問は両方を呼ぶ。',
-  '- 答えの形：1 行目「【ご案内】<節の題名>」、続けて要点と手順を 3〜5 行（ボタン名・画面名は「」で画面の文字のまま）、',
-  '  url があれば「こちらから開けます：<url>」、最後に「くわしい手順：<manualUrl>」。',
-  '- 日本語以外の質問には、その言語で答える（画面の名前・ボタン名は日本語のまま「」で示す。{tool} には日本語に言い換えて渡す）。',
-].join('\n'))
-export const helpRules = (toolName, rules = HELP_RULES_JA) => rules.replaceAll('{tool}', toolName)
+import { HELP_RULES, frameLocale } from './messages.js'
+
+/** The persona rules for how-to questions (Japanese; add them to the AI employee's persona). en / zh: HELP_RULES.en / .zh. */
+export const HELP_RULES_JA = HELP_RULES.ja
+export { HELP_RULES }
+/**
+ * The persona rules with the tool name. `rules`: the rules text (default Japanese), or the language of the business system
+ * ('ja' | 'en' | 'zh' or its manifest's locale such as 'en-US': the answer is framed in it, e.g. "[How to] <section title>").
+ */
+export const helpRules = (toolName, rules = HELP_RULES_JA) => {
+  const text = String(rules)
+  const lang = /^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$/.test(text) ? HELP_RULES[frameLocale(text)] : text
+  return lang.replaceAll('{tool}', toolName)
+}
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const asArray = (v) => (Array.isArray(v) ? v : [])

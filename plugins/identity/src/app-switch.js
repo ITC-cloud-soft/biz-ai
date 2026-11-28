@@ -16,8 +16,9 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import {
-  SECRETARY_LABEL_RE, SWITCH_CURRENT_WORDS, SWITCH_HELP_WORDS, SWITCH_LIST_WORDS, createAppSwitch, normalizeText, withAppPrefix,
+  SECRETARY_LABEL_RE, SWITCH_CURRENT_WORDS, SWITCH_HELP_WORDS, SWITCH_LIST_WORDS, createAppSwitch, localeOf, normalizeText, withAppPrefix,
 } from '@dsh-bridge/dsh-core'
+import { MESSAGES, messagesFor } from './messages.js'
 
 /** 「#一覧」に出す切り替え名（aliases の最初、無ければ name）。 */
 export function switchLabel(app) {
@@ -25,34 +26,32 @@ export function switchLabel(app) {
 }
 
 /**
- * 共用ボットの返事。文字列のもの（listTitle / listFooter / helpTitle / helpExample）は設定 switchMessages で上書きできる。
- * helpExample は使い方の「#アプリ名（例 …）」の例（既定はこのチャットの最初のアプリの切り替え名）。
- * linkKeyword は未連携の案内に使う連携キーワード（既定 連携）。
+ * 共用ボットの返事。文字列のもの（listTitle / listFooter / helpTitle / helpExample）は設定 switchMessages で上書きできる
+ * （日本語の既定と同じ文は既定とみなす）。helpExample は使い方の「#アプリ名（例 …）」の例（既定はこのチャットの最初のアプリの切り替え名）。
+ * linkKeyword は未連携の案内に使う連携キーワード（既定はその言語の語：連携 / link / 绑定）。
+ * locale は返事の言語（ja / en / zh。そのアプリケーションの manifest の system.locale。既定 ja。文言は src/messages.js）。
  */
-export function switchMessages(overrides = {}, { linkKeyword = '連携' } = {}) {
-  const pick = (key, fallback) => (typeof overrides?.[key] === 'string' && overrides[key] ? overrides[key] : fallback)
-  const listTitle = pick('listTitle', '【アプリ一覧】このチャットで使える業務アプリ：')
-  const listFooter = pick('listFooter', '切り替え：「#アプリ名」　いまのアプリ：「#いま」\nアプリごとに会話・記録は別々です。')
-  const helpTitle = pick('helpTitle', '【使い方】このチャットでは複数の業務アプリを切り替えて使えます。')
+export function switchMessages(overrides = {}, { linkKeyword, locale } = {}) {
+  const m = messagesFor(locale)
+  const t = m.switch
+  const keyword = linkKeyword ?? m.linkKeyword
+  const pick = (key, fallback) => (typeof overrides?.[key] === 'string' && overrides[key] && overrides[key] !== MESSAGES.ja.switch[key] ? overrides[key] : fallback)
+  const listTitle = pick('listTitle', t.listTitle)
+  const listFooter = pick('listFooter', t.listFooter)
+  const helpTitle = pick('helpTitle', t.helpTitle)
   const helpExample = pick('helpExample', null)
   return Object.freeze({
     listTitle,
-    listItem: (app, label, current) => `・${app.name}（${label}）${current ? '← いま' : ''}`,
+    listItem: (app, label, current) => t.listItem(app.name, label, current),
     listFooter,
-    switched: (app) => withAppPrefix(app, `${app.name}に切り替えました。ここからは${app.name}の会話です（ほかのアプリの会話とは別です）。`),
-    already: (app) => withAppPrefix(app, `いまのアプリは${app.name}です。`),
-    current: (app) => withAppPrefix(app, `いまのアプリは${app.name}です。ほかのアプリは「#一覧」で確認できます。`),
-    unknown: (query) => `【アプリ一覧】「#${query}」というアプリはこのチャットにありません。「#一覧」で使えるアプリを確認してください。`,
+    switched: (app) => withAppPrefix(app, t.switched(app.name)),
+    already: (app) => withAppPrefix(app, t.already(app.name)),
+    current: (app) => withAppPrefix(app, t.current(app.name)),
+    unknown: (query) => t.unknown(query),
     /** example = 例に出す切り替え名（このチャットのアプリの「#一覧」の名前） */
-    help: (example) => [
-      helpTitle,
-      '・#一覧　使えるアプリの一覧',
-      `・#アプリ名${(helpExample ?? example) ? `（例 ${helpExample ?? example}）` : ''}　切り替え`,
-      '・#いま　いまのアプリ',
-      '返信の先頭の【アプリ名】が、そのメッセージのアプリです。通知に返信すると、その通知のアプリの会話になります。',
-    ].join('\n'),
-    notLinked: (app) => `${app.name}とはまだ連携していません。${app.name}の業務Webで連携コードを発行し、『${linkKeyword} 123456』と送信してください。`,
-    switchedByReply: (app, reason) => `（${reason === 'quote' ? '引用された通知' : '通知'}への返信のため、${app.name}の会話に切り替えました。「#一覧」で切り替えられます）`,
+    help: (example) => [helpTitle, ...t.helpLines(helpExample ?? example)].join('\n'),
+    notLinked: (app) => t.notLinked(app.name, keyword),
+    switchedByReply: (app, reason) => t.switchedByReply(app.name, reason),
   })
 }
 export const SWITCH_MESSAGES = switchMessages()
@@ -154,15 +153,16 @@ export function defaultSwitchStatePath(env = process.env) {
  * @param {object} deps.identity          createIdentityService の結果（切り替え先で未連携なら案内を添える）
  * @param {object} [deps.words]           切り替えコマンドの語 { list, current, help }
  * @param {object} [deps.messages]        返事の上書き（listTitle / listFooter / helpTitle）
- * @param {() => string} [deps.linkKeyword] 未連携の案内に使う連携キーワード
+ * @param {(app) => string} [deps.linkKeyword] 未連携の案内に使う連携キーワード（そのアプリケーションの。既定はその言語の語）
  * @returns {{ appSwitch, router, handleCommand, parse, attachSelector, dispose }}
  */
 export function installAppSwitch({
-  registry, dshIm, identity, logger = console, replyWindowMs, statePath = null, now = Date.now, words = {}, messages = {}, linkKeyword = () => '連携',
+  registry, dshIm, identity, logger = console, replyWindowMs, statePath = null, now = Date.now, words = {}, messages = {}, linkKeyword = () => undefined,
 }) {
   const store = createSwitchStore(statePath, { logger })
   const parse = createSwitchParser(words)
-  const texts = () => switchMessages(messages, { linkKeyword: linkKeyword() })
+  // 返事の言語はそのアプリケーションの言語（manifest の system.locale）。ボット全体の返事（一覧・使い方）は「いまのアプリ」の言語
+  const texts = (app) => switchMessages(messages, { linkKeyword: linkKeyword(app), locale: localeOf(app) })
   let appSwitch = null
   appSwitch = createAppSwitch({
     registry,
@@ -184,11 +184,14 @@ export function installAppSwitch({
     decorateReply: (source, text) => {
       // 【アプリ一覧】【使い方】【アプリ名】などで始まる返事はそのまま。AI 秘書のラベル（【ご報告】【対応のお願い】…）はアプリ名ではないので付ける
       if (!appSwitch.isShared(source) || typeof text !== 'string') return text
-      if (text.trimStart().startsWith('【') && !SECRETARY_LABEL_RE.test(text.trimStart())) return text
+      const lead = text.trimStart()
+      if (lead.startsWith('【') && !SECRETARY_LABEL_RE.test(lead)) return text
       const app = registry()?.get?.(source.applicationId)
       if (!app) return text
+      // en のアプリケーションは [Apps] [Help] [アプリ名] で始まる返事もそのまま（ラベル [FYI] … には付ける）
+      if (localeOf(app) === 'en' && /^\[[^\]\n]{1,40}\]/.test(lead) && !SECRETARY_LABEL_RE.test(lead)) return text
       const notice = appSwitch.takeNotice(source, app.id)
-      return withAppPrefix(app, notice ? `${texts().switchedByReply(app, notice.reason)}\n${text}` : text)
+      return withAppPrefix(app, notice ? `${texts(app).switchedByReply(app, notice.reason)}\n${text}` : text)
     },
     decorateOutbound: ({ botId, to, text, applicationId }) => {
       const platform = platformOfBot(botId)
@@ -209,10 +212,10 @@ export function installAppSwitch({
   async function handleCommand({ text, source, reply }) {
     const command = parse(text)
     if (!command) return
-    const t = texts()
     const apps = appSwitch.list(source)
-    if (command.kind === 'help') return reply(t.help(apps[0] ? switchLabel(apps[0].app) : ''))
     const current = appSwitch.current(source)
+    const t = texts(current ?? apps[0]?.app ?? null)
+    if (command.kind === 'help') return reply(t.help(apps[0] ? switchLabel(apps[0].app) : ''))
     if (command.kind === 'list') {
       const lines = [t.listTitle]
       for (const { app, current: isCurrent } of apps) lines.push(t.listItem(app, switchLabel(app), isCurrent))
@@ -222,11 +225,12 @@ export function installAppSwitch({
     if (command.kind === 'current') return reply(current ? t.current(current) : t.help(apps[0] ? switchLabel(apps[0].app) : ''))
     const target = appSwitch.find(source, command.query)
     if (!target) return reply(t.unknown(command.query))
-    if (current?.id === target.id) return reply(t.already(target))
+    if (current?.id === target.id) return reply(texts(target).already(target))
     appSwitch.select(source, target.id)
     logger.info?.('bridge-identity: %s/%s conversation switched to %s (command)', source.platform, source.botId, target.id)
     const linked = await linkedIn(target, source)
-    return reply(linked ? t.switched(target) : `${t.switched(target)}\n${t.notLinked(target)}`)
+    const tt = texts(target)
+    return reply(linked ? tt.switched(target) : `${tt.switched(target)}\n${tt.notLinked(target)}`)
   }
 
   const disposers = []

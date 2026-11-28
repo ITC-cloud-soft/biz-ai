@@ -4,9 +4,9 @@
 // mock LINE; the page only lays it out like a messenger and paces it to about 15 seconds.
 //
 // Shortened for the small screen: an approval card shows its title, fields, first line and buttons (the plugin's
-// explanation lines, the reply-code hint and the deadline are in the transcript). The framework's fixed IM frame is
-// Japanese today (labels such as 【承認のお願い】, the greeting, the signature "AI 秘書", the link labels): for en / zh those
-// fixed frame strings are shown in the page's language with the table FRAME below — never the business text.
+// explanation lines, the reply-code hint and the deadline are in the transcript). Nothing is translated here: the
+// framework frames every message in the instance's language (its manifest's system.locale), so the labels, greetings,
+// link labels and signatures are shown exactly as they were sent.
 //
 //   node examples/purchase-requests/demo/build-view.mjs [--lang en|ja|zh|all]
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -62,40 +62,28 @@ const UI = {
   },
 }
 
-// the framework's fixed (Japanese) IM frame strings in en / zh — frame only; ja is shown as sent
-const GREETING = /^(おはようございます|お疲れさまです|夜分に失礼します)。/
-const FRAME = {
-  en: [[/^【承認のお願い】/, 'Approval needed · '], [/^【ご報告】(.+)の承認依頼（承認済み）$/, 'Done · $1 (approved)'], [/^【ご報告】(.+)の承認依頼（差戻し済み）$/, 'Done · $1 (sent back)'],
-    [/AI 秘書$/, 'AI assistant'], [/^業務 ?Web.*$/, 'Open in Purchase Requests']],
-  zh: [[/^【承認のお願い】/, '【待审批】'], [/^【ご報告】(.+)の承認依頼（承認済み）$/, '【已处理】$1（已批准）'], [/^【ご報告】(.+)の承認依頼（差戻し済み）$/, '【已处理】$1（已退回）'],
-    [/AI 秘書$/, 'AI 助理'], [/^業務 ?Web.*$/, '在采购申请中打开']],
-}
-const frame = (lang, text) => (FRAME[lang] ?? []).reduce((s, [re, to]) => s.replace(re, to), String(text ?? ''))
-const firstLine = (lang, text) => {
-  const line = String(text ?? '').split('\n')[0]
-  return lang === 'ja' ? line : line.replace(GREETING, '')
-}
+const firstLine = (text) => String(text ?? '').split('\n')[0]
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
-const signatureOf = (lang, footer) => frame(lang, String(footer ?? '').split('\n').filter((l) => l.startsWith('—')).pop() ?? '')
+const signatureOf = (footer) => String(footer ?? '').split('\n').filter((l) => l.startsWith('—')).pop() ?? ''
 
 /** A notice (no action buttons): title, its lines, the link, the signature. */
-function noticeHtml(lang, c) {
-  const lines = String(c.text).split('\n').map((l, i) => (i === 0 ? firstLine(lang, l) : l))
+function noticeHtml(c) {
+  const lines = String(c.text).split('\n')
   const link = c.buttons.find((b) => b.kind === 'link')
-  return `<div class="card notice"><div class="ct">${esc(frame(lang, c.title))}</div>${lines.map((l) => `<div class="cl">${esc(l)}</div>`).join('')}`
-    + `${link ? `<div class="clink">${esc(frame(lang, link.label))}</div>` : ''}<div class="sig">${esc(signatureOf(lang, c.footer))}</div></div>`
+  return `<div class="card notice"><div class="ct">${esc(c.title)}</div>${lines.map((l) => `<div class="cl">${esc(l)}</div>`).join('')}`
+    + `${link ? `<div class="clink">${esc(link.label)}</div>` : ''}<div class="sig">${esc(signatureOf(c.footer))}</div></div>`
 }
 
 /** The approval card, and the same card after the decision (updateCard): title, fields, first line, buttons ↔ status. */
-function approvalHtml(lang, c, updated, ui) {
+function approvalHtml(c, updated, ui) {
   const actions = c.buttons.filter((b) => b.kind === 'action')
   return `<div class="card approval">`
-    + `<div class="ct swap"><span class="a">${esc(frame(lang, c.title))}</span><span class="b">${esc(frame(lang, updated?.title ?? ''))}</span></div>`
+    + `<div class="ct swap"><span class="a">${esc(c.title)}</span><span class="b">${esc(updated?.title ?? '')}</span></div>`
     + `<div class="fields">${c.fields.map((f) => `<div class="f"><span>${esc(f.label)}</span><b>${esc(f.value)}</b></div>`).join('')}</div>`
-    + `<div class="cl swap"><span class="a">${esc(firstLine(lang, c.text))}</span><span class="b">${esc(updated?.text ?? '')}</span></div>`
+    + `<div class="cl swap"><span class="a">${esc(firstLine(c.text))}</span><span class="b">${esc(updated?.text ?? '')}</span></div>`
     + `<div class="btns swap"><span class="a">${actions.map((b, i) => `<i class="btn ${i === 0 ? 'ok' : 'no'}">${esc(b.label)}</i>`).join('')}</span>`
     + `<span class="b"><i class="done">✓ ${esc(ui.approved)}</i></span></div>`
-    + `<div class="sig">${esc(signatureOf(lang, c.footer))}</div></div>`
+    + `<div class="sig">${esc(signatureOf(c.footer))}</div></div>`
 }
 
 /** The story as scenes of timed items (pacing is the page's; order and content are the transcript's). */
@@ -123,10 +111,10 @@ function buildStory(lang, tr) {
     for (const msg of e.messages) {
       const at = next(e.chat)
       if (msg.kind === 'text') scenes[e.chat].push({ at, side: 'bot', typing: e.from === 'ai' ? 800 : 0, html: `<div class="bubble bot">${esc(msg.text)}</div>` })
-      else if (msg.buttons.some((b) => b.kind === 'action')) { card = { at, side: 'bot', msg, id: 'card' }; scenes[e.chat].push(card) } else scenes[e.chat].push({ at, side: 'bot', html: noticeHtml(lang, msg) })
+      else if (msg.buttons.some((b) => b.kind === 'action')) { card = { at, side: 'bot', msg, id: 'card' }; scenes[e.chat].push(card) } else scenes[e.chat].push({ at, side: 'bot', html: noticeHtml(msg) })
     }
   }
-  if (card) card.html = approvalHtml(lang, card.msg, card.updated, ui)
+  if (card) card.html = approvalHtml(card.msg, card.updated, ui)
   return { scenes, logs, sceneStart, tapAt, updateAt: card?.updateAt ?? null, end: 15500 }
 }
 
@@ -203,7 +191,7 @@ function page(lang, tr) {
   </div>
   <div class="phone">${sceneHtml}<div class="tap" id="tap"></div></div>
 </div>
-<p class="note">${esc(tr.how)} · ${esc(tr.generatedAt)} · ${tr.checks.filter((c) => c.status === 'pass').length} / ${tr.checks.length} checks passed.${lang === 'ja' ? '' : ' The framework\'s fixed chat frame is Japanese today; its labels are shown in this page\'s language. Every business text, button and answer is as sent.'}</p>
+<p class="note">${esc(tr.how)} · ${esc(tr.generatedAt)} · ${tr.checks.filter((c) => c.status === 'pass').length} / ${tr.checks.length} checks passed. Every message, button and answer is as sent.</p>
 <script>
 (() => {
   const S = ${JSON.stringify({ sceneStart: story.sceneStart, tapAt: story.tapAt, updateAt: story.updateAt, end: story.end, steps: [0, 4200, 8200] })}

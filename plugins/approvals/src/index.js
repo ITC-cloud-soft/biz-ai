@@ -1,8 +1,12 @@
 import {
-  APPROVAL_LABEL, BridgeApiError, appNickname, DEFAULT_APPLICATION_ID, DEFAULT_PLATFORM_PRIORITY, INTENT_LABELS, MAX_REQUEST_PLATFORMS, NOTIFY_ONLY_PLATFORMS, apiSource, appPath,
-  V1_PATHS, applicationOfEvent, cfg, classifyDeliveryError, fallbackRegistry, createBotResolver, greetingAt, loadSchemastery, makeLogger, monthDayTime,
-  normalizeText, onDispose, openDomain, registryGetter, scopedKey, signatureOf, singleApplicationRegistry, watchRegistry, whenServices,
+  BridgeApiError, appNickname, DEFAULT_APPLICATION_ID, DEFAULT_PLATFORM_PRIORITY, MAX_REQUEST_PLATFORMS, NOTIFY_ONLY_PLATFORMS, apiSource, appPath,
+  V1_PATHS, applicationOfEvent, askLine, cfg, classifyDeliveryError, fallbackRegistry, createBotResolver, greetAnd, greetingAt, loadSchemastery, localeOf,
+  makeLogger, monthDayTime, normalizeText, onDispose, openDomain, registryGetter, scopedKey, signatureOf, singleApplicationRegistry, timeZoneOf,
+  watchRegistry, whenServices,
 } from '@dsh-bridge/dsh-core'
+import { CANCEL_WORDS, MESSAGES, REPLY_WORDS, messagesFor, replyWordsFor } from './messages.js'
+
+export { MESSAGES, REPLY_WORDS, messagesFor, replyWordsFor } from './messages.js'
 
 /**
  * bridge-approvals — 業務システムの承認依頼を IM に届け、ボタン／文字返信で決定する（DSH Business Bridge の汎用プラグイン）。
@@ -35,6 +39,9 @@ import {
  *   業務システムはカードに任意の文面 `wording`（cardWording：lead / ask / buttons / replies / statusBody）を付けられる。
  *   付いていればその承認だけ、あいさつの後の一文・お願いしたいこと・各ボタンの説明・ボタン／返信の結果の返事・更新したカードの
  *   本文をその文にする（例：ケアビリングの給与発行「この内容で給与明細を発行し、職員のみなさんにお知らせします」）。無ければ既定の文。
+ *   言語（ja / en / zh）と時間帯（あいさつ・期限）はアプリケーションの manifest の system.locale / system.timezone（manifest が無ければ
+ *   日本語・日本時間）。文言はすべて messages.js。文字返信の語は設定 replyWords、無ければその言語の既定（承認/差戻・Approve/Reject・
+ *   批准/驳回。返信は 3 つの言語のどの語でも受け付ける）。
  */
 
 export const name = 'bridge-approvals'
@@ -62,12 +69,32 @@ export function actionPattern(prefix = ACTION_PREFIX) {
   // 接頭辞は英数字・_・.・- と末尾の : だけ（actionPrefixOf が確かめる）。正規表現で意味を持つのは . だけ
   return new RegExp(`^${actionPrefixOf(prefix).replace(/\./g, '\\.')}(approve|reject):(.+)$`)
 }
-export const DEFAULT_REPLY_WORDS = Object.freeze({ approve: Object.freeze(['承認']), reject: Object.freeze(['差戻']) })
+export const DEFAULT_REPLY_WORDS = REPLY_WORDS.ja
+/** 設定 replyWords が無いときの返信の解釈：3 つの言語の既定の語をすべて受け付ける。 */
+export const ALL_REPLY_WORDS = Object.freeze({
+  approve: Object.freeze([...new Set(Object.values(REPLY_WORDS).flatMap((w) => w.approve))]),
+  reject: Object.freeze([...new Set(Object.values(REPLY_WORDS).flatMap((w) => w.reject))]),
+})
 
 const escapeRe = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const cleanWords = (list) => (Array.isArray(list) ? list : []).map((w) => String(w ?? '').normalize('NFKC').trim()).filter(Boolean)
 const wordList = (list, fallback) => {
-  const words = (Array.isArray(list) ? list : []).map((w) => String(w ?? '').normalize('NFKC').trim()).filter(Boolean)
+  const words = cleanWords(list)
   return words.length ? words : [...fallback]
+}
+
+/**
+ * The replyWords setting as given, or null when it says nothing (missing, {}, empty lists — DSH hands an unset object
+ * setting over as an empty object) or only repeats the Japanese default (承認 / 差戻): then the card uses the language's
+ * default words and a text reply may use the words of any language.
+ */
+export function configuredReplyWords(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const approve = cleanWords(raw.approve)
+  const reject = cleanWords(raw.reject)
+  if (!approve.length && !reject.length) return null
+  if (approve.join('\u0000') === REPLY_WORDS.ja.approve.join('\u0000') && reject.join('\u0000') === REPLY_WORDS.ja.reject.join('\u0000')) return null
+  return raw
 }
 
 /**
@@ -96,85 +123,9 @@ export const DOMAIN = 'bridge_approvals'
 const RETENTION_MS = 7 * 24 * 3600_000
 /** 「差戻」を押した後、次の文を理由として待つ時間（B-028）。 */
 const REASON_WAIT_MS = 10 * 60_000
-const CANCEL_WORDS = new Set(['取消', '取り消し', '取消し', 'キャンセル', 'やめる', 'cancel'])
 
-export const MSG = {
-  approved: '承認しました。ありがとうございます。結果はカードにも反映します。',
-  rejected: '差戻しました。ありがとうございます。理由とともに申請者へ戻します。',
-  reasonDialogTitle: '差戻しの理由',
-  reasonDialogLabel: '差戻しの理由を入力してください',
-  reasonCancelled: '差戻しを取りやめました。依頼はそのまま残っています。',
-  askReason: (code, w = DEFAULT_REPLY_WORDS) =>
-    `差戻しの理由を、このチャットにそのまま送ってください（10 分以内）。やめるときは「取消」と送ってください。\n（「${w.reject[0]} ${code} 理由」の形で送っても差戻しできます。例：${w.reject[0]} ${code} 金額を確認してください）`,
-  reasonRequired: (code, w = DEFAULT_REPLY_WORDS) =>
-    `差戻しには理由が必要です。番号のあとに理由を続けて送ってください。\n例：${w.reject[0]} ${code} 金額を確認してください`,
-  reasonInputLabel: '差戻しの理由',
-  reasonInputPlaceholder: '例：金額を確認してください',
-  notFound: 'この承認依頼は見つかりませんでした。既に処理済みか期限切れの可能性があります。業務Webをご確認ください。',
-  notYours: 'この承認依頼はあなた宛てではありません。',
-  unknownAction: '不明な操作です。',
-  finished: {
-    approved: 'この承認依頼は既に承認されています。',
-    rejected: 'この承認依頼は既に差戻されています。',
-    cancelled: 'この承認依頼は取り消されました。',
-    expired: 'この承認依頼は期限切れです。',
-    decided: 'この承認依頼は既に処理済みです。',
-  },
-  code: {
-    token_or_reply_code_required: '入力内容に誤りがあります（ボタンまたは返信コードが必要です）。',
-    comment_required: '差戻しには理由が必要です。',
-    identity_not_linked: 'このアカウントは職員と連携されていません。業務Webで SNS 連携をしてください。',
-    delivery_not_found: 'この承認依頼の送付先が見つかりません。業務Webをご確認ください。',
-    identity_mismatch: 'この承認依頼はあなた宛てではありません。',
-    invalid_reply_code: (remaining) => `返信コードが正しくありません。${Number.isInteger(remaining) ? `（あと ${remaining} 回まで）` : ''}`,
-    role_not_permitted: 'この承認に必要な役割を持っていないため、決定できません。',
-    self_approval_forbidden: '申請者本人は承認・差戻しできません。',
-    delivery_locked: '返信コードの誤りが続いたため、この依頼は IM から操作できなくなりました。業務Webで操作してください。',
-    too_many_attempts: '試行回数が多すぎます。しばらく時間をおいてから再度お試しください。',
-    delivery_used: 'このボタン・返信コードは既に使用されています。',
-    delivery_revoked: 'この依頼は無効になりました（他の方が決定したか、取り消されました）。',
-    expired: '承認の期限が切れています。業務Webをご確認ください。',
-    delegation_not_permitted: 'システム設定の問題で処理できませんでした。管理者に連絡してください。',
-  },
-  error: {
-    unreachable: '業務システムに接続できませんでした。時間をおいて再度お試しください。',
-    badRequest: '入力内容に誤りがあります。',
-    commentRequired: '差戻しには理由が必要です。',
-    unauthorized: 'システム設定の問題で処理できませんでした（認証エラー）。管理者に連絡してください。',
-    forbidden: 'この承認を行う権限がありません（申請者本人、または必要な役割を持たない場合は決定できません）。',
-    notFound: 'この承認依頼は見つかりません。',
-    conflict: 'この承認依頼は既に処理済みです。',
-    gone: '承認の期限が切れているか、このボタン・コードは既に使用されています。',
-    server: '業務システムでエラーが発生しました。時間をおいて再度お試しください。',
-  },
-  footer: (code, w = DEFAULT_REPLY_WORDS) => `文字で返信する場合：「${w.approve[0]} ${code}」／「${w.reject[0]} ${code} 理由」`,
-  statusFooter: {
-    approved: '状態：承認済み',
-    rejected: '状態：差戻し済み',
-    expired: '状態：期限切れ',
-    cancelled: '状態：取消',
-    replaced: '状態：無効（送り直し済み）',
-  },
-  /** 更新したカードの件名の（状態）。 */
-  statusLabel: { approved: '承認済み', rejected: '差戻し済み', expired: '期限切れ', cancelled: '取消', replaced: '無効', decided: '処理済み' },
-  /** 更新したカードの本文（結果と、まだ何かすることがあるか）。 */
-  statusBody: {
-    approved: 'この承認依頼は承認されました。ご対応は不要です。',
-    rejected: 'この承認依頼は差し戻されました。申請者に戻っていますので、ご対応は不要です。',
-    expired: 'この承認依頼は期限が切れました。必要な場合は、業務Webから依頼し直してください。',
-    cancelled: 'この承認依頼は取り消されました。ご対応は不要です。',
-    replaced: 'この依頼は別の連絡先に送り直されました。新しいメッセージから操作してください。',
-    decided: 'この承認依頼は処理済みです。ご対応は不要です。',
-  },
-  /** 依頼カードの本文。 */
-  request: {
-    lead: (what) => `${what ? `${what}の` : ''}承認をお願いします。`,
-    ask: (deadline, w = DEFAULT_REPLY_WORDS) => `▶ お願いしたいこと${deadline ? `（期限 ${deadline}）` : ''}：内容を確認し、「${w.approve[0]}」か「${w.reject[0]}」を選んでください。`,
-    buttons: (w = DEFAULT_REPLY_WORDS) => [`・${w.approve[0]}：この内容で確定します`, `・${w.reject[0]}：理由を添えて申請者に戻します`],
-  },
-  detailLink: '業務Webで詳細を見る',
-  noApplication: 'このボットはどの業務システムにも割り当てられていません。管理者に連絡してください。',
-}
+/** 日本語の文言（従来の定数）。言語ごとは messagesFor(locale)（messages.js）。 */
+export const MSG = MESSAGES.ja
 
 const WORDING_MAX = 300
 const wordingText = (value) => {
@@ -206,9 +157,13 @@ export function cardWording(raw) {
   return Object.keys(kept).length ? kept : null
 }
 
-/** 業務システムのカード件名 → 何の承認か（'修理依頼の承認依頼' / '修理依頼の承認' → '修理依頼'。種類だけ。無ければ ''）。 */
+/**
+ * 業務システムのカード件名 → 何の承認か（'修理依頼の承認依頼' / '修理依頼の承認' → '修理依頼'、'Repair request approval' → 'Repair request'、
+ * '维修申请的审批' → '维修申请'。種類だけ。無ければ ''）。
+ */
 export function approvalSubject(title) {
-  return String(title ?? '').trim().replace(/[【】]/g, '').replace(/の?承認(依頼)?$/, '').slice(0, 40)
+  return String(title ?? '').trim().replace(/[【】]/g, '').replace(/の?承認(依頼)?$/, '').replace(/\s+approval(\s+request)?$/i, '')
+    .replace(/的?审批(申请)?$/, '').slice(0, 40)
 }
 
 /**
@@ -245,16 +200,17 @@ export const Config = z
   : undefined
 
 /**
- * 業務システムのエラー → 利用者向けの日本語。
+ * 業務システムのエラー → 利用者向けの文（locale：ja / en / zh。既定 ja）。
  * @param overrides  エラーコード → 文（設定 messages。MSG.code の文字列の項目を置き換える。invalid_reply_code は残り回数を後ろに付ける）
  */
-export function decisionErrorMessage(error, overrides = {}) {
+export function decisionErrorMessage(error, overrides = {}, locale) {
+  const MSG = messagesFor(locale)
   const status = error instanceof BridgeApiError ? error.status : (error?.status ?? 0)
   const code = error?.code ?? ''
   const own = overrides && typeof overrides === 'object' && typeof overrides[code] === 'string' && overrides[code] ? overrides[code] : null
   if (code === 'invalid_reply_code') {
     const remaining = error?.body?.remainingAttempts
-    return own ? `${own}${Number.isInteger(remaining) ? `（あと ${remaining} 回まで）` : ''}` : MSG.code.invalid_reply_code(remaining)
+    return own ? `${own}${MSG.remaining(remaining)}` : MSG.code.invalid_reply_code(remaining)
   }
   if (own) return own
   if (typeof MSG.code[code] === 'string') return MSG.code[code]
@@ -333,7 +289,7 @@ function memoryTable() {
  * @param deps.api       レジストリの代わりに API クライアント 1 つ（1 アプリケーション・Bridge v1 の経路。単体テスト・組み込み）
  * @param deps.table     { get, entries, put, delete }（storage-domain の KvTable 互換）
  * @param deps.applicationOptions  (applicationId) => { platformPriority?, bots?, webUrl?, showBusinessBody? }（既定以外のアプリケーション）
- * @param deps.replyWords  () => { approve: string[], reject: string[] }（文字返信の語とボタンの表示名）
+ * @param deps.replyWords  () => { approve: string[], reject: string[] } | null（文字返信の語とボタンの表示名。null：設定なし＝その言語の既定の語、返信は 3 つの言語の語を受け付ける）
  * @param deps.showBusinessBody  () => boolean（業務システムのカード本文を「ご参考」として出すか。既定 true）
  */
 export function createApprovalsIm({
@@ -346,7 +302,7 @@ export function createApprovalsIm({
   bots = () => ({}),
   webUrl = () => '',
   applicationOptions = () => ({}),
-  replyWords = () => DEFAULT_REPLY_WORDS,
+  replyWords = () => null,
   showBusinessBody = () => true,
   applicationName = 'business',
   actionPrefix = ACTION_PREFIX,
@@ -356,14 +312,18 @@ export function createApprovalsIm({
   const buttonPrefix = actionPrefixOf(actionPrefix)
   const buttonRe = actionPattern(buttonPrefix)
   const single = api ? singleApplicationRegistry(api, { id: DEFAULT_APPLICATION_ID, name: applicationName, label: 'business API', namespace: 'app', paths: V1_PATHS }) : null
-  let matcherFor = null
-  let matcher = null
-  /** いまの設定の返信の解釈（設定の変更に追随）。 */
-  const replies = () => {
-    const words = replyWords() ?? DEFAULT_REPLY_WORDS
+  const matchers = new Map() // JSON(words) -> replyMatcher
+  const matcherOf = (words) => {
     const key = JSON.stringify(words)
-    if (key !== matcherFor) { matcher = replyMatcher(words); matcherFor = key }
-    return matcher
+    if (!matchers.has(key)) { if (matchers.size > 20) matchers.clear(); matchers.set(key, replyMatcher(words)) }
+    return matchers.get(key)
+  }
+  /** いまの設定の返信の解釈（設定の変更に追随。設定が無ければ 3 つの言語の既定の語）。 */
+  const replies = () => matcherOf(replyWords() ?? ALL_REPLY_WORDS)
+  /** そのアプリケーションのカード・案内に出す語（設定 replyWords、無ければその言語の既定の語）。 */
+  const wordsFor = (applicationId) => {
+    const configured = replyWords()
+    return matcherOf(configured ?? replyWordsFor(localeOf(appById(applicationId)))).words
   }
   const getRegistry = single ? () => single : registryGetter(registry)
   const defaultId = () => getRegistry()?.default?.()?.id ?? DEFAULT_APPLICATION_ID
@@ -371,6 +331,10 @@ export function createApprovalsIm({
   const appIdOf = (record) => record?.applicationId ?? defaultId()
   const appById = (applicationId) => (isDefault(applicationId) ? getRegistry()?.default?.() ?? null : getRegistry()?.get?.(applicationId) ?? null)
   const recordKey = (applicationId, approvalId) => scopedKey(applicationId, defaultId(), approvalId)
+  /** そのアプリケーションの言語の文言（manifest の system.locale。無ければ日本語）。 */
+  const msgFor = (applicationId) => messagesFor(localeOf(appById(applicationId)))
+  /** 発信元の会話のアプリケーション（無ければ既定）の文言。 */
+  const msgForSource = (source) => messagesFor(localeOf(getRegistry()?.resolveApplication?.(source) ?? getRegistry()?.default?.() ?? null))
   const indexKey = (applicationId, deliveryId) => `${isDefault(applicationId) ? '' : applicationId}\u0001${deliveryId}`
   const byDelivery = new Map() // indexKey(app, deliveryId) -> record key
   const resolver = createBotResolver({ dshIm, registry: getRegistry, logger, label: 'bridge-approvals' })
@@ -415,17 +379,18 @@ export function createApprovalsIm({
 
   /** カードのリンク：業務システムが delivery に付けた本人用のリンク（delivery.link）、無ければ設定の webUrl。 */
   function link(applicationId, approvalId, delivery = null) {
+    const label = msgFor(applicationId).detailLink
     const own = personalLink(delivery?.link)
-    if (own) return { label: MSG.detailLink, url: own }
+    if (own) return { label, url: own }
     const template = optionsFor(applicationId).webUrl
     if (!template) return undefined
-    return { label: MSG.detailLink, url: template.includes('{id}') ? template.replaceAll('{id}', encodeURIComponent(approvalId)) : template }
+    return { label, url: template.includes('{id}') ? template.replaceAll('{id}', encodeURIComponent(approvalId)) : template }
   }
 
   /** 署名（そのアプリケーションの AI 秘書。AI 社員の呼び名があれば「— <呼び名>（<アプリ名> AI 秘書）」）。 */
   const signatureFor = (applicationId) => {
     const app = appById(applicationId)
-    return signatureOf(app?.name ?? applicationId, appNickname(app, undefined))
+    return signatureOf(app?.name ?? applicationId, appNickname(app, undefined), { locale: localeOf(app) })
   }
 
   /**
@@ -433,19 +398,23 @@ export function createApprovalsIm({
    * ボタンの説明 / 業務システムの本文を「ご参考」として（showBusinessBody）。氏名・金額は書かない（項目は業務システムが決める）。
    */
   function requestLines(applicationId, base, expiresAt) {
+    const app = appById(applicationId)
+    const locale = localeOf(app)
+    const timeZone = timeZoneOf(app)
+    const MSG = messagesFor(locale)
     const what = approvalSubject(base.title)
-    const deadline = expiresAt ? monthDayTime(expiresAt) : undefined
-    const words = replies().words
+    const deadline = expiresAt ? monthDayTime(expiresAt, timeZone) : undefined
+    const words = wordsFor(applicationId)
     const w = base.wording ?? {}
     const lines = [
-      `${greetingAt(now())}${w.lead ?? MSG.request.lead(what)}`,
-      w.ask ? `▶ お願いしたいこと${deadline ? `（期限 ${deadline}）` : ''}：${w.ask}` : MSG.request.ask(deadline, words),
+      greetAnd(greetingAt(now(), { timeZone, locale }), w.lead ?? MSG.request.lead(what), locale),
+      w.ask ? askLine(w.ask, { due: deadline ? MSG.due(deadline) : undefined, locale }) : MSG.request.ask(deadline, words),
       ...(w.buttons
-        ? [w.buttons.approve ? `・${words.approve[0]}：${w.buttons.approve}` : MSG.request.buttons(words)[0], w.buttons.reject ? `・${words.reject[0]}：${w.buttons.reject}` : MSG.request.buttons(words)[1]]
+        ? [w.buttons.approve ? MSG.buttonLine(words.approve[0], w.buttons.approve) : MSG.request.buttons(words)[0], w.buttons.reject ? MSG.buttonLine(words.reject[0], w.buttons.reject) : MSG.request.buttons(words)[1]]
         : MSG.request.buttons(words)),
     ]
     // 業務システムの本文は補足として残す（本文が操作の説明だけのアプリケーションは showBusinessBody: false。ここで言い直している）
-    if (base.body && optionsFor(applicationId).showBusinessBody) lines.push(`ご参考：${String(base.body)}`)
+    if (base.body && optionsFor(applicationId).showBusinessBody) lines.push(MSG.reference(String(base.body)))
     return lines
   }
 
@@ -458,19 +427,21 @@ export function createApprovalsIm({
     // 既定以外のアプリケーションはボタン ID にアプリケーションを含める（deliveryId はアプリケーションごとの名前空間）
     const target = isDefault(applicationId) ? delivery.deliveryId : `${applicationId}/${delivery.deliveryId}`
     const what = approvalSubject(base.title)
+    const MSG = msgFor(applicationId)
+    const words = wordsFor(applicationId)
     const card = {
-      title: `${APPROVAL_LABEL}${what || '承認依頼'}`,
+      title: MSG.requestTitle(what),
       fields: Array.isArray(base.fields) ? base.fields.map((f) => ({ label: String(f.label), value: String(f.value) })) : [],
       body: requestLines(applicationId, base, expiresAt).join('\n'),
       actions: [
-        { id: `${buttonPrefix}approve:${target}`, label: replies().words.approve[0], style: 'primary', value: delivery.deliveryId },
+        { id: `${buttonPrefix}approve:${target}`, label: words.approve[0], style: 'primary', value: delivery.deliveryId },
         // input：カードに理由の入力欄を持てるチャネル（Teams・Lark）は、差戻のボタンと一緒に入力欄を出す
         {
-          id: `${buttonPrefix}reject:${target}`, label: replies().words.reject[0], style: 'danger', value: delivery.deliveryId,
+          id: `${buttonPrefix}reject:${target}`, label: words.reject[0], style: 'danger', value: delivery.deliveryId,
           input: { label: MSG.reasonInputLabel, placeholder: MSG.reasonInputPlaceholder },
         },
       ],
-      footer: `${MSG.footer(delivery.replyCode, replies().words)}\n${signatureFor(applicationId)}`,
+      footer: `${MSG.footer(delivery.replyCode, words)}\n${signatureFor(applicationId)}`,
     }
     const l = link(applicationId, approvalId, delivery)
     if (l) card.link = l
@@ -483,8 +454,9 @@ export function createApprovalsIm({
    */
   function finalCard(applicationId, approvalId, base, status, delivery = null) {
     const what = approvalSubject(base?.title)
+    const MSG = msgFor(applicationId)
     const card = {
-      title: `${INTENT_LABELS.info}${what ? `${what}の承認依頼` : '承認依頼'}（${MSG.statusLabel[status] ?? MSG.statusLabel.decided}）`,
+      title: MSG.finalTitle(what, MSG.statusLabel[status] ?? MSG.statusLabel.decided),
       fields: Array.isArray(base?.fields) ? base.fields : [],
       body: base?.wording?.statusBody?.[status] ?? MSG.statusBody[status] ?? MSG.statusBody.decided,
       actions: [],
@@ -723,13 +695,14 @@ export function createApprovalsIm({
     } catch (error) {
       noteError(error)
       logger.info('bridge-approvals: im-decision failed (%s %s %s)', approvalId ?? 'reply', error?.status ?? 0, error?.code ?? '')
-      await respond(decisionErrorMessage(error, messages() ?? {}))
+      await respond(decisionErrorMessage(error, messages() ?? {}, localeOf(app)))
       return false
     }
     stats.decisions += 1
     const decidedId = approvalId ?? (res?.approval?.id ? String(res.approval.id) : null)
     // その承認のカードの文面（wording.replies）があれば、それで返事をする
     const wording = decidedId ? table.get(recordKey(app.id, decidedId))?.deliveries?.find((d) => d.card?.wording)?.card.wording : null
+    const MSG = messagesFor(localeOf(app))
     await respond(action === 'approve' ? wording?.replies?.approved ?? MSG.approved : wording?.replies?.rejected ?? MSG.rejected)
     if (!decidedId) return true
     try {
@@ -742,6 +715,7 @@ export function createApprovalsIm({
   }
 
   function finishedMessage(record) {
+    const MSG = msgFor(appIdOf(record))
     return MSG.finished[record.status] ?? MSG.finished.decided
   }
 
@@ -759,6 +733,7 @@ export function createApprovalsIm({
 
   async function handleAwaitedReason({ text, source, reply }, entry) {
     awaiting.delete(entry.key)
+    const MSG = msgFor(entry.applicationId)
     const reason = normalizeText(String(text ?? '')).trim()
     if (!reason || CANCEL_WORDS.has(reason.toLowerCase())) return reply(MSG.reasonCancelled)
     const found = lookup(entry.applicationId, entry.deliveryId)
@@ -772,10 +747,11 @@ export function createApprovalsIm({
 
   async function handleAction(e) {
     const match = buttonRe.exec(String(e?.actionId ?? ''))
-    if (!match) return e.respond(MSG.unknownAction)
+    if (!match) return e.respond(msgForSource(e?.source).unknownAction)
     const [, action, rest] = match
     const target = parseActionTarget(rest)
     const applicationId = target.applicationId ?? defaultId()
+    const MSG = msgFor(applicationId)
     const deliveryId = target.deliveryId
     const found = lookup(applicationId, deliveryId)
     if (!found) {
@@ -798,7 +774,7 @@ export function createApprovalsIm({
       } else {
         if (typeof e.openReasonDialog !== 'function') {
           awaiting.set(reasonKey(e.source), { applicationId: appIdOf(found.record), deliveryId, expiresAt: now() + REASON_WAIT_MS })
-          return e.respond(MSG.askReason(found.delivery.replyCode, replies().words))
+          return e.respond(MSG.askReason(found.delivery.replyCode, wordsFor(applicationId)))
         }
         const reason = await e.openReasonDialog({ title: MSG.reasonDialogTitle, label: MSG.reasonDialogLabel })
         comment = typeof reason === 'string' ? reason.trim() : ''
@@ -845,7 +821,9 @@ export function createApprovalsIm({
     // 「差戻 123456 理由」などの文字返信が来たら、待っていた理由の受け付けは終える
     awaiting.delete(reasonKey(source))
     const { action, code, comment } = parsed
-    if (action === 'reject' && !comment) return reply(MSG.reasonRequired(code, replies().words))
+    const MSG = msgForSource(source)
+    const resolvedId = getRegistry()?.resolveApplication?.(source)?.id ?? defaultId()
+    if (action === 'reject' && !comment) return reply(MSG.reasonRequired(code, wordsFor(resolvedId)))
     const target = replyTarget(source, code)
     if (target.error === 'no_application') return reply(MSG.noApplication)
     if (target.error === 'foreign') return reply(MSG.notYours)
@@ -904,11 +882,14 @@ export function apply(ctx, config = {}) {
   const logger = makeLogger(ctx, name)
   const fallback = configRegistry(config, { logger })
   const registry = watchRegistry(ctx, fallback)
-  const replyWords = () => cfg(config, 'replyWords', null) ?? DEFAULT_REPLY_WORDS
+  // 設定 replyWords が無ければ null（カードはその言語の既定の語、返信は 3 つの言語の語を受け付ける）。DSH の設定は書いていない
+  // replyWords も空の object（{} や空の配列）で渡すので、語が 1 つも無ければ設定なし。日本語の既定と同じ語も設定なしとみなす
+  const replyWords = () => configuredReplyWords(cfg(config, 'replyWords', null))
   let claimMatcher = { key: null, matcher: null }
   const matchesReply = (text) => {
-    const key = JSON.stringify(replyWords())
-    if (claimMatcher.key !== key) claimMatcher = { key, matcher: replyMatcher(replyWords()) }
+    const words = replyWords() ?? ALL_REPLY_WORDS
+    const key = JSON.stringify(words)
+    if (claimMatcher.key !== key) claimMatcher = { key, matcher: replyMatcher(words) }
     return claimMatcher.matcher.parse(text) !== null
   }
   const applicationOptions = (id) => {

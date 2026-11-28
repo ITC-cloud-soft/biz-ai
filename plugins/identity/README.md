@@ -65,7 +65,8 @@ IM の発信者（dsh-im がプラットフォームのイベントから作る�
 
 ## 拡張点
 - 文面：`messages` / `unlinkedReply`（プラグイン）と、レジストリの `applications[].messages`（アプリケーションごと）。
-- 語：`linkKeywords`・`switchWords`。日本語の既定はそのまま。
+- 語：`linkKeywords`・`switchWords`。日本語の既定はそのまま。`linkKeywords` が既定のままなら 連携 / link / 绑定 のどれでも連携でき、案内はアプリケーションの言語の語。
+- 言語：返事・案内・【ご案内】の枠・リンクの検査の置き換え・切り替えの返事は、アプリケーションの manifest の `system.locale`（ja / en / zh、`src/messages.js`）。`messages` の上書きが日本語の既定と同じ文なら既定とみなす（その言語の文）。
 - 部品：`createIdentityService` / `createRateLimiter` / `linkPattern` / `installAppSwitch` / `createSwitchParser` を export（ctx 無しで使える）。
 
 ## テスト

@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/plugin-approvals",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "description": "DSH Business Bridge plugin bridge-approvals: approval cards from the application bot, buttons and reply codes, card updates",
   "keywords": [
@@ -43,7 +43,7 @@
     "node": ">=22.19"
   },
   "peerDependencies": {
-    "@dsh-bridge/dsh-core": "^0.1.0"
+    "@dsh-bridge/dsh-core": "^0.2.0"
   },
   "devDependencies": {
     "@dsh-bridge/dsh-core": "workspace:*",

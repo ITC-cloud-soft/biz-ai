@@ -20,14 +20,17 @@
 import { conversationKeyOf } from './session.js'
 import { normalizeText } from './runtime.js'
 import { SECRETARY_LABEL_RE } from './secretary.js'
+import { localeOf, messagesOf } from './messages.js'
 
-export const SWITCH_LIST_WORDS = Object.freeze(['一覧', 'いちらん', 'アプリ', 'apps', 'list'])
-export const SWITCH_CURRENT_WORDS = Object.freeze(['いま', '今', '現在', 'now', 'current'])
-export const SWITCH_HELP_WORDS = Object.freeze(['ヘルプ', '使い方', 'つかいかた', 'help', '?'])
+// ja / en / zh の語（どの言語のアプリケーションでも全部効く）
+export const SWITCH_LIST_WORDS = Object.freeze(['一覧', 'いちらん', 'アプリ', 'apps', 'list', '列表', '应用'])
+export const SWITCH_CURRENT_WORDS = Object.freeze(['いま', '今', '現在', 'now', 'current', '当前', '现在'])
+export const SWITCH_HELP_WORDS = Object.freeze(['ヘルプ', '使い方', 'つかいかた', 'help', '?', '帮助', '用法'])
 export const DEFAULT_REPLY_WINDOW_MS = 10 * 60_000
 export const DEFAULT_QUOTE_RETENTION_MS = 7 * 24 * 60 * 60_000
 const MIN_QUOTE_MATCH = 4
-const PREFIX_RE = /^【([^】\n]{1,40})】/u
+// 【アプリ名】（ja / zh）か [App name]（en）
+const PREFIX_RE = /^(?:【([^】\n]{1,40})】|\[([^\]\n]{1,40})\])/u
 
 const fold = (value) => normalizeText(value).toLowerCase()
 const squash = (value) => (typeof value === 'string' ? value.replace(/\s+/gu, ' ').trim() : '')
@@ -48,21 +51,21 @@ export function parseSwitchCommand(text) {
   return { kind: 'switch', query: word }
 }
 
-/** 【アプリ名】 */
+/** 【アプリ名】（そのアプリケーションの manifest の言語が en なら「[App name] 」）。 */
 export function appPrefix(app) {
   const name = app?.name ?? app?.id ?? ''
-  return name ? `【${name}】` : ''
+  return name ? messagesOf(localeOf(app)).appPrefix(name) : ''
 }
 
 /**
- * 返信・通知の先頭に【アプリ名】を付ける（既に【…】で始まる文はそのまま）。ただし AI 秘書のラベル
- * （【ご報告】【対応のお願い】【至急】【承認のお願い】【定時のご報告】）で始まる文はアプリ名ではないので前に付ける。
+ * 返信・通知の先頭に【アプリ名】を付ける（既にその接頭辞か【…】で始まる文はそのまま）。ただし AI 秘書のラベル
+ * （どの言語でも：【ご報告】【対応のお願い】…、[FYI] [Action needed] …、【通知】【请处理】…）で始まる文はアプリ名ではないので前に付ける。
  */
 export function withAppPrefix(app, text) {
   const body = typeof text === 'string' ? text : String(text ?? '')
   if (!app || !body.trim()) return body
   const lead = body.trimStart()
-  if (lead.startsWith(appPrefix(app)) || (lead.startsWith('【') && !SECRETARY_LABEL_RE.test(lead))) return body
+  if (lead.startsWith(appPrefix(app).trimEnd()) || (lead.startsWith('【') && !SECRETARY_LABEL_RE.test(lead))) return body
   return `${appPrefix(app)}${body}`
 }
 
@@ -190,7 +193,8 @@ export function createAppSwitch({
   function quoted(source, replyTo) {
     if (!replyTo || typeof replyTo !== 'object') return null
     const content = squash(replyTo.content)
-    const prefix = PREFIX_RE.exec(content)?.[1]
+    const hit = PREFIX_RE.exec(content)
+    const prefix = hit?.[1] ?? hit?.[2]
     if (prefix) {
       const named = applications(source).find((app) => fold(app.name) === fold(prefix))
       if (named) return named

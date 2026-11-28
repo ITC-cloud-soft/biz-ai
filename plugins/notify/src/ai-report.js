@@ -32,18 +32,23 @@
 import { createHash } from 'node:crypto'
 import {
   BridgeApiError, DEFAULT_APPLICATION_ID, REPORT_LABEL, appNickname, V1_PATHS, apiSource, appPath, frameMessage, hasPath, normalizeText, registryGetter, scopedKey,
-  screenOutboundText, signatureOf, singleApplicationRegistry, sourceKey,
+  screenOutboundText, signatureOf, singleApplicationRegistry, sourceKey, frameSettingsOf, frameLabels, frameLocale,
 } from '@dsh-bridge/dsh-core'
 import { absoluteLink } from './templates.js'
+import { COMMAND_WORDS, MESSAGES, REPORT_COMMANDS, messagesFor, reportPrompt } from './messages.js'
 
 export const AI_REPORT_MARKER = '【定時業務報告】'
 export const DEFAULT_AI_REPORT_COMMAND = '定時報告'
 const escapeRe = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/** 「<キーワード> オン / オフ / 状態 / テスト」の正規表現。 */
+const ALL_WORDS = [...new Set(Object.values(COMMAND_WORDS).flat())]
+/** 設定のキーワードが既定（定時報告）なら、3 つの言語の既定のキーワード（定時報告 / daily report / 定时报告）をどれも受け付ける。 */
+const keywordsOf = (word) => (word === DEFAULT_AI_REPORT_COMMAND ? [...new Set([word, ...Object.values(REPORT_COMMANDS)])] : [word])
+
+/** 「<キーワード> オン / オフ / 状態 / テスト」（en on / off / status / test、zh 开启 / 关闭 / 状态 / 测试 も）の正規表現。 */
 export function commandPattern(keyword = DEFAULT_AI_REPORT_COMMAND) {
   const word = String(keyword ?? '').normalize('NFKC').trim() || DEFAULT_AI_REPORT_COMMAND
-  return new RegExp(`^${escapeRe(word)}\\s*(オン|on|開始|有効|オフ|off|停止|無効|状態|確認|テスト|test)?$`, 'i')
+  return new RegExp(`^(?:${keywordsOf(word).map(escapeRe).join('|')})\\s*(${ALL_WORDS.map(escapeRe).join('|')})?$`, 'i')
 }
 export const COMMAND_RE = commandPattern()
 
@@ -52,42 +57,23 @@ export const COMMAND_RE = commandPattern()
  * 【定時のご報告】/ あいさつ / ■ 対応が必要なこと / ■ ご参考 / 署名。
  */
 export function defaultReportPrompt(app) {
-  return `定時業務報告の時刻です。${app?.namespace ?? 'app'}_* のツールで最新の業務状況を確認し、必ず 1 通だけ、${app?.name ?? '業務システム'}の AI 秘書として担当者への簡潔な報告を日本語で返してください。`
-    + '1 行目は「【定時のご報告】」と日時、次に時刻に合ったあいさつ（名前は書かない）。「■ 対応が必要なこと」（件数が 1 以上で誰かが対応するものだけ。役割名と、何をするかをお願いの形で）と'
-    + `「■ ご参考」（情報だけ）を分け、対応が必要なものが無ければそう一言添える。最後の行は「${signatureOf(app?.name ?? '業務システム', appNickname(app, undefined))}」。`
-    + '氏名・個人の情報・自由記述は書かない。件数はツールの結果どおりに書き、推測で補わない。この報告では proactive_reclaim を使わない。'
+  return reportPrompt({ locale: frameSettingsOf(app).locale, namespace: app?.namespace ?? 'app', name: app?.name, nickname: appNickname(app, undefined) })
 }
 const HHMM_RE = /^([01][0-9]|2[0-3]):([0-5][0-9])$/
 export const DEFAULT_REPORT_ROLES = Object.freeze(['admin', 'manager'])
 export const AI_REPORT_GUARDS = Object.freeze(['off', 'screen', 'template'])
 /** 定時報告の固定の文面（AI の文が検査を通らないとき・aiReportGuard: template）。業務の中身は書かない。nickname：AI 社員の呼び名（署名） */
-export function reportTemplate({ appName, nickname, url = null, now = Date.now() } = {}) {
+export function reportTemplate({ appName, nickname, url = null, now = Date.now(), locale, timeZone } = {}) {
   return frameMessage({
-    intent: 'info', label: REPORT_LABEL, title: '',
-    lead: '定時業務報告の時刻になりました。最新の状況は業務 Web のダッシュボードでご確認ください。',
-    url, now, signature: signatureOf(appName, nickname),
+    intent: 'info', label: locale ? frameLabels(locale).report : REPORT_LABEL, title: '',
+    lead: messagesFor(locale).report.templateLead,
+    url, now, locale, ...(timeZone ? { timeZone } : {}), signature: signatureOf(appName, nickname, { locale }),
   }).body
 }
 const CLOSED = new Set(['cancelled', 'completed', 'failed'])
 
-// 会話の返事（ラベルは付けない。AI 秘書の口調で、次にできることを添える）
-const MSG = {
-  enabled: (times, delivery, tz, k = DEFAULT_AI_REPORT_COMMAND) => `承知しました。定時業務報告をオンにしました（毎日 ${times.join('・')}、${tz === 'Asia/Tokyo' ? '日本時間' : tz}）。この会話にご報告します。`
-    + (delivery === 'im' ? '' : '（このチャンネルでは報告を自動で転送できないため、DSH の会話にだけ残ります）')
-    + `止めるときは「${k} オフ」、今すぐ試すときは「${k} テスト」と送ってください。`,
-  disabled: (n, k = DEFAULT_AI_REPORT_COMMAND) => (n ? `承知しました。定時業務報告をオフにしました。また必要になったら「${k} オン」と送ってください。` : `定時業務報告は設定されていません。始めるときは「${k} オン」と送ってください。`),
-  status: (times, k = DEFAULT_AI_REPORT_COMMAND) => (times.length ? `定時業務報告はオンです（毎日 ${times.join('・')}）。この時刻にこの会話へご報告します。` : `定時業務報告はオフです。「${k} オン」で始められます。`),
-  fired: '定時業務報告を今すぐ 1 回起動しました。まとまり次第、この会話にお届けします。',
-  notEnabled: (k = DEFAULT_AI_REPORT_COMMAND) => `定時業務報告がオフになっています。先に「${k} オン」と送ってください。`,
-  notLinked: 'このアカウントはまだ業務システムと連携していません。お手数ですが、業務Webで SNS 連携をしてから、もう一度お試しください。',
-  role: '申し訳ありません。定時業務報告は、設定された役割（管理者・責任者など）の方だけが設定できます。',
-  direct: '定時業務報告の設定は、ボットとの個別チャットでお願いします。',
-  noSession: (k = DEFAULT_AI_REPORT_COMMAND) => `お手数ですが、まずこの会話で AI 社員に一度話しかけてから、もう一度「${k} オン」と送ってください。`,
-  noTimes: '報告の時刻がまだ設定されていません（業務システムの定時報告の設定、または manifest の reports）。管理者に設定をご依頼ください。',
-  unavailable: '申し訳ありません。この環境では定時の呼び出し（dsh-proactive）が使えません。管理者にご連絡ください。',
-  failed: '申し訳ありません。定時業務報告の設定に失敗しました。時間をおいて再度お試しいただくか、管理者にご連絡ください。',
-  noApplication: '申し訳ありません。このボットはどの業務システムにも割り当てられていません。管理者にご連絡ください。',
-}
+// 会話の返事（ラベルは付けない。AI 秘書の口調で、次にできることを添える）。日本語。言語ごとは messages.js
+const MSG = MESSAGES.ja.replies
 
 const fail = (code, message) => Object.assign(new Error(message ?? code), { code })
 
@@ -276,7 +262,7 @@ export function createAiReporter({
     try {
       const list = await dshIm.listTargets(botId)
       if (!(Array.isArray(list) ? list : []).some((t) => t?.targetId === targetId)) {
-        await dshIm.createTarget(botId, { targetId, name: '定時業務報告（AI 社員）', ...draft })
+        await dshIm.createTarget(botId, { targetId, name: messagesFor(frameSettingsOf(appFor(source)).locale).report.targetName, ...draft })
       }
       return { bot_id: botId, target_id: targetId }
     } catch (error) {
@@ -430,7 +416,7 @@ export function createAiReporter({
       stats.screened += 1
       logger.info('bridge-notify: AI report text replaced by the fixed template (%s)', screen.reasons.join(','))
     }
-    return { text: reportTemplate({ appName: app.name, nickname: appNickname(app, undefined), url, now: now() }) }
+    return { text: reportTemplate({ appName: app.name, nickname: appNickname(app, undefined), url, now: now(), ...frameSettingsOf(app) }) }
   }
 
   /**
@@ -443,23 +429,28 @@ export function createAiReporter({
     return o.applicationId ? { ...o.source, applicationId: o.applicationId } : { ...o.source }
   }
 
-  /** 返事の文：設定 aiReportMessages（文字列の項目だけ上書きできる）→ MSG。 */
-  const say = (key) => {
+  /**
+   * 返事の文：設定 aiReportMessages（文字列の項目だけ上書きできる。日本語の既定と同じ文は既定とみなし、その言語の文にする）→ その言語の MSG。
+   */
+  const say = (key, locale) => {
     const own = messages()?.[key]
-    return typeof own === 'string' && own ? own : MSG[key]
+    return typeof own === 'string' && own && own !== MSG[key] ? own : messagesFor(locale).replies[key]
   }
+  /** 返事に出すキーワード（設定が既定なら、その言語の既定のキーワード）。 */
+  const shownKeyword = (locale) => (keyword() === DEFAULT_AI_REPORT_COMMAND ? REPORT_COMMANDS[frameLocale(locale)] : keyword())
 
-  function replyFor(error) {
+  function replyFor(error, locale) {
+    const R = messagesFor(locale).replies
     switch (error?.code) {
-      case 'direct_only': return say('direct')
-      case 'not_linked': return say('notLinked')
-      case 'role': return say('role')
-      case 'no_session': return MSG.noSession(keyword())
-      case 'no_times': return say('noTimes')
-      case 'not_enabled': return MSG.notEnabled(keyword())
-      case 'proactive_unavailable': return say('unavailable')
-      case 'no_application': return say('noApplication')
-      default: return say('failed')
+      case 'direct_only': return say('direct', locale)
+      case 'not_linked': return say('notLinked', locale)
+      case 'role': return say('role', locale)
+      case 'no_session': return R.noSession(shownKeyword(locale))
+      case 'no_times': return say('noTimes', locale)
+      case 'not_enabled': return R.notEnabled(shownKeyword(locale))
+      case 'proactive_unavailable': return say('unavailable', locale)
+      case 'no_application': return say('noApplication', locale)
+      default: return say('failed', locale)
     }
   }
 
@@ -468,21 +459,25 @@ export function createAiReporter({
     const m = currentCommandRe().exec(normalizeText(text))
     if (!m) return null
     const word = (m[1] ?? '').toLowerCase()
+    let locale
+    try { locale = frameSettingsOf(appFor(source)).locale } catch { locale = undefined }
+    const R = messagesFor(locale).replies
+    const k = shownKeyword(locale)
     try {
-      if (['オン', 'on', '開始', '有効'].includes(word)) {
+      if (COMMAND_WORDS.on.includes(word)) {
         const r = await enable(source)
-        return MSG.enabled(r.times, r.delivery, r.timeZone, keyword())
+        return R.enabled(r.times, r.delivery, r.timeZone, k)
       }
-      if (['オフ', 'off', '停止', '無効'].includes(word)) return MSG.disabled((await disable(source)).cancelled, keyword())
-      if (['テスト', 'test'].includes(word)) { await fire(source); return say('fired') }
-      return MSG.status((await status(source)).times, keyword())
+      if (COMMAND_WORDS.off.includes(word)) return R.disabled((await disable(source)).cancelled, k)
+      if (COMMAND_WORDS.test.includes(word)) { await fire(source); return say('fired', locale) }
+      return R.status((await status(source)).times, k)
     } catch (error) {
       if (['direct_only', 'not_linked', 'role', 'no_application'].includes(error?.code)) stats.denied += 1
       else if (!(error?.code in { no_session: 1, no_times: 1, not_enabled: 1 })) {
         stats.lastError = String(error?.message ?? error).slice(0, 200)
         logger.warn('bridge-notify: AI report command failed: %s', error instanceof BridgeApiError ? `${error.status} ${error.code}` : stats.lastError)
       }
-      return replyFor(error)
+      return replyFor(error, locale)
     }
   }
 

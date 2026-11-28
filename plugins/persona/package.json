@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/plugin-persona",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "description": "Biz Assistant Framework plugin bridge-persona: the AI employee's profile (nickname, tone, company introduction, personality, background) from the business system as a system prompt section after the fixed rules, fixed per conversation",
   "keywords": [
@@ -43,7 +43,7 @@
     "node": ">=22.19"
   },
   "peerDependencies": {
-    "@dsh-bridge/dsh-core": "^0.1.0"
+    "@dsh-bridge/dsh-core": "^0.2.0"
   },
   "devDependencies": {
     "@dsh-bridge/dsh-core": "workspace:*"

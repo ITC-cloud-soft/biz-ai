@@ -7,8 +7,12 @@
 //    部分的な伏せ字はしない）。理由はコードだけ返す（一致した文字列は返さない・ログに残さない）。語の一覧は完全ではない（固有の病名・
 //    言い換えは通る）。そもそも IM に出すのは件数だけの情報源・本人の 1:1 に限るので、一覧は念のための網。
 
-/** グループ会話の既定の案内（Bizアシスタント共通。アプリケーションの messages.groupChat で上書き）。 */
-export const GROUP_CHAT_GUIDE = '業務の内容は個別チャットでお尋ねください。'
+import { FRAME_MESSAGES, messagesOf } from './messages.js'
+
+/** グループ会話の既定の案内（Bizアシスタント共通。アプリケーションの messages.groupChat で上書き）。日本語。 */
+export const GROUP_CHAT_GUIDE = FRAME_MESSAGES.ja.groupChat
+/** その言語のグループ会話の既定の案内（ja / en / zh。業務システムの manifest の system.locale）。 */
+export const groupChatGuide = (locale) => messagesOf(locale).groupChat
 export const GROUP_CHAT_POLICIES = Object.freeze(['deny', 'allow'])
 
 /**

@@ -1,8 +1,9 @@
 import {
   BridgeApiError, DEFAULT_APPLICATION_ID, DEFAULT_PLATFORM_PRIORITY, MAX_REQUEST_PLATFORMS, V1_PATHS, appPath, applicationOfEvent, backoffDelay, cfg,
   classifyDeliveryError, fallbackRegistry, createBotResolver, frameAiText, frameMessage, loadSchemastery, makeLogger, noticeCard, onDispose, openDomain,
-  appNickname, registryGetter, scopedKey, signatureOf, singleApplicationRegistry, watchRegistry, whenServices,
+  appNickname, registryGetter, scopedKey, signatureOf, singleApplicationRegistry, watchRegistry, whenServices, frameSettingsOf,
 } from '@dsh-bridge/dsh-core'
+import { messagesFor } from './messages.js'
 import { createRequire } from 'node:module'
 import { isAbsolute, resolve as resolvePath } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -157,15 +158,14 @@ const errorText = (error) => (error instanceof Error ? error.message : String(er
 /**
  * 自動タスクの報告の固定の文面（audienceText: template）。AI の summary は使わない（受信者は委託した職員と別の人になりうるため）。
  * status：needsDecision → 【対応のお願い】、failed・done → 【ご報告】。title はタスク名（テンプレートの名前。業務データではない）。
+ * locale / timeZone：枠の言語とあいさつの時間帯（アプリケーションの manifest。既定 ja・Asia/Tokyo）。
  */
-export function audienceTemplate({ status, title = '', url = null, now = Date.now(), signature } = {}) {
-  if (status === 'needsDecision') {
-    return frameMessage({ intent: 'action', title, lead: 'AI が自動処理で、確認していただきたい内容をまとめました。', ask: '業務 Web で内容をご確認のうえ、ご対応をお願いします。', url, now, signature })
-  }
-  if (status === 'failed') {
-    return frameMessage({ intent: 'info', title, lead: 'AI の自動処理を完了できませんでした。', note: '詳しい内容は業務 Web でご確認ください。', url, now, signature })
-  }
-  return frameMessage({ intent: 'info', title, lead: 'AI の自動処理が完了しました。', url, now, signature })
+export function audienceTemplate({ status, title = '', url = null, now = Date.now(), signature, locale, timeZone } = {}) {
+  const t = messagesFor(locale).audience
+  const frame = { title, url, now, signature, locale, ...(timeZone ? { timeZone } : {}) }
+  if (status === 'needsDecision') return frameMessage({ intent: 'action', lead: t.needsDecision.lead, ask: t.needsDecision.ask, ...frame })
+  if (status === 'failed') return frameMessage({ intent: 'info', lead: t.failed.lead, note: t.failed.note, ...frame })
+  return frameMessage({ intent: 'info', lead: t.done.lead, ...frame })
 }
 // 届かない理由の分類は共通部品（@dsh-bridge/dsh-core の delivery）。テストと呼び出し元のため再エクスポートする。
 export { classifyDeliveryError }
@@ -493,14 +493,14 @@ export function createNotifier({
   }
 
   /** dsh-im への送信（card 既定、text モードは登録済み配信先 → unknown-target なら card）。 */
-  async function sendTo({ botId, identity, message, idempotencyKey, applicationId }) {
+  async function sendTo({ botId, identity, message, idempotencyKey, applicationId, locale }) {
     // 既定以外のアプリケーション・共用ボットの送信には applicationId を添える（dsh-im の窓口内切り替えが【アプリ名】と
     // 返信先のアプリケーションを記録するため。上流の dsh-im は未知の項目を無視する）
     const extra = applicationId ? { applicationId } : {}
     const viaCard = () => dshIm.sendCard({
       botId,
       to: { userId: identity.externalId },
-      card: noticeCard(message),
+      card: noticeCard(message, { locale }),
       idempotencyKey,
       ...extra,
     })
@@ -553,6 +553,7 @@ export function createNotifier({
       if (!chosen?.botId) throw Object.assign(new Error(`no bot for platform ${identity.platform}`), { code: 'no_bot' })
       const result = await sendTo({
         botId: chosen.botId, identity, message, idempotencyKey: batchKey, applicationId: scoped || chosen.shared ? app.id : undefined,
+        locale: frameSettingsOf(app).locale,
       })
       if (result?.deduped) stats.deduped += 1
       stats.messages += 1
@@ -729,12 +730,14 @@ export function createNotifier({
     // dsh-auto-tasks の既定の文面（絵文字と **タスク名**）ではなく summary を使う。summary が無ければ渡された文面
     const summary = typeof taskReport?.summary === 'string' && taskReport.summary.trim() ? taskReport.summary : withoutAutoTaskHeader(text)
     // タスク名の先頭の【アプリ名】は外す（共用ボットでは dsh-im の窓口が【アプリ名】を付ける）
-    const fallbackTitle = String(task?.name ?? app.name).replace(/^【[^】]*】/, '')
+    // （英語のアプリケーションの接頭辞は「[App name] 」）
+    const { locale, timeZone } = frameSettingsOf(app)
+    const fallbackTitle = String(task?.name ?? app.name).replace(locale === 'en' ? /^(?:【[^】]*】|\[[^\]]*\]\s*)/ : /^【[^】]*】/, '')
     const opts = optionsFor(app.id)
-    const signature = signatureOf(app.name, appNickname(app, undefined))
+    const signature = signatureOf(app.name, appNickname(app, undefined), { locale })
     const framed = opts.audienceText === 'template'
-      ? audienceTemplate({ status: taskReport?.status, title: fallbackTitle, url: absoluteLink(opts.audienceLink, opts.webUrl), now: now(), signature })
-      : frameAiText(summary, { status: taskReport?.status, fallbackTitle, now: now(), signature })
+      ? audienceTemplate({ status: taskReport?.status, title: fallbackTitle, url: absoluteLink(opts.audienceLink, opts.webUrl), now: now(), signature, locale, timeZone })
+      : frameAiText(summary, { status: taskReport?.status, fallbackTitle, now: now(), signature, locale, timeZone })
     const results = []
     for (const r of recipients) {
       try {
@@ -742,6 +745,7 @@ export function createNotifier({
         if (!chosen?.botId) throw Object.assign(new Error(`no bot for platform ${r.identity.platform}`), { code: 'no_bot' })
         const res = await sendTo({
           botId: chosen.botId, identity: r.identity, message: framed, idempotencyKey: `${idempotencyKey ?? `auto-tasks:${task?.id}`}:u:${r.userId}`, applicationId: app.id,
+          locale,
         })
         stats.audienceDeliveries += 1
         results.push({ channel: 'im', botId: chosen.botId, userId: r.userId, ok: true, ...(res?.deduped ? { deduped: true } : {}) })

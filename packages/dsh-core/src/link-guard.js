@@ -9,7 +9,11 @@
 // No routes (an application that does not declare its screens) → the guard keeps every link (it cannot tell).
 // Pure: no I/O.
 
-export const DEFAULT_LINK_REPLACEMENT = '（リンクを省きました）'
+import { FRAME_MESSAGES, messagesOf } from './messages.js'
+
+export const DEFAULT_LINK_REPLACEMENT = FRAME_MESSAGES.ja.linkRemoved
+/** The replacement in the business system's language (ja「（リンクを省きました）」/ en "(link removed)" / zh「（已省略链接）」). */
+export const linkReplacement = (locale) => messagesOf(locale).linkRemoved
 // a URL ends at white space, quotes, brackets and Japanese punctuation
 const URL_RE = /https?:\/\/[^\s<>"'`「」『』（）()［］[\]{}、。，！？]+/g
 const TRAILING = /[.,;:!?)\]}]+$/

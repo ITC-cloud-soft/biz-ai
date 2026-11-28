@@ -11,7 +11,7 @@
   "scripts": {
     "start": "node src/server.mjs",
     "validate": "bridge-validate manifest bridge.manifest.yaml",
-    "test": "node --test --test-concurrency=1 test/app.test.mjs test/im-templates.test.mjs test/conformance.test.mjs",
+    "test": "node --test --test-concurrency=1 test/app.test.mjs test/conformance.test.mjs",
     "demo": "node demo/run.mjs",
     "demo:view": "node demo/build-view.mjs",
     "demo:record": "node demo/record.mjs"

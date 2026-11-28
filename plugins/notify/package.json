@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/plugin-notify",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "description": "DSH Business Bridge plugin bridge-notify: IM notifications (recipients from the business API, realtime digest, quiet hours, AI secretary framing, scheduled reports, audience delivery)",
   "keywords": [
@@ -46,7 +46,7 @@
     "node": ">=22.19"
   },
   "peerDependencies": {
-    "@dsh-bridge/dsh-core": "^0.1.0"
+    "@dsh-bridge/dsh-core": "^0.2.0"
   },
   "devDependencies": {
     "@dsh-bridge/dsh-core": "workspace:*"

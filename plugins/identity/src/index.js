@@ -1,8 +1,12 @@
 import {
-  BridgeApiError, DEFAULT_APPLICATION_ID, GROUP_CHAT_GUIDE, appNickname, HELP_LABEL, NOTIFY_ONLY_PLATFORMS, V1_PATHS, apiSource, cfg, createLinkGuard, fallbackRegistry,
-  frameAiText, groupChatPolicy, isGroupConversation, loadSchemastery, makeLogger, normalizeText, onDispose, signatureOf, sourceKey, watchRegistry, whenServices,
+  BridgeApiError, DEFAULT_APPLICATION_ID, appNickname, NOTIFY_ONLY_PLATFORMS, V1_PATHS, apiSource, cfg, createLinkGuard, fallbackRegistry,
+  frameAiText, frameLabels, groupChatPolicy, isGroupConversation, labelled, loadSchemastery, localeOf, makeLogger, messagesOf,
+  normalizeText, onDispose, signatureOf, sourceKey, timeZoneOf, watchRegistry, whenServices,
 } from '@dsh-bridge/dsh-core'
 import { defaultSwitchStatePath, installAppSwitch } from './app-switch.js'
+import { ALL_LINK_KEYWORDS, MESSAGES, messagesFor } from './messages.js'
+
+export { MESSAGES, messagesFor, ALL_LINK_KEYWORDS }
 
 /**
  * bridge-identity — IM 発信者 → 業務アプリケーションの職員 の対応付け（DSH Business Bridge の汎用プラグイン）。
@@ -32,6 +36,11 @@ import { defaultSwitchStatePath, installAppSwitch } from './app-switch.js'
  * - リンクの検査（linkGuard）：AI の答え（IM のターン）を送る前に、業務 Web の URL は manifest の web.routes の画面だけを残し、
  *   ほかのホストは linkGuard.allowHosts だけを残す（dsh-im の setAnswerFilter。routes の無いアプリケーションでは何もしない）。
  *
+ * 言語（ja / en / zh）：案内・返事・使い方の答えの枠・リンクを省いたしるしは、そのアプリケーションの manifest の system.locale
+ * （@dsh-bridge/dsh-core localeOf。manifest が無ければ日本語）。文言は src/messages.js。linkKeywords を設定していなければ
+ * 連携 / link / 绑定 のどれでも受け付け、案内にはその言語の語を出す。設定の messages が日本語の既定と同じ文なら既定とみなす
+ * （製品 profile の雛形が messages.groupChat に日本語の既定を書いているため）。
+ *
  * email は通知専用のプラットフォーム：差出人（From）は詐称でき、dsh-im は DKIM / DMARC を検証しないので、連携コードを受け付けず
  * （「メールでは連携できません」と返す）、AI の利用も拒否する（返信しない：詐称された宛先へ送り返さない）。
  */
@@ -42,25 +51,15 @@ export const SERVICE = 'bridgeIdentity'
 
 export const DEFAULT_LINK_KEYWORDS = Object.freeze(['連携'])
 
-/** 未連携の案内（キーワードは linkKeywords の先頭）。 */
-export function linkGuide(keyword = DEFAULT_LINK_KEYWORDS[0]) {
-  return `AI 秘書です。お手伝いを始める前に、業務システムとの連携をお願いします。業務Webで連携コードを発行し、『${keyword} 123456』と送信してください（コードの有効期限は 10 分です）。`
+/** 未連携の案内（キーワードは linkKeywords の先頭。locale：ja / en / zh、既定 ja）。 */
+export function linkGuide(keyword, locale) {
+  const m = messagesFor(locale)
+  return m.linkGuide(keyword ?? m.linkKeyword)
 }
 export const LINK_GUIDE_JA = linkGuide()
 
 // 会話の返事（AI 秘書の口調。ラベルは付けない）。設定 messages / レジストリの applications[].messages で上書きできる
-export const DEFAULT_MESSAGES = Object.freeze({
-  unavailable: '申し訳ありません。現在、業務システムに接続できません。しばらくしてから、もう一度お試しください。',
-  linked: '連携が完了しました。{displayName}ご利用いただけます。これから、確認やお願いが必要なことをこのチャットでお知らせします。気になることがあれば、いつでも話しかけてください。',
-  invalidCode: '連携コードが無効か、有効期限（10分）が切れているようです。お手数ですが、業務Webで新しいコードを発行して、もう一度送ってください。',
-  alreadyLinked: 'このアカウントは既に連携済みです。連携先を変更する場合は、管理者にご連絡ください。',
-  groupNotAllowed: '連携はボットとの個別チャット（DM）でお願いします。このコードは他の方に見えた可能性があるため、業務Webで新しいコードを発行してください。',
-  tooMany: '連携の試行回数が多すぎます。しばらく時間をおいてから、もう一度お試しください。',
-  failed: '申し訳ありません。連携に失敗しました。時間をおいて再度お試しいただくか、管理者にご連絡ください。',
-  noApplication: '申し訳ありません。このボットはどの業務システムにも割り当てられていません。管理者にご連絡ください。',
-  emailNotLinkable: 'メールでは連携できません。業務Webで別の SNS を連携してください。',
-  groupChat: GROUP_CHAT_GUIDE,
-})
+export const DEFAULT_MESSAGES = MESSAGES.ja.replies
 
 /** 発信者を検証できない（通知だけの）プラットフォームか。 */
 export const isNotifyOnlySource = (source) => NOTIFY_ONLY_PLATFORMS.includes(String(source?.platform ?? ''))
@@ -340,10 +339,14 @@ export function apply(ctx, config = {}) {
   const guideSentAt = new Map()
   // 同じ IM アカウントでもアプリケーション（ボット）が違えば別の案内・別の試行回数
   const accountKey = (source) => `${service.applicationOf(source) ?? ''}\u0001${sourceKey(source)}`
-  const keywords = () => {
+  const configuredKeywords = () => {
     const list = cfg(config, 'linkKeywords', DEFAULT_LINK_KEYWORDS)
     return Array.isArray(list) && list.length ? list.map(String) : [...DEFAULT_LINK_KEYWORDS]
   }
+  // 設定が既定（連携）のままなら 3 つの言語の語を受け付ける。案内に出す語はアプリケーションの言語の語
+  const isDefaultKeywords = () => configuredKeywords().join('\u0001') === DEFAULT_LINK_KEYWORDS.join('\u0001')
+  const keywords = () => (isDefaultKeywords() ? [...ALL_LINK_KEYWORDS] : configuredKeywords())
+  const keywordFor = (app) => (isDefaultKeywords() ? messagesFor(localeOf(app)).linkKeyword : configuredKeywords()[0])
   let linkRe = linkPattern(keywords())
   let linkReFor = keywords().join('\u0001')
   const currentLinkRe = () => {
@@ -352,11 +355,15 @@ export function apply(ctx, config = {}) {
     return linkRe
   }
 
-  /** 返事の文：アプリケーションの messages → プラグイン設定の messages → 既定。 */
+  /**
+   * 返事の文：アプリケーションの messages → プラグイン設定の messages → そのアプリケーションの言語の既定。
+   * 上書きが日本語の既定と同じ文なら既定とみなす（その言語の文にする）。
+   */
   function msg(app, key, vars = {}) {
-    const fromApp = app?.messages?.[key]
-    const fromConfig = (cfg(config, 'messages', {}) ?? {})[key]
-    const text = String((typeof fromApp === 'string' && fromApp) || (typeof fromConfig === 'string' && fromConfig) || DEFAULT_MESSAGES[key] || '')
+    const own = (value) => (typeof value === 'string' && value && value !== MESSAGES.ja.replies[key] ? value : '')
+    const fromApp = own(app?.messages?.[key])
+    const fromConfig = own((cfg(config, 'messages', {}) ?? {})[key])
+    const text = String(fromApp || fromConfig || messagesFor(localeOf(app)).replies[key] || '')
     return text.replace(/\{([A-Za-z]+)\}/g, (_, name) => String(vars[name] ?? ''))
   }
 
@@ -381,7 +388,7 @@ export function apply(ctx, config = {}) {
 
   function guideFor(source) {
     const app = service.application(source)
-    return String(app?.messages?.unlinkedReply || cfg(config, 'unlinkedReply', '') || linkGuide(keywords()[0]))
+    return String(app?.messages?.unlinkedReply || cfg(config, 'unlinkedReply', '') || linkGuide(keywordFor(app), localeOf(app)))
   }
 
   async function accessResolver(source, { text = '' } = {}) {
@@ -432,17 +439,21 @@ export function apply(ctx, config = {}) {
       const hit = res?.found ? (Array.isArray(res.results) ? res.results[0] : null) : null
       if (!hit?.title) return null
       const steps = (Array.isArray(hit.steps) ? hit.steps : []).filter((s) => typeof s === 'string').slice(0, 4)
+      const locale = localeOf(app)
+      const words = messagesOf(locale)
       const lines = [
-        `${HELP_LABEL}${hit.title}`,
+        labelled(frameLabels(locale).help, hit.title),
         typeof hit.summary === 'string' ? hit.summary : '',
         ...steps.map((s, i) => `${i + 1}. ${s}`),
-        typeof hit.url === 'string' && hit.url ? `こちらから開けます：${hit.url}` : '',
-        typeof hit.manualUrl === 'string' && hit.manualUrl ? `くわしい手順：${hit.manualUrl}` : '',
+        typeof hit.url === 'string' && hit.url ? `${words.linkLead}${hit.url}` : '',
+        typeof hit.manualUrl === 'string' && hit.manualUrl ? `${words.manualLead}${hit.manualUrl}` : '',
         '',
         guideFor(source),
       ]
       guideSentAt.set(accountKey(source), Date.now())
-      return frameAiText(lines.filter((l, i) => l !== '' || i === lines.length - 2).join('\n'), { signature: signatureOf(app.name, appNickname(app, undefined)) }).body
+      return frameAiText(lines.filter((l, i) => l !== '' || i === lines.length - 2).join('\n'), {
+        locale, timeZone: timeZoneOf(app), signature: signatureOf(app.name, appNickname(app, undefined), { locale }),
+      }).body
     } catch (error) {
       logger.info('bridge-identity: public help failed (%s)', error?.status ?? error?.message ?? error)
       return null
@@ -471,9 +482,10 @@ export function apply(ctx, config = {}) {
       logger.warn('bridge-identity: link guard is off for application %s (no linkGuard.webUrls.%s / webUrl): its AI answers keep every link', app.id, app.id)
     }
     if (!base || !Array.isArray(routes) || !routes.length) return text
-    const key = `${app.id}\u0001${base}\u0001${routes.length}\u0001${(conf.allowHosts ?? []).join(',')}`
+    const replacement = messagesOf(localeOf(app)).linkRemoved // （リンクを省きました）/ (link removed) / （已省略链接）
+    const key = `${app.id}\u0001${base}\u0001${routes.length}\u0001${(conf.allowHosts ?? []).join(',')}\u0001${replacement}`
     let guard = guards.get(app.id)
-    if (!guard || guard.key !== key) { guard = { key, run: createLinkGuard({ base, routes, allowHosts: conf.allowHosts ?? [] }) }; guards.set(app.id, guard) }
+    if (!guard || guard.key !== key) { guard = { key, run: createLinkGuard({ base, routes, allowHosts: conf.allowHosts ?? [], replacement }) }; guards.set(app.id, guard) }
     const { text: out, removed } = guard.run(text)
     if (removed.length) logger.info('bridge-identity: link guard removed %d link(s) the application does not have', removed.length)
     return out
@@ -503,7 +515,7 @@ export function apply(ctx, config = {}) {
       const res = await service.link(match[1], source)
       guideSentAt.delete(accountKey(source))
       const displayName = res.user?.displayName
-      await reply(msg(app, 'linked', { displayName: displayName ? `${displayName} さんとして` : '' }))
+      await reply(msg(app, 'linked', { displayName: messagesFor(localeOf(app)).linkedAs(displayName) }))
     } catch (error) {
       const status = error instanceof BridgeApiError ? error.status : 0
       if (status === 404 || status === 410) await reply(msg(app, 'invalidCode'))
@@ -526,7 +538,7 @@ export function apply(ctx, config = {}) {
     statePath: cfg(config, 'switchStatePath', '') || defaultSwitchStatePath(),
     words: cfg(config, 'switchWords', null) ?? undefined,
     messages: cfg(config, 'switchMessages', {}) ?? {},
-    linkKeyword: () => keywords()[0],
+    linkKeyword: (app) => keywordFor(app),
   })
   disposers.push(() => switching.dispose())
   whenServices(ctx, ['bridgeApps'], (sub) => switching.attachSelector(sub.bridgeApps))

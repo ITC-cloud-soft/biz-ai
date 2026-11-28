@@ -22,7 +22,7 @@ conformance suite: **52 / 52 checks, 0 skipped, 0 known gaps**.
 | approval subject | `purchase_request` with Approve / Reject (one decision closes every card) |
 | AI read tools | `purchase_list_requests`, `purchase_get_request` (one request by number: another employee's is *not found* for staff), `purchase_list_unanswered` (approvers) |
 | AI proposals | `purchase_quantity` (any role; staff for their own requests), `purchase_cancel` (approvers only) — a person accepts or rejects |
-| languages | one instance, one language: `locale` `en` / `ja` / `zh` (`src/messages.mjs`) — the served manifest, the card wording and the replies. `src/im-templates.mjs` is a bridge-notify template module that writes the en / zh notifications (ja uses the framework's own frame) |
+| languages | one instance, one language: `locale` `en` / `ja` / `zh` (`src/messages.mjs`) — the served manifest (`system.locale` en-US / ja-JP / zh-CN), the card wording and the replies. The chat frame around them (labels such as `[For your approval]` / 【承認のお願い】 / 【请审批】, the greeting, the reply-code hint, the signature) is the framework's, in the language of the served manifest: no template module, no translation |
 | storage | memory: nothing to install, **nothing survives a restart** |
 | data | fictional only |
 
@@ -31,7 +31,7 @@ conformance suite: **52 / 52 checks, 0 skipped, 0 known gaps**.
 ```sh
 pnpm install                                                  # at the framework root
 pnpm --filter @dsh-bridge/example-purchase-requests start     # http://127.0.0.1:19760 (PURCHASE_LOCALE=ja|zh for the other languages)
-pnpm --filter @dsh-bridge/example-purchase-requests test      # the business rules, the template module, the conformance suite (52 / 52)
+pnpm --filter @dsh-bridge/example-purchase-requests test      # the business rules, the three languages, the conformance suite (52 / 52)
 ```
 
 It starts with five fictional employees (`admin`, `approver1`, `approver2`, `staff1` → approver1, `staff2` → approver2; password
@@ -67,10 +67,9 @@ PLAYWRIGHT_CORE=<an installed playwright-core> FFMPEG=<ffmpeg> node examples/pur
 (`.dsh-home-purchase-demo`, never `~/.dsh`) and free ports (`PURCHASE_DEMO_PORTS`, default `app=19761,dsh=3261,llm=3262,line=3263,gateway=3264`).
 It writes the transcript of each run to `demo-view/transcript.<lang>.json` (what people did and what they received, without ids,
 tokens, hosts or reply codes). `build-view.mjs` lays it out as a messenger page and paces it to about 15 seconds; an approval
-card is shortened to its title, fields, first line and buttons. The framework's fixed chat frame is Japanese today (labels such as
-【承認のお願い】, the greeting, the signature "AI 秘書"): the en / zh pages show those fixed frame strings in their language
-(the table `FRAME` in `build-view.mjs`); every business text, button and answer is as sent. `record.mjs` renders the page frame by
-frame with Playwright and encodes it with ffmpeg (nothing is downloaded).
+card is shortened to its title, fields, first line and buttons. Nothing is translated: every label, greeting, button, signature
+and answer is shown as it was sent (the framework frames each message in the language of the instance's manifest).
+`record.mjs` renders the page frame by frame with Playwright and encodes it with ffmpeg (nothing is downloaded).
 
 ## What is in `src/app.mjs`
 

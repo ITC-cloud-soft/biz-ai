@@ -20,12 +20,15 @@
 //    スキャンの PDF（文字の層が無いページ）は、業務システムがページを JPEG にして文書の pageImages で渡す（OCR はモデルが画像から読む）。
 //    そのページも画像の部品として送る（モデルが画像を読めなければ断る）。
 import { createHash, randomUUID } from 'node:crypto'
-import { BridgeApiError, DEFAULT_APPLICATION_ID, V1_PATHS, appNickname, appPath, registryGetter, singleApplicationRegistry } from '@dsh-bridge/dsh-core'
+import { BridgeApiError, DEFAULT_APPLICATION_ID, V1_PATHS, appNickname, appPath, localeOf, registryGetter, singleApplicationRegistry } from '@dsh-bridge/dsh-core'
+import { MESSAGES, messagesFor } from './messages.js'
+
+export { MESSAGES, messagesFor }
 
 export const TEXT_MAX = 4000
 export const MESSAGES_MAX = 200
-/** 添付だけで文が空のときに送る文。 */
-export const DEFAULT_ATTACHMENT_TEXT = '添付した資料について説明してください。'
+/** 添付だけで文が空のときに送る文（日本語。言語ごとは src/messages.js、アプリケーションの manifest の system.locale）。 */
+export const DEFAULT_ATTACHMENT_TEXT = MESSAGES.ja.attachmentText
 export const ATTACHMENTS_MAX = 5
 export const DOCUMENT_TEXT_MAX = 30_000
 export const DOCUMENTS_TEXT_MAX = 60_000
@@ -50,13 +53,21 @@ const CONTROL_RE = /[\u0000-\u001f\u007f]/
 const DELEGATION_MARGIN_MS = 30_000
 
 export const DEFAULT_AGENTS = Object.freeze([
-  Object.freeze({ id: 'assistant', preset: 'bridge-assistant', name: 'AI アシスタント', description: '業務の質問に、あなたの権限の範囲で答えます。確定・承認はしません。' }),
+  Object.freeze({ id: 'assistant', preset: 'bridge-assistant', ...MESSAGES.ja.agents.assistant }),
 ])
 
-export const DEFAULT_SESSION_TITLE = 'AIアシスタント（{application}・職員 {user}）'
-/** DSH の会話の題名（agents[].sessionTitle。{application} = アプリ名、{user} = 職員 ID の先頭 8 文字）。 */
+/** パネルに出す AI 社員の名前と説明：既定の AI 社員の日本語の文のままなら、そのアプリケーションの言語の文。 */
+export function localizedAgent(agent, locale) {
+  const ja = MESSAGES.ja.agents[agent?.id]
+  const own = messagesFor(locale).agents[agent?.id]
+  if (!ja || !own) return agent
+  return { ...agent, ...(agent.name === ja.name ? { name: own.name } : {}), ...(agent.description === ja.description ? { description: own.description } : {}) }
+}
+
+export const DEFAULT_SESSION_TITLE = MESSAGES.ja.sessionTitle
+/** DSH の会話の題名（agents[].sessionTitle。{application} = アプリ名、{user} = 職員 ID の先頭 8 文字。既定はアプリケーションの言語）。 */
 export function sessionTitle(agent, app, user) {
-  const template = typeof agent?.sessionTitle === 'string' && agent.sessionTitle.trim() ? agent.sessionTitle : DEFAULT_SESSION_TITLE
+  const template = typeof agent?.sessionTitle === 'string' && agent.sessionTitle.trim() ? agent.sessionTitle : messagesFor(localeOf(app)).sessionTitle
   const values = { application: String(app?.name ?? app?.id ?? ''), user: String(user?.id ?? '').slice(0, 8) }
   return template.replace(/\{(application|user)\}/g, (_, key) => values[key]).slice(0, 120)
 }
@@ -282,6 +293,12 @@ export function createAssistantService({
   const single = api ? singleApplicationRegistry(api, { id: DEFAULT_APPLICATION_ID, name: applicationName, label: 'business API', namespace: 'app', paths: V1_PATHS }) : null
   const manifestOf = (app) => { try { return app?.manifest?.() ?? null } catch { return null } }
   const getRegistry = single ? () => single : registryGetter(registry)
+  /** その会話のアプリケーションの言語の文（パネルに出す返事・エラー）。 */
+  const wordsOf = (conv) => {
+    let app = null
+    try { app = getRegistry()?.get?.(conv?.applicationId) ?? null } catch { app = null }
+    return messagesFor(localeOf(app))
+  }
   const defaultId = () => getRegistry()?.default?.()?.id ?? DEFAULT_APPLICATION_ID
   const tickets = new Map() // `${applicationId}\u0001${ticketHash}` -> { user, token, expiresAt }
   const conversations = new Map() // `${applicationId}\u0001${userId}\u0001${agentId}` -> conversation
@@ -374,7 +391,7 @@ export function createAssistantService({
     for (const [key, entry] of tickets) if (entry.expiresAt <= t) tickets.delete(key)
     for (const [key, conv] of conversations) {
       if (conv.running && conv.activeTurn && t - conv.activeTurn.startedAt > turnTimeoutMs) {
-        finishTurn(conv, { error: 'AI の応答がありませんでした。もう一度お試しください。' })
+        finishTurn(conv, { error: wordsOf(conv).errors.noResponse })
       }
       if (!conv.running && t - conv.lastUsedAt > idleMs) {
         conversations.delete(key)
@@ -442,7 +459,7 @@ export function createAssistantService({
     // capabilities.images：モデルが画像を読めるか（true / false / null = 分からない。DSH の既定のモデルの inputModalities）
     const images = await imagesCapability()
     return {
-      agents: agentList(app.id).map(({ id, name, description, preset }) => ({
+      agents: agentList(app.id).map((a) => localizedAgent(a, localeOf(app))).map(({ id, name, description, preset }) => ({
         id, name, displayName: appNickname(app, preset ?? id) || name, description: description ?? '', capabilities: { images },
       })),
       user: { id: user.id, displayName: user.displayName },
@@ -465,9 +482,9 @@ export function createAssistantService({
     const typed = typeof text === 'string' ? text.trim() : ''
     if (!typed && !hasAttachments) throw fail('bad-request', 'text is required')
     if (typed.length > TEXT_MAX) throw fail('text-too-long', `text must be at most ${TEXT_MAX} characters`)
-    const trimmed = typed || DEFAULT_ATTACHMENT_TEXT
     if (attachments.images.length && (await imagesCapability()) === false) throw fail('images_not_supported', 'the model of this AI employee cannot read images')
     const app = applicationFor(application)
+    const trimmed = typed || messagesFor(localeOf(app)).attachmentText
     const idLabels = contextIdsOf(manifestOf(app), contextIds?.() ?? {})
     const ctxClean = cleanContext(context, { ids: idLabels })
     const agent = agentById(agentId, app.id)
@@ -511,8 +528,8 @@ export function createAssistantService({
       const refused = error?.code === 'session/attachment-invalid'
       const noImages = refused && error?.details?.reason === 'MODEL_DOES_NOT_SUPPORT_IMAGES'
       if (noImages) imageCache = { value: false, at: now() }
-      const message = noImages ? 'この AI のモデルは画像を読めません。画像を外して送ってください。'
-        : refused ? '添付ファイルを AI に渡せませんでした（大きさ・形式）。' : 'AI に送信できませんでした。しばらくしてからもう一度お試しください。'
+      const errors = messagesFor(localeOf(app)).errors
+      const message = noImages ? errors.noImages : refused ? errors.attachmentRefused : errors.sendFailed
       if (conv.activeTurn) finishTurn(conv, { error: message })
       else conv.running = false
       logger.warn?.('bridge-assistant: send failed: %s', error?.code ?? error?.name ?? 'error')
@@ -530,7 +547,7 @@ export function createAssistantService({
     try { await harness.cancel(conv.sessionId) } catch (error) {
       logger.warn?.('bridge-assistant: cancel failed: %s', error?.code ?? error?.name ?? 'error')
     }
-    finishTurn(conv, { error: '回答を停止しました。' })
+    finishTurn(conv, { error: messagesFor(localeOf(app)).errors.stopped })
     return { cancelled: true }
   }
 
@@ -617,8 +634,9 @@ export function createAssistantService({
       if (conv.openTurn === data.turn) conv.openTurn = null
       if (!active || active.turn === null || data.turn !== active.turn) return
       const ok = turnSucceeded(data.reason)
-      const answer = conv.pending || (ok ? '（回答の本文はありませんでした）' : null)
-      finishTurn(conv, { answer, error: ok ? null : 'AI の処理が途中で終了しました。もう一度お試しください。' })
+      const words = wordsOf(conv)
+      const answer = conv.pending || (ok ? words.emptyAnswer : null)
+      finishTurn(conv, { answer, error: ok ? null : words.errors.aborted })
     }
   }
 

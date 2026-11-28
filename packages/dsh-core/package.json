@@ -1,6 +1,6 @@
 {
   "name": "@dsh-bridge/dsh-core",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "description": "DSH Business Bridge — DSH side core: application registry, manifest holder, per-application business API client, delegation cache, session keys, tools-sdk, app-switch, secretary framing, delivery classification (and the bridge-apps DSH plugin)",
   "keywords": [

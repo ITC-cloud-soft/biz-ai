@@ -10,6 +10,7 @@
 //   apps       経路（appPath）・単一アプリケーション互換・送信ボットの選択（第 2 段階で移した events / notify / approvals / assistant）
 //   outbound   AI から IM へ出るものの決まり（グループ会話は既定で業務を扱わない・AI の自由文の事後の検査）
 //   secretary  IM の文面の枠（【ご報告】【対応のお願い】【至急】・時刻のあいさつ・署名「— <アプリ名> AI 秘書」）
+//   messages   枠の文言（ja / en / zh）と、言語・時間帯の決め方（manifest の system.locale / system.timezone。既定 ja・Asia/Tokyo）
 //   persona    AI 社員のプロフィール → system prompt の節（固定の規則が先）・署名の呼び名。ai-profile：業務システムから取る保持者（etag）
 //   runtime    DSH(Cordis) 上のヘルパー
 //   plugin     この package 自体が DSH プラグイン `bridge-apps`（ctx.bridgeApps を提供）
@@ -34,7 +35,7 @@ export {
 } from './delegation.js'
 export { sessionKey, parseSessionKey, conversationKeyOf } from './session.js'
 export { classifyDeliveryError, DEFAULT_PLATFORM_PRIORITY, NOTIFY_ONLY_PLATFORMS, MAX_REQUEST_PLATFORMS } from './delivery.js'
-export { GROUP_CHAT_GUIDE, GROUP_CHAT_POLICIES, HEALTH_WORDS, ROLE_WORDS, isGroupConversation, groupChatPolicy, screenOutboundText } from './outbound.js'
+export { GROUP_CHAT_GUIDE, groupChatGuide, GROUP_CHAT_POLICIES, HEALTH_WORDS, ROLE_WORDS, isGroupConversation, groupChatPolicy, screenOutboundText } from './outbound.js'
 export {
   appPath, hasPath, singleApplicationRegistry, registryGetter, applicationOfEvent, scopedKey, createBotResolver,
 } from './apps.js'
@@ -46,10 +47,14 @@ export {
 export {
   INTENTS, INTENT_LABELS, APPROVAL_LABEL, CONSULT_LABEL, REPORT_LABEL, SECRETARY_LABEL_RE, DEFAULT_INFO_NOTE, DEFAULT_ASK, DEFAULT_SECRETARY_NAME, LINK_LEAD,
   HELP_LABEL, normalizeIntent, intentOfHead, wallHour,
-  greetingAt, signatureOf, bundleLine, monthDayTime, frameMessage, frameAiText, noticeCard,
+  greetingAt, signatureOf, bundleLine, monthDayTime, frameMessage, frameAiText, noticeCard, intentLabels, frameLabels, labelled, askLine, greetAnd,
 } from './secretary.js'
-export { createLinkGuard, routePattern, DEFAULT_LINK_REPLACEMENT } from './link-guard.js'
-export { helpToolSpec, toHelpResult, renderHelp, HELP_RULES_JA, helpRules } from './help-tool.js'
+export {
+  FRAME_LOCALES, DEFAULT_LOCALE, DEFAULT_TIME_ZONE, FRAME_MESSAGES, PERSONA_MESSAGES, ALL_LABELS, frameLocale, frameTimeZone, frameSettingsOf,
+  localeOf, timeZoneOf, messagesOf,
+} from './messages.js'
+export { createLinkGuard, routePattern, DEFAULT_LINK_REPLACEMENT, linkReplacement } from './link-guard.js'
+export { helpToolSpec, toHelpResult, renderHelp, HELP_RULES_JA, HELP_RULES, helpRules } from './help-tool.js'
 export {
   loadSchemastery, cfg, makeLogger, whenServices, onDispose, objectSchema, openDomain, backoffDelay, normalizeText,
 } from './runtime.js'

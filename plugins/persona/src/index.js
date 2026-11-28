@@ -1,5 +1,5 @@
 import {
-  DEFAULT_APPLICATION_ID, cfg, fallbackRegistry, loadSchemastery, makeLogger, nicknameOf, onDispose, renderPersona, signatureOf, watchRegistry, whenServices,
+  DEFAULT_APPLICATION_ID, cfg, fallbackRegistry, loadSchemastery, localeOf, makeLogger, nicknameOf, onDispose, renderPersona, signatureOf, watchRegistry, whenServices,
 } from '@dsh-bridge/dsh-core'
 
 /**
@@ -115,7 +115,8 @@ export function apply(ctx, config = {}) {
   function render(app, agentId) {
     let profile = null
     try { profile = app?.aiProfile?.() ?? null } catch { profile = null }
-    return renderPersona({ profile, agentId, appName: app?.name ?? '', rules: withRules() })
+    // 節の言語はそのアプリケーションの manifest の system.locale（ja / en / zh。manifest が無ければ日本語）
+    return renderPersona({ profile, agentId, appName: app?.name ?? '', rules: withRules(), locale: localeOf(app) })
   }
 
   function promptFor(assembly) {
@@ -157,7 +158,7 @@ export function apply(ctx, config = {}) {
     /** 署名「— <呼び名>（<アプリ名> AI 秘書）」（呼び名が無ければ「— <アプリ名> AI 秘書」）。 */
     signatureFor(applicationId, agentId) {
       const app = resolveApp(applicationId)
-      return signatureOf(app?.name ?? applicationId ?? '', service.nicknameFor(applicationId, agentId))
+      return signatureOf(app?.name ?? applicationId ?? '', service.nicknameFor(applicationId, agentId), { locale: localeOf(app) })
     },
     /** system prompt の節（会話ごとに固定。テスト・診断用）。 */
     promptFor,

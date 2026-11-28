@@ -96,11 +96,10 @@ function makeProductProfile(lang) {
   // demo timings: no digest windows, no quiet hours (independent of the clock)
   replace('    digestMinutes: 30 ', '    digestMinutes: 0\n    honorQuietHours: false\n    # ', 'bridge-notify digestMinutes')
   replace('    # linkGuard:\n', `    linkGuard:\n      webUrl: ${APP}\n`, 'bridge-identity linkGuard')
-  // the application's chat texts: the en / zh notifications (template module) and the words of the card buttons
-  replace('    audienceText: template\n', `    audienceText: template\n    templateModules:\n      - { module: ${JSON.stringify(slash(join(EXAMPLE, 'src', 'im-templates.mjs')))}, application: ${APP_ID} }\n`, 'bridge-notify audienceText')
-  const words = { en: ['Approve', 'Reject'], ja: ['承認', '差戻'], zh: ['批准', '驳回'] }[lang]
+  // the card: the application's own explanation (its wording) instead of the business body. No language settings: the
+  // framework frames every message (and picks the button / reply words) in the language of the served manifest.
   replace("- id: bridge-approvals\n  name: '@dsh-bridge/plugin-approvals'\n  config:\n",
-    `- id: bridge-approvals\n  name: '@dsh-bridge/plugin-approvals'\n  config:\n    showBusinessBody: false\n    replyWords: { approve: [${words[0]}], reject: [${words[1]}] }\n`, 'bridge-approvals config')
+    "- id: bridge-approvals\n  name: '@dsh-bridge/plugin-approvals'\n  config:\n    showBusinessBody: false\n", 'bridge-approvals config')
   const presetAt = text.indexOf('- insert:\n    - id: preset-business-assistant')
   if (presetAt < 0) throw new Error('profile template changed: preset-business-assistant not found')
   text = `${text.slice(0, presetAt)}# ── demo product settings ──\n- id: bridge-events\n  config:\n    pollIntervalSeconds: 1\n    maxBackoffSeconds: 5\n\n${text.slice(presetAt)}`
@@ -286,12 +285,12 @@ async function runLanguage(lang) {
     const webhook = lineWebhookSender({ url: `${GATEWAY}/dsh-hooks/line`, channelSecret: SECRETS.lineSecret, botUserId: LINE_BOT })
     const toUser = (event, userId) => (e) => (e.kind === 'reply' && e.replyToken === event.replyToken) || (e.kind === 'push' && e.to === userId)
 
-    // everyone links their own chat (setup, not part of the story): a link code from the business web, then 「連携 123456」
+    // everyone links their own chat (setup, not part of the story): a link code from the business web, then "link 123456" (連携 / 绑定)
     for (const who of ['approver', 'otherApprover', 'requester', 'other']) {
       const r = await fetch(`${APP}/bridge/v1/me/link-codes`, { method: 'POST', headers: { cookie: cookies[who] } })
       const { code } = await r.json()
       const at = Date.now()
-      const sent = await webhook.text(LINE[who], `連携 ${code}`)
+      const sent = await webhook.text(LINE[who], `${{ en: 'link', ja: '連携', zh: '绑定' }[lang]} ${code}`)
       if (!(await line.waitForMessage(toUser(sent.event, LINE[who]), { since: at, timeoutMs: 30_000 }))) throw new Error(`linking ${who}: no answer`)
     }
     await sleep(1500)

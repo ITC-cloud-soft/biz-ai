@@ -50,7 +50,8 @@ footer に返信コードの案内と署名「— <アプリ名> AI 秘書」（
 （送付済みのカードのボタン ID と送付記録をそのまま使う。`actionPrefix` は起動時に決まるので変えたら再起動）。
 
 ## 拡張点
-- 語：`replyWords`。文面の定数は `MSG`（export）、エラーの文は `messages` で上書き。
+- 語：`replyWords`。文面の定数は `MSG`（export、日本語）、言語ごとは `MESSAGES.{ja,en,zh}`（`src/messages.js`）。エラーの文は `messages` で上書き。
+- 言語：アプリケーションの manifest の `system.locale` / `system.timezone`（dsh-core `localeOf` / `timeZoneOf`。無ければ日本語・日本時間）。`replyWords` を設定しない（または日本語の既定と同じ）ときは、カードはその言語の既定の語（承認 / 差戻、Approve / Reject、批准 / 驳回）、文字返信は 3 つの言語のどの語でも受け付ける。
 - 部品：`createApprovalsIm`（ctx 無し）、`replyMatcher`、`parseActionTarget`、`actionPrefixOf` / `actionPattern`、`decisionErrorMessage(error, overrides)`、`normalizeStatus`、`approvalSubject`。
 
 ## テスト

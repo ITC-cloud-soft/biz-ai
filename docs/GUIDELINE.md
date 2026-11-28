@@ -1024,6 +1024,21 @@ export const templates = {
 - **日付を作らない**：目安・期限は params にあるものだけ。日付の無い対応で業務上はっきりしているものだけ「本日中」。
 - 共用ボット（個人 WeChat）では前に【アプリ名】が付く（`【設備点検】【対応のお願い】…`）。
 - 枠は `@dsh-bridge/dsh-core` の `frameMessage` / `frameAiText` / `noticeCard` を使い、自分で組み立てない。
+- **枠の言語と時間帯は manifest の `system.locale` / `system.timezone`**（どの manifest にもある必須の項目。レジストリやプラグインの
+  設定は要らない）。`ja-*` は日本語、`en-*` は英語、`zh-*` は中国語（それ以外の言語は英語）。manifest がまだ無いときは日本語・日本時間。
+  ラベル・あいさつ・▶ の行・結び・リンクの行・署名・共用ボットの【アプリ名】・承認カードの決まった文・連携の返事などが、その言語になる。
+  業務システムが書く事実の文（manifest の `templates` の `description` / `action`、カードの `wording`）は業務システムの言語で書く。
+
+| | ja（既定） | en | zh |
+|---|---|---|---|
+| ラベル | 【ご報告】【対応のお願い】【至急】【承認のお願い】【ご相談】【定時のご報告】【ご案内】 | [FYI] [Action needed] [Urgent] [For your approval] [Your input needed] [Daily report] [How to] | 【通知】【请处理】【紧急】【请审批】【请商议】【定时报告】【使用说明】 |
+| あいさつ（timezone の時刻） | 5〜9 時 おはようございます。／10〜20 時 お疲れさまです。／21〜4 時 夜分に失礼します。 | 5–11 Good morning. / 12–17 Good afternoon. / 18–20 Good evening. / 21–4 Sorry for the late message. | 5〜9 早上好。／10〜17 您好。／18〜20 晚上好。／21〜4 抱歉这么晚打扰您。 |
+| お願いの行・結び | ▶ お願いしたいこと（目安）：… ／ ご対応は不要です。ご確認だけお願いします。 | ▶ What I'd like you to do (due): … / No action needed. This is just for your information. | ▶ 需要您做的（目安）：… ／ 无需处理，请知悉。 |
+| リンク・署名 | こちらから開けます：<URL> ／ — <アプリ名> AI 秘書 | Open: <URL> / — <name> AI assistant | 点此打开：<URL> ／ — <名称> AI 助理 |
+| 承認カードの返信の語 | 承認 / 差戻 | Approve / Reject | 批准 / 驳回 |
+
+ラベルの見分け（`SECRETARY_LABEL_RE`・`intentOfHead`・【アプリ名】の付け忘れ判定）と、文字の返信（承認の返信の語・連携の語「連携 / link / 绑定」・
+共用ボットの `#一覧` / `#list` / `#列表`）は、インスタンスの言語にかかわらず 3 つの言語のどれでも通る。
 
 見本（info・まとめ送信）：
 

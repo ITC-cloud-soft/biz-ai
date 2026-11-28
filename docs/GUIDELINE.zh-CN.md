@@ -1008,6 +1008,21 @@ export const templates = {
 - **不编造日期**：目标日期、期限只用 params 中有的。没有日期但在业务上明确的处理，才写「本日中」（今天之内）。
 - 在共用机器人（个人微信）中，前面会加上【アプリ名】（应用名）（`【設備点検】【対応のお願い】…`）。
 - 外框使用 `@dsh-bridge/dsh-core` 的 `frameMessage` / `frameAiText` / `noticeCard`，不要自己拼装。
+- **外框的语言和时区取自 manifest 的 `system.locale` / `system.timezone`**（每个 manifest 都有的必填项，注册表和插件无需设置）。
+  `ja-*` 为日语，`en-*` 为英语，`zh-*` 为中文（其他语言为英语）。还没有 manifest 时为日语、日本时间。标签、问候、▶ 行、结尾、链接行、
+  署名、共用机器人的【应用名】、审批卡片的固定文字、绑定的回复等都会使用该语言。业务系统自己写的事实句（manifest `templates` 的
+  `description` / `action`、卡片的 `wording`）请用业务系统的语言书写。
+
+| | ja（默认） | en | zh |
+|---|---|---|---|
+| 标签 | 【ご報告】【対応のお願い】【至急】【承認のお願い】【ご相談】【定時のご報告】【ご案内】 | [FYI] [Action needed] [Urgent] [For your approval] [Your input needed] [Daily report] [How to] | 【通知】【请处理】【紧急】【请审批】【请商议】【定时报告】【使用说明】 |
+| 问候（timezone 的时刻） | 5〜9 おはようございます。／10〜20 お疲れさまです。／21〜4 夜分に失礼します。 | 5–11 Good morning. / 12–17 Good afternoon. / 18–20 Good evening. / 21–4 Sorry for the late message. | 5〜9 早上好。／10〜17 您好。／18〜20 晚上好。／21〜4 抱歉这么晚打扰您。 |
+| 请求行・结尾 | ▶ お願いしたいこと（目安）：… ／ ご対応は不要です。ご確認だけお願いします。 | ▶ What I'd like you to do (due): … / No action needed. This is just for your information. | ▶ 需要您做的（目安）：… ／ 无需处理，请知悉。 |
+| 链接・署名 | こちらから開けます：<URL> ／ — <アプリ名> AI 秘書 | Open: <URL> / — <name> AI assistant | 点此打开：<URL> ／ — <名称> AI 助理 |
+| 审批的回复词 | 承認 / 差戻 | Approve / Reject | 批准 / 驳回 |
+
+识别与实例的语言无关：`SECRETARY_LABEL_RE`、`intentOfHead` 和【应用名】的判断认得三种语言的标签；文字回复（审批的回复词、绑定词
+「連携」/ `link` /「绑定」、共用机器人的 `#一覧` / `#list` / `#列表`）用哪种语言都可以。
 
 示例（info、汇总发送）：
 

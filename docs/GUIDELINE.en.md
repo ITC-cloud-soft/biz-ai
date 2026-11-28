@@ -1023,6 +1023,24 @@ Shape (4–6 lines on a smartphone, no emoji; "▶" and the "—" of the signatu
 - **Do not invent dates**: target dates and deadlines only when they are in params. 「本日中」 (by the end of today) only for undated actions where it is clear in business terms.
 - On a shared bot (personal WeChat), 【アプリ名】 (app name) is prefixed (`【設備点検】【対応のお願い】…`).
 - Use `frameMessage` / `frameAiText` / `noticeCard` from `@dsh-bridge/dsh-core` for the frame; do not assemble it yourself.
+- **The frame's language and time zone are the manifest's `system.locale` / `system.timezone`** (required fields of every
+  manifest; nothing to set in the registry or the plugins). `ja-*` → Japanese, `en-*` → English, `zh-*` → Chinese (any other
+  language → English). Without a manifest yet: Japanese, Japan time. The labels, greeting, ▶ line, closing note, link line,
+  signature, the 【アプリ名】 prefix of shared bots, the fixed text of the approval card and the account-link replies follow it.
+  The fact sentences the business system writes (the manifest `templates` `description` / `action`, the card `wording`) are
+  written in the business system's language.
+
+| | ja (default) | en | zh |
+|---|---|---|---|
+| labels | 【ご報告】【対応のお願い】【至急】【承認のお願い】【ご相談】【定時のご報告】【ご案内】 | [FYI] [Action needed] [Urgent] [For your approval] [Your input needed] [Daily report] [How to] | 【通知】【请处理】【紧急】【请审批】【请商议】【定时报告】【使用说明】 |
+| greeting (time in `timezone`) | 5–9 おはようございます。/ 10–20 お疲れさまです。/ 21–4 夜分に失礼します。 | 5–11 Good morning. / 12–17 Good afternoon. / 18–20 Good evening. / 21–4 Sorry for the late message. | 5–9 早上好。/ 10–17 您好。/ 18–20 晚上好。/ 21–4 抱歉这么晚打扰您。 |
+| ask line / closing note | ▶ お願いしたいこと（目安）：… / ご対応は不要です。ご確認だけお願いします。 | ▶ What I'd like you to do (due): … / No action needed. This is just for your information. | ▶ 需要您做的（目安）：… / 无需处理，请知悉。 |
+| link / signature | こちらから開けます：<URL> / — <アプリ名> AI 秘書 | Open: <URL> / — <name> AI assistant | 点此打开：<URL> / — <名称> AI 助理 |
+| approval reply words | 承認 / 差戻 | Approve / Reject | 批准 / 驳回 |
+
+Recognition does not depend on the instance's language: `SECRETARY_LABEL_RE`, `intentOfHead` and the app-name prefix check
+know the labels of all three languages, and text replies (approval reply words, the link word 「連携」 / `link` / 「绑定」, the
+shared-bot commands `#一覧` / `#list` / `#列表`) work in any of them.
 
 Sample (info, digest):
 

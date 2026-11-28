@@ -14,7 +14,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { BridgeApiError, apiSource, sourceKey } from './api-client.js'
 import { createDelegationCache, delegationKey, eventIdForRequest } from './delegation.js'
-import { GROUP_CHAT_GUIDE, groupChatPolicy, isGroupConversation } from './outbound.js'
+import { groupChatGuide, groupChatPolicy, isGroupConversation } from './outbound.js'
+import { localeOf } from './messages.js'
 import { helpToolSpec } from './help-tool.js'
 import { isConnectorRunPath } from './connectors.js'
 
@@ -293,7 +294,7 @@ export function createDelegationGate({
       if (!allowed) {
         logger.info?.('%s: %s denied (group conversation)', app.id, tool)
         throw new Error(`${tool}: not allowed — ${toolKind} are not available in a group conversation (the answer would be visible to the other members). `
-          + `Do not answer business questions here; reply only: 「${GROUP_CHAT_GUIDE}」`)
+          + `Do not answer business questions here; reply only: 「${groupChatGuide(localeOf(app))}」`)
       }
     }
     let reason = current ? 'the sender of this conversation is not linked to an employee'

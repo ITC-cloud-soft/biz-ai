@@ -37,7 +37,7 @@
       }
     },
     {
-      "t": 1001,
+      "t": 29,
       "chat": "approver",
       "from": "system",
       "messages": [
@@ -45,10 +45,10 @@
           "kind": "card",
           "title": "[Action needed] Purchase request waiting",
           "fields": [],
-          "text": "Purchase request PR-1041 has waited 3 day(s) for your decision.\n▶ Approve or reject it with the card in this chat (or in Purchase Requests).",
+          "text": "Good morning. Purchase request PR-1041 has waited 3 day(s) for your decision.\n▶ What I'd like you to do: Approve or reject it with the card in this chat (or in Purchase Requests).",
           "buttons": [
             {
-              "label": "業務 Web を開いて対応",
+              "label": "Open and take action",
               "kind": "link"
             }
           ],
@@ -57,13 +57,13 @@
       ]
     },
     {
-      "t": 1078,
+      "t": 95,
       "chat": "approver",
       "from": "system",
       "messages": [
         {
           "kind": "card",
-          "title": "【承認のお願い】Purchase request",
+          "title": "[For your approval] Purchase request",
           "fields": [
             {
               "label": "Request",
@@ -82,7 +82,7 @@
               "value": "3 days"
             }
           ],
-          "text": "お疲れさまです。PR-1041 has waited 3 days for your decision.\n▶ お願いしたいこと（期限 12/12 16:56）：Approve or reject it here. The decision is recorded in Purchase Requests.\n・Approve：approved, and the requester is told\n・Reject：sent back to the requester",
+          "text": "Good morning. PR-1041 has waited 3 days for your decision.\n▶ What I'd like you to do (due 12/12 09:13): Approve or reject it here. The decision is recorded in Purchase Requests.\n• Approve: approved, and the requester is told\n• Reject: sent back to the requester",
           "buttons": [
             {
               "label": "Approve",
@@ -93,23 +93,23 @@
               "kind": "action"
             },
             {
-              "label": "業務Webで詳細を見る",
+              "label": "View details in the web app",
               "kind": "link"
             }
           ],
-          "footer": "文字で返信する場合：「Approve ••••••」／「Reject •••••• 理由」\n— Purchase Requests AI 秘書"
+          "footer": "Reply in text: “Approve ••••••” / “Reject •••••• reason”\n— Purchase Requests AI assistant"
         }
       ]
     },
     {
-      "t": 4083,
+      "t": 3104,
       "chat": "approver",
       "from": "person",
       "kind": "tap",
       "label": "Approve"
     },
     {
-      "t": 4091,
+      "t": 3116,
       "chat": "approver",
       "from": "system",
       "messages": [
@@ -120,7 +120,7 @@
       ]
     },
     {
-      "t": 4091,
+      "t": 3116,
       "chat": "approver",
       "from": "business",
       "kind": "note",
@@ -132,14 +132,14 @@
       }
     },
     {
-      "t": 4094,
+      "t": 3120,
       "chat": "approver",
       "from": "system",
       "update": true,
       "messages": [
         {
           "kind": "card",
-          "title": "【ご報告】Purchase requestの承認依頼（承認済み）",
+          "title": "[FYI] Purchase request (Approved)",
           "fields": [
             {
               "label": "Request",
@@ -161,27 +161,27 @@
           "text": "Approved in Purchase Requests. Nothing more to do.",
           "buttons": [
             {
-              "label": "業務Webで詳細を見る",
+              "label": "View details in the web app",
               "kind": "link"
             }
           ],
-          "footer": "状態：承認済み\n— Purchase Requests AI 秘書"
+          "footer": "Status: approved\n— Purchase Requests AI assistant"
         }
       ]
     },
     {
-      "t": 4221,
+      "t": 3233,
       "chat": "requester",
       "from": "system",
       "messages": [
         {
           "kind": "card",
-          "title": "[Update] Purchase request approved",
+          "title": "[FYI] Purchase request decided",
           "fields": [],
-          "text": "Your purchase request PR-1041 was approved.\nNothing more to do.",
+          "text": "Good morning. Your purchase request PR-1041 was approved.\nNo action needed. This is just for your information.",
           "buttons": [
             {
-              "label": "業務 Web で確認",
+              "label": "View in the web app",
               "kind": "link"
             }
           ],
@@ -190,14 +190,14 @@
       ]
     },
     {
-      "t": 4222,
+      "t": 3233,
       "chat": "requester",
       "from": "person",
       "kind": "text",
       "text": "Where is my request?"
     },
     {
-      "t": 5671,
+      "t": 4622,
       "chat": "requester",
       "from": "ai",
       "messages": [
@@ -208,7 +208,7 @@
       ]
     },
     {
-      "t": 5671,
+      "t": 4623,
       "chat": "requester",
       "from": "business",
       "kind": "note",
@@ -220,14 +220,14 @@
       }
     },
     {
-      "t": 5671,
+      "t": 4623,
       "chat": "other",
       "from": "person",
       "kind": "text",
       "text": "Where is PR-1041?"
     },
     {
-      "t": 6664,
+      "t": 5955,
       "chat": "other",
       "from": "ai",
       "messages": [
@@ -238,7 +238,7 @@
       ]
     },
     {
-      "t": 6665,
+      "t": 5956,
       "chat": "other",
       "from": "business",
       "kind": "note",
