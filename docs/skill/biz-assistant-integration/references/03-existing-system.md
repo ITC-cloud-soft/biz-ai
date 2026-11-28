@@ -27,6 +27,14 @@ const bridge = await createBridgeApp({
 - Add `kit.emitEvent` in the same transaction to each existing state-changing process (check whether the existing transaction's connection can be passed to the kit;
   if it cannot, move that process inside `kit.tx`). Details in `05-business-side.md`.
 - Attach `readToolPolicy` to the existing GETs the AI is to read, so they accept delegation. Write APIs return 403 for delegation (`delegation_not_permitted`).
+- **Existing `node:http` routes**: `bridge.handler` answers 404 for paths it does not know, and `readToolPolicy` is a route policy of `bridge.router`
+  (the kit's gate resolves the AI's delegation token). So at least the GETs the AI reads move to `bridge.router.add(method, '/api/…/:id', policy, handler)`. Choose and write in the plan:
+  - Move every existing route to `bridge.router`. All responses then use the kit's error envelope (`{ ok: false, error }`) and carry the `bridge-protocol: 1` header:
+    list this as a change to existing behavior.
+  - Or move only the AI's read GETs, and dispatch by path in the existing server (`/bridge/` and those GETs to `bridge.handler`, everything else to the old code).
+    The other routes keep their behavior, but conformance D5 sends a delegation token to every write API in `writeProbes` and expects exactly
+    `403 delegation_not_permitted`; an old write route that answers 401 (or anything else) fails D5. In practice, move the write routes too, or make them answer that error.
+  - With express / connect, `bridge.middleware` passes unknown paths to `next()`, so the old routes can stay where they are.
 
 ## B. APIs with the same function exist: mount as aliases
 

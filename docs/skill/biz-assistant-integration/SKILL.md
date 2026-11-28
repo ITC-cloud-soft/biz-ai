@@ -19,7 +19,8 @@ so that it works with **AI employees** (an AI assistant for each employee that n
   - `docs/GUIDELINE.en.md` (also in Japanese, the original: `docs/GUIDELINE.md`, and Chinese: `docs/GUIDELINE.zh-CN.md`) (development guideline: steps in b, extension points in c, rules in d, testing in e, versioning in f, FAQ in g)
   - `docs/ARCHITECTURE.md` (structure, flows, recipient guarantees, safety commitments)
   - `packages/protocol/README.md` (Bridge v1, manifest, the 52 conformance items), `packages/server-kit/README.md`, `packages/web-kit/README.md`, `plugins/*/README.md`
-  - Example: `examples/equipment-inspection` (a business system newly built on server-kit; conformance 52 / 52)
+  - Examples: `examples/equipment-inspection` (a business system newly built on server-kit with PostgreSQL; conformance 52 / 52) and
+    `examples/leave-requests` (the smallest one: one source file, no database, the kit's memory store; conformance 52 / 52). For a small existing system without a database, start from leave-requests.
 - Detailed procedures are split into `references/` in this folder. Read only what you need right now (see "Which reference to read" below).
 
 ## 0. First steps
@@ -32,7 +33,9 @@ so that it works with **AI employees** (an AI assistant for each employee that n
    pnpm install && pnpm test && pnpm validate      # Node 22.19 or later, pnpm 10. First confirm the framework itself passes
    ```
 
-   From here on, the framework checkout is written as `<framework>`. `@dsh-bridge/*` is on npm (0.1.0); the checkout is still the
+   Pass = all three exit 0. Without `FW_TEST_DATABASE_URL` (a TEST PostgreSQL), the PostgreSQL tests of `examples/equipment-inspection` are **skipped**
+   (the skip reason is printed); that is expected here. The examples without a database (such as `examples/leave-requests`) still run their 52 / 52.
+   From here on, the framework checkout is written as `<framework>`. `@dsh-bridge/*` is on npm (check the current version with `npm view @dsh-bridge/server-kit version`); the checkout is still the
    source of truth for documents and checks (see "Location and dependencies" in `references/02-new-system.md`).
 2. **Read "Connecting an existing business system: checklist" at the top of `docs/GUIDELINE.en.md` and the diagram in section b.** The steps of this skill correspond to them.
 3. **Read the target business system**: language and framework, login and sessions, the employee and role tables, business APIs (reads and writes), approval rules,
@@ -72,6 +75,10 @@ At the start of the work, copy `templates/integration-plan.md` to create the pla
 
 Before and after each step, review that nothing violates `references/09-rules.md` (summary of MUST / SHOULD).
 
+**When a check or a kit constraint conflicts with something the user decided** (for example, conformance needs a wider proposal scope than the user chose),
+stop and ask before changing it: explain the constraint, give the options and a recommendation. Do not change a decision on your own and only mention it afterwards.
+Points the user left open may be decided provisionally, but list them in the report (section 6).
+
 ## 3. Rules to keep (key points; full text in GUIDELINE section d)
 
 - **Do not modify the inside of the framework** (`packages/*`, `plugins/*`, `vendor/*`, `profile/template`, `profile/scripts`). Fill gaps with hooks,
@@ -92,7 +99,8 @@ Do not decide the following by guessing; write the options and a recommendation 
 
 - The first business function to handle and what the AI may read (the manifest's `tools` and each tool's `roles`, and `delegation: none | read | propose` per role)
 - Which events to notify and their recipient rules (to whom, in what scope), and which kinds are delivered at night too (`notify.quiet: exempt`)
-- The kinds of proposals the AI may make, and the roles that may accept them
+- The kinds of proposals the AI may make, who accepts each kind, and on which records each role may propose (ask during the assessment, with the kit's constraints: section 4 of `references/01-assessment.md`)
+- Whether to fix defects found in the existing system during the assessment (such as self-approval or secrets in the code), now or separately: the bridge reuses the system's authorization, so its defects become the AI's defects
 - The delegation class for automatic tasks and the employee delegated to (do not pick a broad role), or `<class>=each`
 - Whether any outbound setting is opened (opt-in), and why
 - Which chat to use (the organization's bot or personal bots) and which AI model to use
@@ -118,4 +126,8 @@ Do not decide the following by guessing; write the options and a recommendation 
 
 - Report the results of the definition of done (`references/10-verification.md`) with the commands and a summary of their output. Write "not verified" for anything you did not check (such as confirmation in a real chat or with a real model).
 - Leave in the plan what was added, what was decided, any settings opened (opt-in) and why, and the remaining work.
+- In every progress report (not only the last one), list under their own headings:
+  - **Changes to existing behavior** (API responses, error formats, tokens, startup settings, seed data) that callers of the existing system will notice
+  - **Provisional decisions** you made on points the user left open (deadlines, who sees what, report scope), so the user can confirm or change them
+  - **Links and screens not built yet** (for example, a notification links to `/requests/:id`, but the web screen comes in step 7): the notification is not verified end to end until the screen exists
 - Write down the framework version (commit) the work was based on. When the framework version goes up, check GUIDELINE section f (versioning) and the changes.

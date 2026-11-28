@@ -34,6 +34,7 @@ The 4 capabilities if external mode is chosen: IdP ( ) / APIs callable as the us
 | Proposal kinds, and who accepts each kind (`roles.proposalReviewers` is one list for all kinds, per-kind rules go in `apply`; the employee a proposal was made for cannot accept it; reviewers see every department's proposals) | | | |
 | Proposal scope of each proposing role (= its read scope, or conformance PR1 / PR2 fail) | | | |
 | Delegation class and employee for automatic tasks (or each) | | | |
+| Defects of the existing system found in the assessment (section 7): fix in this work or separately | | | |
 | Outbound settings to open (opt-in) and why | None (recommended) | | |
 | Chat, bot and AI model to use | | | |
 | Optional features (manual, profile, attachments, external connectors) and handling of scanned PDFs | | | |
@@ -74,8 +75,20 @@ The 4 capabilities if external mode is chosen: IdP ( ) / APIs callable as the us
 | 7 | Rejection of fixed destinations | | |
 | 8 | Business web app (tsc) | | |
 
-Not verified (such as confirmation in a real chat or with a real model):
+Not verified (such as confirmation in a real chat or with a real model, notification links to screens not built yet):
 
 ## 6. What was added to the existing system (for explanation)
 
 (Do not write "it connects without changing anything". List the APIs, tables, screens and settings that were added.)
+
+## 7. Defects of the existing system found during the work (unrelated to AI)
+
+| Defect | Evidence (file, function) | Fix now / separately (user's decision) | Status |
+|---|---|---|---|
+| | | | |
+
+## 8. Changes to existing behavior and provisional decisions (keep up to date in every report)
+
+| Kind (changed behavior / provisional decision) | Content | Reason | Confirmed by the user |
+|---|---|---|---|
+| | | | |

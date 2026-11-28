@@ -27,6 +27,11 @@ node --test <framework>/packages/protocol/conformance/http.test.mjs        # the
   - `roles` lists every role in the manifest (M3)
 - `capabilities`: `approvals: true` (with `false`, A1–A4 are skipped), `personalBots` (with `false`, B1–B4 are skipped), `personalBotPlatform`.
 - Two proposal samples: one the delegated role can create (`proposalSample`: PR1, PR2) and one it cannot (`proposalForbiddenSample`: PR3).
+  - `proposalSample()` returns `{ role, reviewerRole, kind, payload }`. `reviewerRole` (default `manager`) is the fixtures employee who lists the pending
+    sample and rejects it in PR2, so it must be a role in `roles.proposalReviewers` (rejecting does not run the kind's `apply`).
+  - The suite **reuses one delegation per role for 3 minutes** (`conformance/checks/delegation.mjs`): the employee behind the token is created once and shared
+    by later checks. Do not build a sample around "the next employee `newEmployee` creates" or the delegated employee's own records; take a record inside the
+    role's read scope that exists independently (see section 4 of `01-assessment.md`).
 - hooks: `expireLinkCode`, `expireDelegation`, `revokeSession`, `deactivateEmployee`, `emitNotifiableEvent` (creates an event **whose recipients include that employee**),
   `createPendingApproval`, `produceEvents`, `tryEmitEvent`, `writeProbes` (lists every business write API).
 - Items without a hook are **skipped**. The release condition is no skips.
@@ -43,6 +48,7 @@ node --test <framework>/packages/protocol/conformance/http.test.mjs        # the
 | M3 | The fixtures' `roles` is missing roles from the manifest |
 | N1–N3 | The `emitNotifiableEvent` event does not include that employee as a recipient, strings in `paramsFor` |
 | S4 | No `isSessionLive` |
+| PR1, PR2 | The kind's `validate` accepts only the delegated employee's own records, the sample depends on the delegated employee, or `reviewerRole` is not in `roles.proposalReviewers` |
 
 ## 2. Definition of Done (verified by commands)
 
@@ -60,6 +66,8 @@ node --test <framework>/packages/protocol/conformance/http.test.mjs        # the
 
 - The framework's e2e (`pnpm run e2e`) is currently for the sample only. The completion of a new system or a connected system is judged by 1–8.
 - Checks with a real chat and real models are manual. If they were not done, write "not verified" in the report.
+- Notification links point at screens of the business web app (`web.routes`). Until those screens exist (step 7), conformance can pass while a tap on the link
+  leads nowhere: report such links as "not verified".
 
 ## 3. Final checklist (a copy of the GUIDELINE "Checklist"; check the original for the latest)
 
